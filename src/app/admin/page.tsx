@@ -33,16 +33,18 @@ const RECENT_ACTIVITY = [
   { action: 'Doctor approved', detail: 'Dr. Hassan Ali — license verified', time: '12 min ago' },
   { action: 'Threshold updated', detail: 'Systolic BP high threshold → 140 mmHg', time: '1h ago' },
   { action: 'NGO registered', detail: 'Edhi Foundation — pending review', time: '3h ago' },
-  { action: 'Alert escalated', detail: 'Patient Fatima Malik — unacknowledged for 30 min', time: '5h ago' },
+  {
+    action: 'Alert escalated',
+    detail: 'Patient Fatima Malik — unacknowledged for 30 min',
+    time: '5h ago',
+  },
 ]
 
 export default function AdminDashboard() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="font-display text-2xl font-semibold text-pine">
-          Admin Console
-        </h1>
+        <h1 className="font-display text-2xl font-semibold text-pine">Admin Console</h1>
         <p className="text-sm text-ink-muted">
           Platform oversight, user governance, and system health.
         </p>
@@ -79,15 +81,10 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         {/* Service Health Cards */}
         <div className="col-span-2 space-y-4">
-          <h2 className="font-display text-lg font-semibold text-pine">
-            Service Health
-          </h2>
+          <h2 className="font-display text-lg font-semibold text-pine">Service Health</h2>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {SERVICES.map((svc) => (
-              <div
-                key={svc.name}
-                className="rounded-[10px] border border-line bg-panel p-4"
-              >
+              <div key={svc.name} className="rounded-[10px] border border-line bg-panel p-4">
                 <div className="mb-2 flex items-center gap-2">
                   <svc.icon size={16} className="text-ink-muted" aria-hidden />
                   <span className="text-sm font-medium text-ink">{svc.name}</span>
@@ -118,18 +115,12 @@ export default function AdminDashboard() {
 
         {/* Recent Activity */}
         <div className="col-span-1 space-y-4">
-          <h2 className="font-display text-lg font-semibold text-pine">
-            Recent Activity
-          </h2>
+          <h2 className="font-display text-lg font-semibold text-pine">Recent Activity</h2>
           <div className="flex flex-col gap-3 rounded-[10px] border border-line bg-panel p-4">
             {RECENT_ACTIVITY.map((item, i) => (
               <div
                 key={i}
-                className={`${
-                  i < RECENT_ACTIVITY.length - 1
-                    ? 'border-b border-line pb-3'
-                    : ''
-                }`}
+                className={`${i < RECENT_ACTIVITY.length - 1 ? 'border-b border-line pb-3' : ''}`}
               >
                 <div className="flex items-start justify-between">
                   <p className="text-sm font-medium text-ink">{item.action}</p>

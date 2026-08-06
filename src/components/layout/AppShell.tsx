@@ -2,14 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import {
-  HeartPulse,
-  Bell,
-  PanelLeftClose,
-  PanelLeft,
-  Search,
-  LogOut,
-} from 'lucide-react'
+import { HeartPulse, Bell, PanelLeftClose, PanelLeft, Search, LogOut } from 'lucide-react'
 import NavItem, { type NavItemConfig } from './NavItem'
 import { createClient } from '@/lib/supabase/client'
 

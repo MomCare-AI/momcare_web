@@ -16,62 +16,74 @@ import {
   Check,
   CloudUpload,
   Eye,
-  EyeOff
+  EyeOff,
 } from 'lucide-react'
 import { useToast } from '@/components/ui/useToast'
 
 // Zod Schema mapping directly to the legacy RPM fields requested by user
-const registrationSchema = z.object({
-  // Step 1: Account
-  firstName: z.string().min(2, 'First name is required'),
-  lastName: z.string().min(2, 'Last name is required'),
-  username: z.string().min(4, 'Username is required'),
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
-  confirmPassword: z.string(),
-  gender: z.enum(['Male', 'Female', 'Other']),
-  primaryPhone: z.string().min(10, 'Valid phone number is required'),
-  
-  // Step 2: Additional
-  address1: z.string().min(5, 'Address is required'),
-  address2: z.string().optional(),
-  city: z.string().min(2, 'City is required'),
-  postalCode: z.string().min(4, 'Postal code is required'),
-  state: z.string().min(2, 'State is required'),
-  provider: z.string().min(2, 'Provider is required'),
-  secondaryProvider: z.string().optional(),
-  nurse: z.string().optional(),
-  rpmDiagnosis: z.string().optional(),
+const registrationSchema = z
+  .object({
+    // Step 1: Account
+    firstName: z.string().min(2, 'First name is required'),
+    lastName: z.string().min(2, 'Last name is required'),
+    username: z.string().min(4, 'Username is required'),
+    email: z.string().email('Invalid email address'),
+    password: z.string().min(8, 'Password must be at least 8 characters'),
+    confirmPassword: z.string(),
+    gender: z.enum(['Male', 'Female', 'Other']),
+    primaryPhone: z.string().min(10, 'Valid phone number is required'),
 
-  // Step 3: Consents
-  consentFormCheck: z.boolean().default(false),
-  doctorNotesCheck: z.boolean().default(false),
-  
-  rpmConsent1: z.boolean().refine((val) => val === true, { message: 'Must acknowledge device receipt' }),
-  rpmConsent2: z.boolean().refine((val) => val === true, { message: 'Must acknowledge property terms' }),
-  rpmConsent3: z.boolean().refine((val) => val === true, { message: 'Must agree to monthly check-in' }),
-  rpmConsent4: z.boolean().refine((val) => val === true, { message: 'Must acknowledge non-emergency' }),
-  verbalConsent: z.boolean().refine((val) => val === true, { message: 'Verbal consent required' }),
-  
-  // Step 4: Bounds
-  glucoseMin: z.coerce.number().min(50).max(100),
-  glucoseMax: z.coerce.number().min(100).max(300),
-  sysMin: z.coerce.number().min(70).max(120),
-  sysMax: z.coerce.number().min(100).max(180),
-  diaMin: z.coerce.number().min(40).max(80),
-  diaMax: z.coerce.number().min(70).max(120),
-  hrMin: z.coerce.number().min(40).max(80),
-  hrMax: z.coerce.number().min(80).max(150),
-  
-  // Initial Baselines
-  initialSys: z.string().optional(),
-  initialDia: z.string().optional(),
-  initialHr: z.string().optional(),
-  initialWeight: z.string().optional(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ['confirmPassword'],
-})
+    // Step 2: Additional
+    address1: z.string().min(5, 'Address is required'),
+    address2: z.string().optional(),
+    city: z.string().min(2, 'City is required'),
+    postalCode: z.string().min(4, 'Postal code is required'),
+    state: z.string().min(2, 'State is required'),
+    provider: z.string().min(2, 'Provider is required'),
+    secondaryProvider: z.string().optional(),
+    nurse: z.string().optional(),
+    rpmDiagnosis: z.string().optional(),
+
+    // Step 3: Consents
+    consentFormCheck: z.boolean().default(false),
+    doctorNotesCheck: z.boolean().default(false),
+
+    rpmConsent1: z
+      .boolean()
+      .refine((val) => val === true, { message: 'Must acknowledge device receipt' }),
+    rpmConsent2: z
+      .boolean()
+      .refine((val) => val === true, { message: 'Must acknowledge property terms' }),
+    rpmConsent3: z
+      .boolean()
+      .refine((val) => val === true, { message: 'Must agree to monthly check-in' }),
+    rpmConsent4: z
+      .boolean()
+      .refine((val) => val === true, { message: 'Must acknowledge non-emergency' }),
+    verbalConsent: z
+      .boolean()
+      .refine((val) => val === true, { message: 'Verbal consent required' }),
+
+    // Step 4: Bounds
+    glucoseMin: z.coerce.number().min(50).max(100),
+    glucoseMax: z.coerce.number().min(100).max(300),
+    sysMin: z.coerce.number().min(70).max(120),
+    sysMax: z.coerce.number().min(100).max(180),
+    diaMin: z.coerce.number().min(40).max(80),
+    diaMax: z.coerce.number().min(70).max(120),
+    hrMin: z.coerce.number().min(40).max(80),
+    hrMax: z.coerce.number().min(80).max(150),
+
+    // Initial Baselines
+    initialSys: z.string().optional(),
+    initialDia: z.string().optional(),
+    initialHr: z.string().optional(),
+    initialWeight: z.string().optional(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ['confirmPassword'],
+  })
 
 type RegistrationFormData = z.infer<typeof registrationSchema>
 
@@ -87,7 +99,7 @@ export default function PatientRegistrationWizard() {
   const { toast } = useToast()
   const [currentStep, setCurrentStep] = useState(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  
+
   // UI states
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -99,14 +111,24 @@ export default function PatientRegistrationWizard() {
     watch,
     formState: { errors },
   } = useForm<RegistrationFormData>({
+    // zod v4's resolver output and react-hook-form's expected Resolver
+    // type disagree specifically on z.coerce.number().optional() fields
+    // (resolver infers `unknown`, react-hook-form expects
+    // `number | undefined`) - a known cross-library generic mismatch,
+    // not something fixable by typing this call site more precisely.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(registrationSchema) as any,
     mode: 'onChange',
     defaultValues: {
       gender: 'Male',
-      glucoseMin: 70, glucoseMax: 130,
-      sysMin: 95, sysMax: 170,
-      diaMin: 45, diaMax: 105,
-      hrMin: 50, hrMax: 100,
+      glucoseMin: 70,
+      glucoseMax: 130,
+      sysMin: 95,
+      sysMax: 170,
+      diaMin: 45,
+      diaMax: 105,
+      hrMin: 50,
+      hrMax: 100,
       consentFormCheck: true,
     },
   })
@@ -121,14 +143,39 @@ export default function PatientRegistrationWizard() {
   const doctorNotesCheck = watch('doctorNotesCheck')
 
   async function onNextStep() {
-    let fieldsToValidate: any[] = []
+    let fieldsToValidate: (keyof RegistrationFormData)[] = []
 
     if (currentStep === 1) {
-      fieldsToValidate = ['firstName', 'lastName', 'username', 'email', 'password', 'confirmPassword', 'gender', 'primaryPhone']
+      fieldsToValidate = [
+        'firstName',
+        'lastName',
+        'username',
+        'email',
+        'password',
+        'confirmPassword',
+        'gender',
+        'primaryPhone',
+      ]
     } else if (currentStep === 2) {
-      fieldsToValidate = ['address1', 'address2', 'city', 'postalCode', 'state', 'provider', 'secondaryProvider', 'nurse', 'rpmDiagnosis']
+      fieldsToValidate = [
+        'address1',
+        'address2',
+        'city',
+        'postalCode',
+        'state',
+        'provider',
+        'secondaryProvider',
+        'nurse',
+        'rpmDiagnosis',
+      ]
     } else if (currentStep === 3) {
-      fieldsToValidate = ['rpmConsent1', 'rpmConsent2', 'rpmConsent3', 'rpmConsent4', 'verbalConsent']
+      fieldsToValidate = [
+        'rpmConsent1',
+        'rpmConsent2',
+        'rpmConsent3',
+        'rpmConsent4',
+        'verbalConsent',
+      ]
     }
 
     const isValid = await trigger(fieldsToValidate)
@@ -199,12 +246,13 @@ export default function PatientRegistrationWizard() {
       const patientData = await response.json()
       setCreatedPatientId(patientData.id)
       setCurrentStep(5) // Move to success screen
-    } catch (error: any) {
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error'
       toast({
         title: 'Registration Failed',
-        description: error.message,
-        variant: 'destructive',
-      } as any)
+        description: message,
+        type: 'error',
+      })
     } finally {
       setIsSubmitting(false)
     }
@@ -220,7 +268,8 @@ export default function PatientRegistrationWizard() {
   }
 
   // Helper for styling inputs uniformly
-  const inputClass = "w-full rounded-xl border border-line bg-surface px-4 py-2.5 text-sm text-ink outline-none transition-all duration-200 placeholder:text-ink-muted/50 hover:border-pine/50 focus:border-pine focus:ring-4 focus:ring-pine-wash/50"
+  const inputClass =
+    'w-full rounded-xl border border-line bg-surface px-4 py-2.5 text-sm text-ink outline-none transition-all duration-200 placeholder:text-ink-muted/50 hover:border-pine/50 focus:border-pine focus:ring-4 focus:ring-pine-wash/50'
 
   return (
     <div className="flex min-h-[700px] w-full overflow-hidden rounded-2xl border border-line bg-surface shadow-sm lg:flex-row flex-col">
@@ -228,7 +277,7 @@ export default function PatientRegistrationWizard() {
       <div className="flex w-full flex-col bg-[var(--color-pine-deep)] p-8 lg:w-72 lg:p-12 relative overflow-hidden">
         {/* Decorative circle */}
         <div className="absolute -top-24 -right-24 h-64 w-64 rounded-full bg-surface/5 blur-3xl pointer-events-none" />
-        
+
         <div className="relative z-10">
           <h2 className="mb-10 font-display text-2xl font-bold text-surface tracking-wide">
             New Patient
@@ -255,8 +304,8 @@ export default function PatientRegistrationWizard() {
                       isCompleted
                         ? 'border-[var(--color-sage)] bg-[var(--color-sage)] text-pine-deep'
                         : isCurrent
-                        ? 'border-surface bg-transparent text-surface shadow-[0_0_15px_rgba(255,255,255,0.2)]'
-                        : 'border-surface/20 bg-transparent text-surface/40'
+                          ? 'border-surface bg-transparent text-surface shadow-[0_0_15px_rgba(255,255,255,0.2)]'
+                          : 'border-surface/20 bg-transparent text-surface/40'
                     }`}
                   >
                     {isCompleted ? (
@@ -291,60 +340,118 @@ export default function PatientRegistrationWizard() {
 
       {/* Right Content - Form */}
       <div className="flex flex-1 flex-col bg-panel relative">
-        <form onSubmit={handleSubmit(onSubmit)} onKeyDown={handleKeyDown} className="flex h-full flex-col">
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          onKeyDown={handleKeyDown}
+          className="flex h-full flex-col"
+        >
           <div className="flex-1 overflow-y-auto p-8 lg:p-12">
-            
             {/* STEP 1: ACCOUNT INFORMATION */}
             {currentStep === 1 && (
               <div className="animate-in fade-in slide-in-from-right-4 duration-500 fill-mode-both">
                 <div className="mb-8">
-                  <h3 className="font-display text-2xl font-semibold text-pine">Basic Patient Information</h3>
-                  <p className="mt-1 text-sm text-ink-muted">Create the patient's account credentials and profile.</p>
+                  <h3 className="font-display text-2xl font-semibold text-pine">
+                    Basic Patient Information
+                  </h3>
+                  <p className="mt-1 text-sm text-ink-muted">
+                    Create the patient&apos;s account credentials and profile.
+                  </p>
                 </div>
 
                 <div className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="mb-1.5 block text-xs font-semibold text-pine">First Name</label>
-                      <input {...register('firstName')} className={inputClass} placeholder="First Name" />
-                      {errors.firstName && <p className="mt-1.5 text-xs text-[var(--color-clay)]">{errors.firstName.message}</p>}
+                      <label className="mb-1.5 block text-xs font-semibold text-pine">
+                        First Name
+                      </label>
+                      <input
+                        {...register('firstName')}
+                        className={inputClass}
+                        placeholder="First Name"
+                      />
+                      {errors.firstName && (
+                        <p className="mt-1.5 text-xs text-[var(--color-clay)]">
+                          {errors.firstName.message}
+                        </p>
+                      )}
                     </div>
                     <div>
-                      <label className="mb-1.5 block text-xs font-semibold text-pine">Last Name</label>
-                      <input {...register('lastName')} className={inputClass} placeholder="Last Name" />
-                      {errors.lastName && <p className="mt-1.5 text-xs text-[var(--color-clay)]">{errors.lastName.message}</p>}
+                      <label className="mb-1.5 block text-xs font-semibold text-pine">
+                        Last Name
+                      </label>
+                      <input
+                        {...register('lastName')}
+                        className={inputClass}
+                        placeholder="Last Name"
+                      />
+                      {errors.lastName && (
+                        <p className="mt-1.5 text-xs text-[var(--color-clay)]">
+                          {errors.lastName.message}
+                        </p>
+                      )}
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="mb-1.5 block text-xs font-semibold text-pine">Username</label>
-                      <input {...register('username')} className={inputClass} placeholder="Username" />
-                      {errors.username && <p className="mt-1.5 text-xs text-[var(--color-clay)]">{errors.username.message}</p>}
+                      <label className="mb-1.5 block text-xs font-semibold text-pine">
+                        Username
+                      </label>
+                      <input
+                        {...register('username')}
+                        className={inputClass}
+                        placeholder="Username"
+                      />
+                      {errors.username && (
+                        <p className="mt-1.5 text-xs text-[var(--color-clay)]">
+                          {errors.username.message}
+                        </p>
+                      )}
                     </div>
                     <div>
                       <label className="mb-1.5 block text-xs font-semibold text-pine">Email</label>
-                      <input type="email" {...register('email')} className={inputClass} placeholder="user@example.com" />
-                      {errors.email && <p className="mt-1.5 text-xs text-[var(--color-clay)]">{errors.email.message}</p>}
+                      <input
+                        type="email"
+                        {...register('email')}
+                        className={inputClass}
+                        placeholder="user@example.com"
+                      />
+                      {errors.email && (
+                        <p className="mt-1.5 text-xs text-[var(--color-clay)]">
+                          {errors.email.message}
+                        </p>
+                      )}
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="mb-1.5 block text-xs font-semibold text-pine">Password</label>
+                      <label className="mb-1.5 block text-xs font-semibold text-pine">
+                        Password
+                      </label>
                       <div className="relative">
-                        <input 
-                          type={showPassword ? 'text' : 'password'} 
-                          {...register('password')} 
-                          className={inputClass} 
-                          placeholder="Enter your password" 
+                        <input
+                          type={showPassword ? 'text' : 'password'}
+                          {...register('password')}
+                          className={inputClass}
+                          placeholder="Enter your password"
                         />
-                        <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-2.5 text-ink-muted hover:text-pine">
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-4 top-2.5 text-ink-muted hover:text-pine"
+                        >
                           {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                         </button>
                       </div>
-                      <p className="mt-1.5 text-xs text-ink-muted">Must be at least 8 characters long</p>
-                      {errors.password && <p className="mt-1 text-xs text-[var(--color-clay)]">{errors.password.message}</p>}
+                      <p className="mt-1.5 text-xs text-ink-muted">
+                        Must be at least 8 characters long
+                      </p>
+                      {errors.password && (
+                        <p className="mt-1 text-xs text-[var(--color-clay)]">
+                          {errors.password.message}
+                        </p>
+                      )}
                     </div>
                     <div>
                       <label className="mb-1.5 block text-xs font-semibold text-pine">Gender</label>
@@ -358,24 +465,45 @@ export default function PatientRegistrationWizard() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="mb-1.5 block text-xs font-semibold text-pine">Confirm Password</label>
+                      <label className="mb-1.5 block text-xs font-semibold text-pine">
+                        Confirm Password
+                      </label>
                       <div className="relative">
-                        <input 
-                          type={showConfirmPassword ? 'text' : 'password'} 
-                          {...register('confirmPassword')} 
-                          className={inputClass} 
-                          placeholder="Enter your password" 
+                        <input
+                          type={showConfirmPassword ? 'text' : 'password'}
+                          {...register('confirmPassword')}
+                          className={inputClass}
+                          placeholder="Enter your password"
                         />
-                        <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-4 top-2.5 text-ink-muted hover:text-pine">
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          className="absolute right-4 top-2.5 text-ink-muted hover:text-pine"
+                        >
                           {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                         </button>
                       </div>
-                      {errors.confirmPassword && <p className="mt-1 text-xs text-[var(--color-clay)]">{errors.confirmPassword.message}</p>}
+                      {errors.confirmPassword && (
+                        <p className="mt-1 text-xs text-[var(--color-clay)]">
+                          {errors.confirmPassword.message}
+                        </p>
+                      )}
                     </div>
                     <div>
-                      <label className="mb-1.5 block text-xs font-semibold text-pine">Primary Phone</label>
-                      <input {...register('primaryPhone')} maxLength={15} className={inputClass} placeholder="+1234567890" />
-                      {errors.primaryPhone && <p className="mt-1.5 text-xs text-[var(--color-clay)]">{errors.primaryPhone.message}</p>}
+                      <label className="mb-1.5 block text-xs font-semibold text-pine">
+                        Primary Phone
+                      </label>
+                      <input
+                        {...register('primaryPhone')}
+                        maxLength={15}
+                        className={inputClass}
+                        placeholder="+1234567890"
+                      />
+                      {errors.primaryPhone && (
+                        <p className="mt-1.5 text-xs text-[var(--color-clay)]">
+                          {errors.primaryPhone.message}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -386,20 +514,38 @@ export default function PatientRegistrationWizard() {
             {currentStep === 2 && (
               <div className="animate-in fade-in slide-in-from-right-4 duration-500 fill-mode-both">
                 <div className="mb-8">
-                  <h3 className="font-display text-2xl font-semibold text-pine">Additional Patient Information</h3>
+                  <h3 className="font-display text-2xl font-semibold text-pine">
+                    Additional Patient Information
+                  </h3>
                   <p className="mt-1 text-sm text-ink-muted">Address and provider assignments.</p>
                 </div>
 
                 <div className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="mb-1.5 block text-xs font-semibold text-pine">Address Line 1</label>
-                      <input {...register('address1')} className={inputClass} placeholder="Address Line 1" />
-                      {errors.address1 && <p className="mt-1.5 text-xs text-[var(--color-clay)]">{errors.address1.message}</p>}
+                      <label className="mb-1.5 block text-xs font-semibold text-pine">
+                        Address Line 1
+                      </label>
+                      <input
+                        {...register('address1')}
+                        className={inputClass}
+                        placeholder="Address Line 1"
+                      />
+                      {errors.address1 && (
+                        <p className="mt-1.5 text-xs text-[var(--color-clay)]">
+                          {errors.address1.message}
+                        </p>
+                      )}
                     </div>
                     <div>
-                      <label className="mb-1.5 block text-xs font-semibold text-pine">Address Line 2</label>
-                      <input {...register('address2')} className={inputClass} placeholder="Address Line 2" />
+                      <label className="mb-1.5 block text-xs font-semibold text-pine">
+                        Address Line 2
+                      </label>
+                      <input
+                        {...register('address2')}
+                        className={inputClass}
+                        placeholder="Address Line 2"
+                      />
                     </div>
                   </div>
 
@@ -407,12 +553,26 @@ export default function PatientRegistrationWizard() {
                     <div>
                       <label className="mb-1.5 block text-xs font-semibold text-pine">City</label>
                       <input {...register('city')} className={inputClass} placeholder="City" />
-                      {errors.city && <p className="mt-1.5 text-xs text-[var(--color-clay)]">{errors.city.message}</p>}
+                      {errors.city && (
+                        <p className="mt-1.5 text-xs text-[var(--color-clay)]">
+                          {errors.city.message}
+                        </p>
+                      )}
                     </div>
                     <div>
-                      <label className="mb-1.5 block text-xs font-semibold text-pine">Postal Code</label>
-                      <input {...register('postalCode')} className={inputClass} placeholder="72000" />
-                      {errors.postalCode && <p className="mt-1.5 text-xs text-[var(--color-clay)]">{errors.postalCode.message}</p>}
+                      <label className="mb-1.5 block text-xs font-semibold text-pine">
+                        Postal Code
+                      </label>
+                      <input
+                        {...register('postalCode')}
+                        className={inputClass}
+                        placeholder="72000"
+                      />
+                      {errors.postalCode && (
+                        <p className="mt-1.5 text-xs text-[var(--color-clay)]">
+                          {errors.postalCode.message}
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -425,23 +585,39 @@ export default function PatientRegistrationWizard() {
                         <option value="CA">California</option>
                         <option value="TX">Texas</option>
                       </select>
-                      {errors.state && <p className="mt-1.5 text-xs text-[var(--color-clay)]">{errors.state.message}</p>}
+                      {errors.state && (
+                        <p className="mt-1.5 text-xs text-[var(--color-clay)]">
+                          {errors.state.message}
+                        </p>
+                      )}
                     </div>
                     <div>
-                      <label className="mb-1.5 block text-xs font-semibold text-pine">Provider</label>
+                      <label className="mb-1.5 block text-xs font-semibold text-pine">
+                        Provider
+                      </label>
                       <select {...register('provider')} className={inputClass}>
                         <option value="">Select provider</option>
                         <option value="dr_smith">Dr. Smith</option>
                         <option value="dr_doe">Dr. Doe</option>
                       </select>
-                      {errors.provider && <p className="mt-1.5 text-xs text-[var(--color-clay)]">{errors.provider.message}</p>}
+                      {errors.provider && (
+                        <p className="mt-1.5 text-xs text-[var(--color-clay)]">
+                          {errors.provider.message}
+                        </p>
+                      )}
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="mb-1.5 block text-xs font-semibold text-pine">Secondary Provider</label>
-                      <input {...register('secondaryProvider')} className={inputClass} placeholder="Secondary Provider" />
+                      <label className="mb-1.5 block text-xs font-semibold text-pine">
+                        Secondary Provider
+                      </label>
+                      <input
+                        {...register('secondaryProvider')}
+                        className={inputClass}
+                        placeholder="Secondary Provider"
+                      />
                     </div>
                     <div>
                       <label className="mb-1.5 block text-xs font-semibold text-pine">Nurse</label>
@@ -454,8 +630,14 @@ export default function PatientRegistrationWizard() {
                   </div>
 
                   <div>
-                    <label className="mb-1.5 block text-xs font-semibold text-pine">RPM Diagnosis Codes</label>
-                    <input {...register('rpmDiagnosis')} className={inputClass} placeholder="Search and select Chronic Conditions..." />
+                    <label className="mb-1.5 block text-xs font-semibold text-pine">
+                      RPM Diagnosis Codes
+                    </label>
+                    <input
+                      {...register('rpmDiagnosis')}
+                      className={inputClass}
+                      placeholder="Search and select Chronic Conditions..."
+                    />
                   </div>
                 </div>
               </div>
@@ -465,7 +647,9 @@ export default function PatientRegistrationWizard() {
             {currentStep === 3 && (
               <div className="animate-in fade-in slide-in-from-right-4 duration-500 fill-mode-both">
                 <div className="mb-8">
-                  <h3 className="font-display text-2xl font-semibold text-pine">Consents & Documents</h3>
+                  <h3 className="font-display text-2xl font-semibold text-pine">
+                    Consents & Documents
+                  </h3>
                 </div>
 
                 <div className="mb-8 flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-line bg-surface/50 p-10 hover:border-pine/50 transition-colors cursor-pointer">
@@ -473,35 +657,70 @@ export default function PatientRegistrationWizard() {
                   <p className="text-sm font-semibold text-pine mb-2">Drop File here</p>
                   <p className="text-xs text-ink-muted mb-4">(Pdf)</p>
                   <p className="text-xs text-ink-muted mb-4 text-center">Or</p>
-                  <button type="button" className="rounded-full bg-pine-deep px-6 py-2 text-xs font-bold text-surface hover:bg-pine">Browse</button>
+                  <button
+                    type="button"
+                    className="rounded-full bg-pine-deep px-6 py-2 text-xs font-bold text-surface hover:bg-pine"
+                  >
+                    Browse
+                  </button>
                 </div>
 
                 <div className="mb-8 flex items-center justify-center gap-12">
                   <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" {...register('consentFormCheck')} className="h-4 w-4 rounded border-line text-pine accent-pine" />
+                    <input
+                      type="checkbox"
+                      {...register('consentFormCheck')}
+                      className="h-4 w-4 rounded border-line text-pine accent-pine"
+                    />
                     <span className="text-sm text-pine">Consent Form</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" {...register('doctorNotesCheck')} className="h-4 w-4 rounded border-line text-pine accent-pine" />
+                    <input
+                      type="checkbox"
+                      {...register('doctorNotesCheck')}
+                      className="h-4 w-4 rounded border-line text-pine accent-pine"
+                    />
                     <span className="text-sm text-pine">Doctor Notes</span>
                   </label>
                 </div>
 
                 <div className="space-y-4 rounded-xl border border-line bg-surface p-6 shadow-sm">
-                  {[
-                    { id: 'rpmConsent1', text: 'I acknowledge that I am receiving at no charge the monitoring device listed below so that I can participate in the remote monitoring and/or chronic care management program.' },
-                    { id: 'rpmConsent2', text: 'The device is the property of the Doctor and is free for me to use while I participate in the program. If I discontinue participation in this program, it is my responsibility to return the device in working order. I will not intentionally tamper with any RPM device or technology used.' },
-                    { id: 'rpmConsent3', text: 'I agree to participate in at least one monthly check-in with my care manager to discuss improving my health. I agree that I will receive text messages and emails.' },
-                    { id: 'rpmConsent4', text: 'RPM services are NOT emergency services and your data WILL NOT BE MONITORED 24/7. If you think you are experiencing a medical emergency, CALL 911 IMMEDIATELY.' },
-                    { id: 'verbalConsent', text: 'Verbal Consent' },
-                  ].map((consent) => (
+                  {(
+                    [
+                      {
+                        id: 'rpmConsent1',
+                        text: 'I acknowledge that I am receiving at no charge the monitoring device listed below so that I can participate in the remote monitoring and/or chronic care management program.',
+                      },
+                      {
+                        id: 'rpmConsent2',
+                        text: 'The device is the property of the Doctor and is free for me to use while I participate in the program. If I discontinue participation in this program, it is my responsibility to return the device in working order. I will not intentionally tamper with any RPM device or technology used.',
+                      },
+                      {
+                        id: 'rpmConsent3',
+                        text: 'I agree to participate in at least one monthly check-in with my care manager to discuss improving my health. I agree that I will receive text messages and emails.',
+                      },
+                      {
+                        id: 'rpmConsent4',
+                        text: 'RPM services are NOT emergency services and your data WILL NOT BE MONITORED 24/7. If you think you are experiencing a medical emergency, CALL 911 IMMEDIATELY.',
+                      },
+                      { id: 'verbalConsent', text: 'Verbal Consent' },
+                    ] satisfies { id: keyof RegistrationFormData; text: string }[]
+                  ).map((consent) => (
                     <div key={consent.id}>
                       <label className="flex items-start gap-4 cursor-pointer hover:bg-surface/50 p-2 -m-2 rounded-lg transition-colors">
-                        <input type="checkbox" {...register(consent.id as any)} className="mt-1 h-4 w-4 shrink-0 rounded border-line text-pine accent-pine" />
-                        <span className="text-sm text-ink-muted leading-relaxed">{consent.text}</span>
+                        <input
+                          type="checkbox"
+                          {...register(consent.id)}
+                          className="mt-1 h-4 w-4 shrink-0 rounded border-line text-pine accent-pine"
+                        />
+                        <span className="text-sm text-ink-muted leading-relaxed">
+                          {consent.text}
+                        </span>
                       </label>
-                      {errors[consent.id as keyof RegistrationFormData] && (
-                        <p className="ml-8 mt-1 text-xs text-[var(--color-clay)]">{(errors[consent.id as keyof RegistrationFormData] as any).message}</p>
+                      {errors[consent.id] && (
+                        <p className="ml-8 mt-1 text-xs text-[var(--color-clay)]">
+                          {errors[consent.id]?.message}
+                        </p>
                       )}
                     </div>
                   ))}
@@ -513,53 +732,93 @@ export default function PatientRegistrationWizard() {
             {currentStep === 4 && (
               <div className="animate-in fade-in slide-in-from-right-4 duration-500 fill-mode-both">
                 <div className="mb-8">
-                  <h3 className="font-display text-2xl font-semibold text-pine">Patient Thresholds</h3>
+                  <h3 className="font-display text-2xl font-semibold text-pine">
+                    Patient Thresholds
+                  </h3>
                 </div>
 
                 <div className="mb-6 grid grid-cols-2 gap-4">
-                  <div className="text-center font-bold text-pine uppercase text-sm tracking-widest">Low</div>
-                  <div className="text-center font-bold text-pine uppercase text-sm tracking-widest">High</div>
+                  <div className="text-center font-bold text-pine uppercase text-sm tracking-widest">
+                    Low
+                  </div>
+                  <div className="text-center font-bold text-pine uppercase text-sm tracking-widest">
+                    High
+                  </div>
                 </div>
 
                 <div className="space-y-6">
-                  {[
-                    { label: 'Glucose', min: 'glucoseMin', max: 'glucoseMax' },
-                    { label: 'Systolic', min: 'sysMin', max: 'sysMax' },
-                    { label: 'Diastolic', min: 'diaMin', max: 'diaMax' },
-                    { label: 'Heart Rate', min: 'hrMin', max: 'hrMax' },
-                  ].map((item) => (
+                  {(
+                    [
+                      { label: 'Glucose', min: 'glucoseMin', max: 'glucoseMax' },
+                      { label: 'Systolic', min: 'sysMin', max: 'sysMax' },
+                      { label: 'Diastolic', min: 'diaMin', max: 'diaMax' },
+                      { label: 'Heart Rate', min: 'hrMin', max: 'hrMax' },
+                    ] satisfies {
+                      label: string
+                      min: keyof RegistrationFormData
+                      max: keyof RegistrationFormData
+                    }[]
+                  ).map((item) => (
                     <div key={item.label} className="grid grid-cols-2 gap-8 relative items-center">
                       <div className="absolute -left-24 text-sm font-semibold text-pine w-20 text-right">
                         {item.label}:
                       </div>
                       <div>
-                        <input type="number" {...register(item.min as any)} className={inputClass} />
+                        <input type="number" {...register(item.min)} className={inputClass} />
                       </div>
                       <div>
-                        <input type="number" {...register(item.max as any)} className={inputClass} />
+                        <input type="number" {...register(item.max)} className={inputClass} />
                       </div>
                     </div>
                   ))}
                 </div>
 
                 <div className="mt-12 rounded-2xl border border-line bg-surface p-6 shadow-sm">
-                  <h4 className="mb-4 text-sm font-semibold text-pine">Initial Baseline Reading (Optional)</h4>
+                  <h4 className="mb-4 text-sm font-semibold text-pine">
+                    Initial Baseline Reading (Optional)
+                  </h4>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="group col-span-2 md:col-span-1">
-                      <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-pine">Blood Pressure</label>
+                      <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-pine">
+                        Blood Pressure
+                      </label>
                       <div className="flex items-center gap-2">
-                        <input {...register('initialSys')} maxLength={3} placeholder="Sys" className={inputClass} />
+                        <input
+                          {...register('initialSys')}
+                          maxLength={3}
+                          placeholder="Sys"
+                          className={inputClass}
+                        />
                         <span className="text-line">/</span>
-                        <input {...register('initialDia')} maxLength={3} placeholder="Dia" className={inputClass} />
+                        <input
+                          {...register('initialDia')}
+                          maxLength={3}
+                          placeholder="Dia"
+                          className={inputClass}
+                        />
                       </div>
                     </div>
                     <div className="group">
-                      <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-pine">Heart Rate</label>
-                      <input {...register('initialHr')} maxLength={3} placeholder="bpm" className={inputClass} />
+                      <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-pine">
+                        Heart Rate
+                      </label>
+                      <input
+                        {...register('initialHr')}
+                        maxLength={3}
+                        placeholder="bpm"
+                        className={inputClass}
+                      />
                     </div>
                     <div className="group">
-                      <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-pine">Weight (kg)</label>
-                      <input {...register('initialWeight')} maxLength={4} placeholder="kg" className={inputClass} />
+                      <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-pine">
+                        Weight (kg)
+                      </label>
+                      <input
+                        {...register('initialWeight')}
+                        maxLength={4}
+                        placeholder="kg"
+                        className={inputClass}
+                      />
                     </div>
                   </div>
                 </div>
@@ -576,7 +835,8 @@ export default function PatientRegistrationWizard() {
                   Registration Complete!
                 </h3>
                 <p className="mb-8 max-w-sm text-sm leading-relaxed text-ink-muted">
-                  The patient account and RPM plan have been created. An SMS with a secure download link and login instructions has been sent.
+                  The patient account and RPM plan have been created. An SMS with a secure download
+                  link and login instructions has been sent.
                 </p>
 
                 <div className="flex flex-col gap-3 w-full max-w-xs">
@@ -628,7 +888,12 @@ export default function PatientRegistrationWizard() {
                   className="group flex items-center gap-2 rounded-xl bg-[var(--color-marigold)] px-6 py-2.5 text-sm font-bold text-pine-deep shadow-md transition-all hover:bg-[#e6a832] hover:shadow-lg disabled:opacity-50 disabled:hover:shadow-none"
                 >
                   {isSubmitting ? 'Registering...' : 'Complete Registration'}
-                  {!isSubmitting && <CheckCircle2 size={18} className="transition-transform group-hover:scale-110" />}
+                  {!isSubmitting && (
+                    <CheckCircle2
+                      size={18}
+                      className="transition-transform group-hover:scale-110"
+                    />
+                  )}
                 </button>
               )}
             </div>

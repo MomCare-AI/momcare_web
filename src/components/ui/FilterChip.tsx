@@ -45,9 +45,7 @@ export default function FilterChip({
         {label}
         <span
           className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-semibold tabular-nums ${
-            active
-              ? 'bg-surface/20 text-surface'
-              : 'bg-pine-wash text-pine'
+            active ? 'bg-surface/20 text-surface' : 'bg-pine-wash text-pine'
           }`}
         >
           {count}

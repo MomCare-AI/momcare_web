@@ -18,9 +18,7 @@ export default function AdminUsers() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-2xl font-semibold text-pine">
-          User Management
-        </h1>
+        <h1 className="font-display text-2xl font-semibold text-pine">User Management</h1>
         <p className="text-sm text-ink-muted">
           Approve, suspend, and audit users across the platform.
         </p>
@@ -33,9 +31,7 @@ export default function AdminUsers() {
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
             className={`relative flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium transition-colors duration-150 ${
-              activeTab === tab.key
-                ? 'text-pine'
-                : 'text-ink-muted hover:text-pine'
+              activeTab === tab.key ? 'text-pine' : 'text-ink-muted hover:text-pine'
             }`}
             role="tab"
             aria-selected={activeTab === tab.key}

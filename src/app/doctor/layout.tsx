@@ -1,13 +1,7 @@
 'use client'
 
 import AppShell from '@/components/layout/AppShell'
-import {
-  LayoutDashboard,
-  Users,
-  FlaskConical,
-  CalendarDays,
-  AlertCircle,
-} from 'lucide-react'
+import { LayoutDashboard, Users, FlaskConical, CalendarDays, AlertCircle } from 'lucide-react'
 import type { NavItemConfig } from '@/components/layout/NavItem'
 
 const NAV_ITEMS: NavItemConfig[] = [

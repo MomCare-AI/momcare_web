@@ -1,10 +1,7 @@
 import { NextResponse } from 'next/server'
 import { api } from '@/lib/api/client'
 
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const { searchParams } = new URL(request.url)
 

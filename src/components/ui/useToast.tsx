@@ -38,7 +38,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={{ toast: addToast }}>
       {children}
-      
+
       {/* Toast Container */}
       <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
         {toasts.map((t) => (
@@ -46,16 +46,23 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             key={t.id}
             className="flex w-80 animate-in slide-in-from-bottom-5 items-start gap-3 rounded-xl border border-line bg-surface p-4 shadow-lg"
           >
-            {t.type === 'success' && <CheckCircle2 className="mt-0.5 shrink-0 text-[var(--color-sage)]" size={18} />}
-            {t.type === 'error' && <XCircle className="mt-0.5 shrink-0 text-[var(--color-clay)]" size={18} />}
+            {t.type === 'success' && (
+              <CheckCircle2 className="mt-0.5 shrink-0 text-[var(--color-sage)]" size={18} />
+            )}
+            {t.type === 'error' && (
+              <XCircle className="mt-0.5 shrink-0 text-[var(--color-clay)]" size={18} />
+            )}
             {t.type === 'info' && <Info className="mt-0.5 shrink-0 text-pine" size={18} />}
-            
+
             <div className="flex-1">
               <p className="text-sm font-semibold text-pine">{t.title}</p>
               {t.description && <p className="mt-1 text-xs text-ink-muted">{t.description}</p>}
             </div>
-            
-            <button onClick={() => removeToast(t.id)} className="shrink-0 text-ink-muted hover:text-pine">
+
+            <button
+              onClick={() => removeToast(t.id)}
+              className="shrink-0 text-ink-muted hover:text-pine"
+            >
               <X size={16} />
             </button>
           </div>

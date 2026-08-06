@@ -279,7 +279,8 @@ export default function LoginPage() {
           </button>
 
           <p className="mt-5 text-center text-xs text-ink-muted">
-            Don&apos;t have an account? <span className="font-medium text-pine">Request access</span>
+            Don&apos;t have an account?{' '}
+            <span className="font-medium text-pine">Request access</span>
           </p>
 
           <div className="mt-5 flex items-center justify-center gap-1.5 border-t border-line pt-4 text-[11px] text-ink-muted">

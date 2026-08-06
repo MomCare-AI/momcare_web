@@ -37,8 +37,9 @@ other — same mechanic as TOCA, not the same palette or imagery.
 ## Dashboard / patient roster
 
 **Adopt:**
+
 - Filter chips with embedded counts + info tooltips — `All Patients | High Risk | Pending Alerts |
-  Lab Verification Needed`, each chip clickable and self-explanatory via a tooltip on hover
+Lab Verification Needed`, each chip clickable and self-explanatory via a tooltip on hover
 - Prominent **"last reading X days ago"** / data-freshness indicator on the roster — real clinical
   signal for us given the connectivity-gap problem the scope doc calls out (a band gone silent for
   days is itself worth a doctor's attention, not just an abnormal reading)
@@ -47,6 +48,7 @@ other — same mechanic as TOCA, not the same palette or imagery.
   cluttering the default view
 
 **Avoid:**
+
 - Showing the same count twice — TOCA's stat card ("Active Patients: 33") duplicates the filter
   chip ("All Patients (33)") right below it. Pick one place.
 - RPM/CCM program badges and the `Time (hr:mm:ss)` billing-minutes column — Medicare
@@ -60,6 +62,7 @@ system) | Latest vitals summary | Last reading (X ago) | Band status | Action`
 ## Patient detail page
 
 **Adopt:**
+
 - **Prev/next patient navigation** with position indicator ("Patient 1/33") — lets a doctor page
   through their roster sequentially without returning to the list. Cheap to build, real workflow
   value for systematic rounds.
@@ -69,14 +72,15 @@ system) | Latest vitals summary | Last reading (X ago) | Band status | Action`
   far as the screenshot shows): **an explicit "AI-generated" label**. Ours must always carry one —
   ties directly to the non-negotiable clinical-framing rule already in `BRIEF.md` section 0.
 - Sub-tab structure for organizing a patient's info (`Details | Settings | Devices | Documents |
-  ...`) — ours: something like `Overview | Vitals History | Lab Reports | Alerts History | Assigned
-  Band`
+...`) — ours: something like `Overview | Vitals History | Lab Reports | Alerts History | Assigned
+Band`
 - The `—` vs `0` convention: "not applicable" (e.g. a program the patient isn't enrolled in) should
   visually differ from "applicable but currently zero"
 - **Save + Deactivate** (not Delete) as the bottom actions — soft-deactivation is the right instinct
   for clinical records; nothing patient-related should be hard-deleted
 
 **Avoid:**
+
 - Live billing-minutes timer ("00:20 RPM" + pause button) and the RPM/CCM/RTM/PCM time-tracking bar
   — 100% US billing infrastructure
 - "Sticky Notes can go here" — literal leftover placeholder text in what looks like a live/staging
@@ -87,11 +91,11 @@ system) | Latest vitals summary | Last reading (X ago) | Band status | Action`
 
 ## Patient settings (the big accordion form)
 
-- **Section "Patient" (basic info):** TOCA lets the *provider* set a patient's login
+- **Section "Patient" (basic info):** TOCA lets the _provider_ set a patient's login
   username/password directly. **Does not apply to us** — mothers self-register via the mobile app
   through Supabase Auth; a doctor never creates or sets a mother's password. Worth remembering this
   explicitly so nobody copies that sub-pattern by default into our patient-management screen.
-- **Section "Additional" (demographics + care team):** address fields matter *more* for us than for
+- **Section "Additional" (demographics + care team):** address fields matter _more_ for us than for
   TOCA — MomCare's NGO Portal has real ambulance/emergency dispatch as a core feature (`BRIEF.md`
   4.2), so a patient's physical location is load-bearing, not incidental. Provider/Secondary
   Provider/Nurse assignment maps loosely to assigning a doctor + NGO coordinator per patient.
@@ -143,7 +147,7 @@ confirmation the schema was on the right track.
 - **Adopt (add to backlog, not urgent):** date-range vitals export ("select a range, download a
   report of all readings in that window") — real clinical workflow, e.g. exporting a BP trend for a
   hospital referral. Nothing like this currently exists in `BRIEF.md`.
-- **Naming collision to avoid:** TOCA's "Audit Report" is a *monthly patient activity summary* for
+- **Naming collision to avoid:** TOCA's "Audit Report" is a _monthly patient activity summary_ for
   billing-compliance paperwork — **not the same thing** as `BRIEF.md`'s planned Admin Console "Audit
   log," which is a security/access-tracking feature. Don't let the shared word cause the two to get
   conflated when either gets scoped.
@@ -220,6 +224,7 @@ requirement (`Avg Time 2-Way`, `Voicemails/Day`, `Call Success Rate`, `Monitorin
 by minutes captured). Skip essentially all of it — no MomCare analog.
 
 **Two ideas worth keeping, reframed away from billing/productivity toward safety:**
+
 - `Out of Range: Avg time on out of range` → for us: **average time a critical alert sits
   unacknowledged**, or average time a patient stays in a high-risk state before a doctor intervenes.
   A real clinical-quality signal, not a productivity metric — worth considering for the Admin

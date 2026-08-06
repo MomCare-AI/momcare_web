@@ -11,27 +11,18 @@ export type NavItemConfig = {
   badge?: number
 }
 
-export default function NavItem({
-  item,
-  collapsed,
-}: {
-  item: NavItemConfig
-  collapsed: boolean
-}) {
+export default function NavItem({ item, collapsed }: { item: NavItemConfig; collapsed: boolean }) {
   const pathname = usePathname()
   // Active if exact match or if current path starts with the item href
   // (but not for the root portal path, to avoid the dashboard matching everything)
   const isActive =
-    pathname === item.href ||
-    (item.href.split('/').length > 2 && pathname.startsWith(item.href))
+    pathname === item.href || (item.href.split('/').length > 2 && pathname.startsWith(item.href))
 
   return (
     <Link
       href={item.href}
       className={`group flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors duration-150 ${
-        isActive
-          ? 'bg-pine-wash text-pine'
-          : 'text-ink-muted hover:bg-pine-wash/60 hover:text-pine'
+        isActive ? 'bg-pine-wash text-pine' : 'text-ink-muted hover:bg-pine-wash/60 hover:text-pine'
       } ${collapsed ? 'justify-center' : ''}`}
       title={collapsed ? item.label : undefined}
       aria-current={isActive ? 'page' : undefined}

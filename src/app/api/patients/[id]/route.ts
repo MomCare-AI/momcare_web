@@ -1,16 +1,13 @@
 import { NextResponse } from 'next/server'
 
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000'
     const response = await fetch(`${apiUrl}/api/v1/patients/${id}`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
-      cache: 'no-store'
+      cache: 'no-store',
     })
 
     if (!response.ok) {
@@ -20,15 +17,13 @@ export async function GET(
 
     const data = await response.json()
     return NextResponse.json(data)
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }
 
-export async function PATCH(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
     const body = await request.json()
@@ -47,7 +42,8 @@ export async function PATCH(
 
     const data = await response.json()
     return NextResponse.json(data)
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }

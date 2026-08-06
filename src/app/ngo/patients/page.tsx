@@ -8,26 +8,20 @@ export default function NgoPatients() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-2xl font-semibold text-pine">
-          Patient Management
-        </h1>
-        <p className="text-sm text-ink-muted">
-          Patients within your assigned geographic zones.
-        </p>
+        <h1 className="font-display text-2xl font-semibold text-pine">Patient Management</h1>
+        <p className="text-sm text-ink-muted">Patients within your assigned geographic zones.</p>
       </div>
 
       {/* Filters — placeholder */}
       <div className="flex flex-wrap gap-2">
-        {['All Zones', 'High Risk', 'Band Offline', 'Unassigned Doctor'].map(
-          (label) => (
-            <button
-              key={label}
-              className="rounded-full border border-line bg-panel px-3 py-1.5 text-xs font-medium text-ink-muted transition-colors duration-150 hover:border-pine/40 hover:text-pine"
-            >
-              {label}
-            </button>
-          )
-        )}
+        {['All Zones', 'High Risk', 'Band Offline', 'Unassigned Doctor'].map((label) => (
+          <button
+            key={label}
+            className="rounded-full border border-line bg-panel px-3 py-1.5 text-xs font-medium text-ink-muted transition-colors duration-150 hover:border-pine/40 hover:text-pine"
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
       <div className="overflow-hidden rounded-[10px] border border-line bg-panel">

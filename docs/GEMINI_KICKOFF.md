@@ -9,7 +9,7 @@ Paste this whole file into Antigravity as the first message for this project. It
 
 1. **`docs/BRIEF.md`** — the master spec. Stack, architecture rules, the full design system, all
    three portals in detail, security, performance budgets, accessibility, testing, and a 9-phase
-   build order. This is the source of truth for *how* to build.
+   build order. This is the source of truth for _how_ to build.
 2. **`AGENTS.md`** (this folder) — one correction to the brief that matters before you write a
    single line of auth code: **the brief says Firebase, the team actually built Supabase Auth**,
    and it's already working end-to-end in `backend/`. Read the addendum in that file before
@@ -51,7 +51,7 @@ a FastAPI route.
   (fixed Supabase CLI local-dev value, not a secret — re-confirm with `supabase status` if it ever
   looks wrong)
 - After a Supabase sign-up, call `POST /api/v1/auth/profile` with `Authorization: Bearer <supabase
-  access_token>` to create the MomCare profile:
+access_token>` to create the MomCare profile:
   ```
   { "full_name": string, "role": "mother"|"doctor"|"ngo_coordinator"|"admin", "phone_number"?: string }
   ```
@@ -63,13 +63,13 @@ a FastAPI route.
 
 ### IoT / Vitals — `/api/v1/iot`
 
-| Method | Path | Notes |
-|---|---|---|
-| `POST` | `/bands/{band_id}/pair` | body `{ "patient_id": uuid }` → `HealthBandOut` |
-| `GET` | `/bands/{band_id}` | → `HealthBandOut` |
-| `POST` | `/vitals` | body `{ "patient_id": uuid, "readings": VitalReadingIn[] }` → `VitalReadingOut[]`. Accepts a batch on purpose — a band buffers offline and uploads several readings at once on reconnect. |
-| `GET` | `/patients/{patient_id}/vitals?limit=50` | → `VitalReadingOut[]`, newest first |
-| `GET` | `/patients/{patient_id}/vitals/latest` | → `VitalReadingOut` |
+| Method | Path                                     | Notes                                                                                                                                                                                     |
+| ------ | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST` | `/bands/{band_id}/pair`                  | body `{ "patient_id": uuid }` → `HealthBandOut`                                                                                                                                           |
+| `GET`  | `/bands/{band_id}`                       | → `HealthBandOut`                                                                                                                                                                         |
+| `POST` | `/vitals`                                | body `{ "patient_id": uuid, "readings": VitalReadingIn[] }` → `VitalReadingOut[]`. Accepts a batch on purpose — a band buffers offline and uploads several readings at once on reconnect. |
+| `GET`  | `/patients/{patient_id}/vitals?limit=50` | → `VitalReadingOut[]`, newest first                                                                                                                                                       |
+| `GET`  | `/patients/{patient_id}/vitals/latest`   | → `VitalReadingOut`                                                                                                                                                                       |
 
 ```ts
 VitalReadingOut = {
@@ -95,12 +95,12 @@ yet): systolic BP ≥140, diastolic BP ≥90, heart rate ≥100 or ≤60, SpO2 �
 
 ### Alerts — `/api/v1/alerts`
 
-| Method | Path | Notes |
-|---|---|---|
-| `GET` | `?patient_id=&alert_status=&limit=100` | both filters optional → `AlertOut[]`, newest first |
-| `GET` | `/{alert_id}` | → `AlertOut` |
-| `POST` | `/{alert_id}/acknowledge` | body `{ "user_id": uuid }`. 409 if already acknowledged by someone else — first responder wins, this is intentional (`BRIEF.md`'s acknowledgement tracking). |
-| `POST` | `/{alert_id}/resolve` | body `{ "user_id": uuid }`. Resolution notes (required by `BRIEF.md` 4.1) are **not yet a field on this endpoint** — flag it. |
+| Method | Path                                   | Notes                                                                                                                                                        |
+| ------ | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `GET`  | `?patient_id=&alert_status=&limit=100` | both filters optional → `AlertOut[]`, newest first                                                                                                           |
+| `GET`  | `/{alert_id}`                          | → `AlertOut`                                                                                                                                                 |
+| `POST` | `/{alert_id}/acknowledge`              | body `{ "user_id": uuid }`. 409 if already acknowledged by someone else — first responder wins, this is intentional (`BRIEF.md`'s acknowledgement tracking). |
+| `POST` | `/{alert_id}/resolve`                  | body `{ "user_id": uuid }`. Resolution notes (required by `BRIEF.md` 4.1) are **not yet a field on this endpoint** — flag it.                                |
 
 ```ts
 AlertOut = {
@@ -118,13 +118,13 @@ AlertOut = {
 
 ### NGOs — `/api/v1/ngos`
 
-| Method | Path | Notes |
-|---|---|---|
-| `POST` | `` | register — see `NGORegisterIn` below → `NGOOut`, starts `pending` |
-| `GET` | `?ngo_status=&service_area=` | both optional → `NGOOut[]` |
-| `GET` | `/{ngo_id}` | → `NGOOut` |
-| `PATCH` | `/{ngo_id}/resources` | partial update, any subset of the resource fields |
-| `POST` | `/{ngo_id}/review` | body `{ "status": NGOStatus, "note"?: string }` — admin approve/reject flow |
+| Method  | Path                         | Notes                                                                       |
+| ------- | ---------------------------- | --------------------------------------------------------------------------- |
+| `POST`  | ``                           | register — see `NGORegisterIn` below → `NGOOut`, starts `pending`           |
+| `GET`   | `?ngo_status=&service_area=` | both optional → `NGOOut[]`                                                  |
+| `GET`   | `/{ngo_id}`                  | → `NGOOut`                                                                  |
+| `PATCH` | `/{ngo_id}/resources`        | partial update, any subset of the resource fields                           |
+| `POST`  | `/{ngo_id}/review`           | body `{ "status": NGOStatus, "note"?: string }` — admin approve/reject flow |
 
 ```ts
 NGOStatus = "pending"|"under_review"|"approved"|"rejected"

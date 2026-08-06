@@ -16,7 +16,7 @@ export default function NewPatientPage() {
         <ArrowLeft size={15} />
         Back to Dashboard
       </Link>
-      
+
       <PatientRegistrationWizard />
     </div>
   )

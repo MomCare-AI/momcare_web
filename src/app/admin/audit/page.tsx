@@ -8,9 +8,7 @@ export default function AdminAudit() {
     <div className="space-y-6">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="font-display text-2xl font-semibold text-pine">
-            Audit Log
-          </h1>
+          <h1 className="font-display text-2xl font-semibold text-pine">Audit Log</h1>
           <p className="text-sm text-ink-muted">
             Immutable, append-only record of all security-relevant actions.
           </p>
@@ -27,9 +25,9 @@ export default function AdminAudit() {
       {/* Scope description */}
       <div className="rounded-[10px] border border-line bg-pine-wash/50 p-4">
         <p className="text-xs text-ink-muted">
-          This log captures: every PHI read, threshold change, lab verification,
-          role change, failed authorization, user login/logout, and alert
-          acknowledgment. Entries are immutable — they cannot be edited or deleted.
+          This log captures: every PHI read, threshold change, lab verification, role change, failed
+          authorization, user login/logout, and alert acknowledgment. Entries are immutable — they
+          cannot be edited or deleted.
         </p>
       </div>
 

@@ -2,10 +2,7 @@ import { NextResponse } from 'next/server'
 import { api } from '@/lib/api/client'
 import { createClient } from '@/lib/supabase/server'
 
-export async function POST(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
 
   const supabase = await createClient()
@@ -17,13 +14,10 @@ export async function POST(
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
   }
 
-  const { data, error, response } = await api.POST(
-    '/api/v1/alerts/{alert_id}/acknowledge',
-    {
-      params: { path: { alert_id: id } },
-      body: { user_id: session.user.id },
-    }
-  )
+  const { data, error, response } = await api.POST('/api/v1/alerts/{alert_id}/acknowledge', {
+    params: { path: { alert_id: id } },
+    body: { user_id: session.user.id },
+  })
 
   if (error) {
     return NextResponse.json(error, { status: response.status })

@@ -4,7 +4,9 @@ import { api } from '@/lib/api/client'
 
 export async function POST() {
   const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
 
   if (!session) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
@@ -30,7 +32,7 @@ export async function POST() {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    path: '/'
+    path: '/',
   })
 
   return nextResponse

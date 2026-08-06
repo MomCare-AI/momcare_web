@@ -1,0 +1,45 @@
+# Branch protection recommendations (configure under Settings > Branches
+# for `main`, alongside this workflow):
+#   - Require a pull request before merging (already enabled on this repo)
+#   - Require this workflow ("CI") to pass before merging
+#   - Require at least one approving review
+#   - Do not allow direct pushes to main
+
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build
+        env:
+          # Placeholder values so the build can complete in CI without
+          # real secrets - this only proves the app compiles, it doesn't
+          # need to actually reach a live backend.
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
+          FASTAPI_BASE_URL: http://localhost:8000

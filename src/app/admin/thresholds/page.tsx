@@ -79,28 +79,22 @@ export default function AdminThresholds() {
         <h1 className="font-display text-2xl font-semibold text-pine">
           Alert Threshold Configuration
         </h1>
-        <p className="text-sm text-ink-muted">
-          Global thresholds that trigger patient alerts.
-        </p>
+        <p className="text-sm text-ink-muted">Global thresholds that trigger patient alerts.</p>
       </div>
 
       {/* Safety warning — per BRIEF.md §4.3: "the most dangerous screen" */}
       <div className="rounded-[10px] border border-[var(--color-clay)]/30 bg-[var(--color-clay)]/5 p-4">
         <div className="flex items-start gap-3">
-          <AlertTriangle
-            size={18}
-            className="mt-0.5 flex-shrink-0 text-[var(--color-clay)]"
-          />
+          <AlertTriangle size={18} className="mt-0.5 flex-shrink-0 text-[var(--color-clay)]" />
           <div>
             <p className="text-sm font-medium text-[var(--color-clay)]">
               Critical safety configuration
             </p>
             <p className="mt-1 text-xs text-ink-muted">
-              Changes to these thresholds affect alert generation for{' '}
-              <strong>all patients</strong> system-wide. Each change will require a
-              confirmation dialog stating how many patients are affected and in which
-              direction. Hard-coded absolute safety bounds prevent values from
-              exceeding safe ranges — enforced server-side, not just in the UI.
+              Changes to these thresholds affect alert generation for <strong>all patients</strong>{' '}
+              system-wide. Each change will require a confirmation dialog stating how many patients
+              are affected and in which direction. Hard-coded absolute safety bounds prevent values
+              from exceeding safe ranges — enforced server-side, not just in the UI.
             </p>
           </div>
         </div>
@@ -134,9 +128,7 @@ export default function AdminThresholds() {
                 <td className="px-4 py-3 text-xs text-ink-muted">{t.guideline}</td>
                 <td className="px-4 py-3">
                   <p className="text-xs text-ink-muted">{t.lastModifiedBy}</p>
-                  <p className="font-data text-[10px] text-ink-muted">
-                    {t.lastModifiedAt}
-                  </p>
+                  <p className="font-data text-[10px] text-ink-muted">{t.lastModifiedAt}</p>
                 </td>
               </tr>
             ))}
