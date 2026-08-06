@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useToast } from '@/components/ui/useToast'
 import { useQueryClient } from '@tanstack/react-query'
+import type { Patient } from '@/lib/types'
 
 const updateSchema = z.object({
   firstName: z.string().min(2, 'First name is required'),
@@ -31,12 +32,12 @@ const updateSchema = z.object({
 
 type UpdateFormData = z.infer<typeof updateSchema>
 
-export default function PatientSettingsForm({ patient }: { patient: any }) {
+export default function PatientSettingsForm({ patient }: { patient: Patient }) {
   const { toast } = useToast()
   const queryClient = useQueryClient()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const fullNameParts = patient?.user?.full_name?.split(' ') || ['', '']
+  const fullNameParts = patient.user?.full_name?.split(' ') || ['', '']
   const initialFirstName = fullNameParts[0] || ''
   const initialLastName = fullNameParts.slice(1).join(' ') || ''
 
@@ -45,27 +46,30 @@ export default function PatientSettingsForm({ patient }: { patient: any }) {
     handleSubmit,
     formState: { errors },
   } = useForm<UpdateFormData>({
+    // Same known zod v4 / react-hook-form resolver mismatch as
+    // PatientRegistrationWizard.tsx - see the comment there.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(updateSchema) as any,
     defaultValues: {
       firstName: initialFirstName,
       lastName: initialLastName,
-      primaryPhone: patient?.user?.phone_number || '',
+      primaryPhone: patient.user?.phone_number || '',
       gender: 'Female', // As MomCare defaults to Female
-      address1: patient?.address1 || '',
-      address2: patient?.address2 || '',
-      city: patient?.city || '',
-      state: patient?.state || '',
-      postalCode: patient?.postal_code || '',
-      provider: patient?.provider_name || '',
-      nurse: patient?.nurse_name || '',
-      glucoseMin: patient?.glucose_min || 70,
-      glucoseMax: patient?.glucose_max || 130,
-      sysMin: patient?.sys_min || 95,
-      sysMax: patient?.sys_max || 170,
-      diaMin: patient?.dia_min || 45,
-      diaMax: patient?.dia_max || 105,
-      hrMin: patient?.hr_min || 50,
-      hrMax: patient?.hr_max || 100,
+      address1: patient.address1 || '',
+      address2: patient.address2 || '',
+      city: patient.city || '',
+      state: patient.state || '',
+      postalCode: patient.postal_code || '',
+      provider: patient.provider_name || '',
+      nurse: patient.nurse_name || '',
+      glucoseMin: patient.glucose_min || 70,
+      glucoseMax: patient.glucose_max || 130,
+      sysMin: patient.sys_min || 95,
+      sysMax: patient.sys_max || 170,
+      diaMin: patient.dia_min || 45,
+      diaMax: patient.dia_max || 105,
+      hrMin: patient.hr_min || 50,
+      hrMax: patient.hr_max || 100,
     },
   })
 
@@ -106,35 +110,44 @@ export default function PatientSettingsForm({ patient }: { patient: any }) {
       toast({
         title: 'Settings Updated',
         description: 'Patient information has been successfully updated.',
-      } as any)
-    } catch (error: any) {
+        type: 'success',
+      })
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error'
       toast({
         title: 'Update Failed',
-        description: error.message,
-        variant: 'destructive',
-      } as any)
+        description: message,
+        type: 'error',
+      })
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  const inputClass = "w-full rounded-xl border border-line bg-surface px-4 py-2.5 text-sm text-ink outline-none transition-all duration-200 placeholder:text-ink-muted/50 hover:border-pine/50 focus:border-pine focus:ring-4 focus:ring-pine-wash/50"
+  const inputClass =
+    'w-full rounded-xl border border-line bg-surface px-4 py-2.5 text-sm text-ink outline-none transition-all duration-200 placeholder:text-ink-muted/50 hover:border-pine/50 focus:border-pine focus:ring-4 focus:ring-pine-wash/50'
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       {/* 1 Patient */}
       <div className="rounded-[10px] border border-line bg-panel p-6">
-        <h3 className="mb-4 font-display text-lg font-semibold text-pine border-b border-line pb-2">1 Patient</h3>
+        <h3 className="mb-4 font-display text-lg font-semibold text-pine border-b border-line pb-2">
+          1 Patient
+        </h3>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-ink-muted">First Name</label>
             <input type="text" {...register('firstName')} className={inputClass} />
-            {errors.firstName && <span className="text-xs text-[var(--color-clay)]">{errors.firstName.message}</span>}
+            {errors.firstName && (
+              <span className="text-xs text-[var(--color-clay)]">{errors.firstName.message}</span>
+            )}
           </div>
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-ink-muted">Last Name</label>
             <input type="text" {...register('lastName')} className={inputClass} />
-            {errors.lastName && <span className="text-xs text-[var(--color-clay)]">{errors.lastName.message}</span>}
+            {errors.lastName && (
+              <span className="text-xs text-[var(--color-clay)]">{errors.lastName.message}</span>
+            )}
           </div>
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-ink-muted">Phone Number</label>
@@ -153,7 +166,9 @@ export default function PatientSettingsForm({ patient }: { patient: any }) {
 
       {/* Location */}
       <div className="rounded-[10px] border border-line bg-panel p-6">
-        <h3 className="mb-4 font-display text-lg font-semibold text-pine border-b border-line pb-2">Location & Care</h3>
+        <h3 className="mb-4 font-display text-lg font-semibold text-pine border-b border-line pb-2">
+          Location & Care
+        </h3>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="col-span-1 sm:col-span-2 space-y-1.5">
             <label className="text-xs font-semibold text-ink-muted">Address Line 1</label>
@@ -184,7 +199,9 @@ export default function PatientSettingsForm({ patient }: { patient: any }) {
 
       {/* Thresholds */}
       <div className="rounded-[10px] border border-line bg-panel p-6">
-        <h3 className="mb-4 font-display text-lg font-semibold text-pine border-b border-line pb-2">Vitals Thresholds</h3>
+        <h3 className="mb-4 font-display text-lg font-semibold text-pine border-b border-line pb-2">
+          Vitals Thresholds
+        </h3>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-ink-muted">Sys Min</label>

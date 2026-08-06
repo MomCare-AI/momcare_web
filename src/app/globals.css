@@ -1,19 +1,19 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @theme inline {
-  --color-ink:        #0B1F1C;
-  --color-ink-muted:  #5A6B67;
-  --color-surface:    #FBFCFB;
-  --color-panel:      #FFFFFF;
-  --color-line:       #E3EAE7;
-  --color-pine:       #0D4F45;
-  --color-pine-deep:  #08332C;
-  --color-pine-wash:  #EDF5F2;
-  --color-marigold:   #E0A32E;
-  --color-clay:       #B3261E;
-  --color-sage:       #1F8A70;
-  --color-slate:      #64748B;
-  
+  --color-ink: #0b1f1c;
+  --color-ink-muted: #5a6b67;
+  --color-surface: #fbfcfb;
+  --color-panel: #ffffff;
+  --color-line: #e3eae7;
+  --color-pine: #0d4f45;
+  --color-pine-deep: #08332c;
+  --color-pine-wash: #edf5f2;
+  --color-marigold: #e0a32e;
+  --color-clay: #b3261e;
+  --color-sage: #1f8a70;
+  --color-slate: #64748b;
+
   --font-display: var(--font-bricolage);
   --font-body: var(--font-inter);
   --font-data: var(--font-ibm-plex);
@@ -29,7 +29,9 @@ body {
 /* Live vital updates cross-fade — never slide or bounce. */
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
@@ -39,8 +41,13 @@ body {
 
 /* Skeleton loading pulse */
 @keyframes skeleton-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
 }
 
 .skeleton {

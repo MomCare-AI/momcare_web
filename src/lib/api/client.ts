@@ -11,7 +11,9 @@ export const api = createClient<paths>({
 api.use({
   async onRequest({ request }) {
     const supabase = await createSupabaseServerClient()
-    const { data: { session } } = await supabase.auth.getSession()
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
 
     if (session?.access_token) {
       request.headers.set('Authorization', `Bearer ${session.access_token}`)

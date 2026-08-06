@@ -16,15 +16,16 @@ Build **MomCare Web**, the web tier of an AI and IoT maternal health monitoring 
 
 The mobile app for mothers is Flutter and is out of scope. You consume the same backend.
 
-**Non-negotiable clinical framing:** this platform is *decision support*. It never issues a diagnosis, never auto-prescribes, and never presents an AI risk classification without showing the underlying vitals and the model confidence. Every AI-extracted lab value enters the record only after a licensed doctor verifies it. Build the UI so that the human sign-off is structurally impossible to skip.
+**Non-negotiable clinical framing:** this platform is _decision support_. It never issues a diagnosis, never auto-prescribes, and never presents an AI risk classification without showing the underlying vitals and the model confidence. Every AI-extracted lab value enters the record only after a licensed doctor verifies it. Build the UI so that the human sign-off is structurally impossible to skip.
 
-**Non-negotiable safety disclaimer:** anywhere a mother is enrolled or consents to monitoring — whether that happens in this web tier (e.g. an NGO field worker registering a patient who has no smartphone) or in the mobile app — the flow must include an explicit, unskippable acknowledgment that MomCare is *not* an emergency service and is *not* monitored 24/7 in real time, and that a suspected emergency means calling local emergency services (e.g. Rescue 1122) or going to the nearest hospital immediately, not waiting on an app alert. This is a liability and patient-safety requirement, not boilerplate — do not bury it in a terms-of-service link.
+**Non-negotiable safety disclaimer:** anywhere a mother is enrolled or consents to monitoring — whether that happens in this web tier (e.g. an NGO field worker registering a patient who has no smartphone) or in the mobile app — the flow must include an explicit, unskippable acknowledgment that MomCare is _not_ an emergency service and is _not_ monitored 24/7 in real time, and that a suspected emergency means calling local emergency services (e.g. Rescue 1122) or going to the nearest hospital immediately, not waiting on an app alert. This is a liability and patient-safety requirement, not boilerplate — do not bury it in a terms-of-service link.
 
 ---
 
 ## 1. Stack (fixed)
 
 **Frontend**
+
 - Next.js 15+, App Router, TypeScript strict mode
 - Tailwind CSS v4 with `@theme inline {}` in `globals.css` for tokens. Do not create `tailwind.config.js`
 - shadcn/ui as the component base, restyled to the token system in section 3. Do not ship default shadcn look
@@ -35,6 +36,7 @@ The mobile app for mothers is Flutter and is out of scope. You consume the same 
 - next-intl for English and Urdu with full RTL
 
 **Backend (contract you code against)**
+
 - FastAPI (Python), PostgreSQL, SQLAlchemy + Alembic
 - Firebase Auth for identity, custom claims for role
 - Redis for caching, rate limiting, and alert dedup
@@ -42,6 +44,7 @@ The mobile app for mothers is Flutter and is out of scope. You consume the same 
 - S3-compatible object storage for lab report images, private bucket, signed URLs only
 
 **Infra**
+
 - Vercel or Railway for Next.js, Railway or Fly.io for FastAPI, managed Postgres with PITR
 - GitHub Actions CI: typecheck, lint, unit, e2e, build, then deploy
 
@@ -75,18 +78,18 @@ Do not produce a generic hospital dashboard. Build a distinct, calm, data-dense 
 
 ```css
 @theme inline {
-  --color-ink:        #0B1F1C;  /* primary text */
-  --color-ink-muted:  #5A6B67;  /* secondary text */
-  --color-surface:    #FBFCFB;  /* app background */
-  --color-panel:      #FFFFFF;  /* cards */
-  --color-line:       #E3EAE7;  /* hairlines, 1px */
-  --color-pine:       #0D4F45;  /* primary brand, headers, primary buttons */
-  --color-pine-deep:  #08332C;  /* hover, dark surfaces */
-  --color-pine-wash:  #EDF5F2;  /* selected rows, subtle fills */
-  --color-marigold:   #E0A32E;  /* accent, medium risk, pending states */
-  --color-clay:       #B3261E;  /* high risk, critical, destructive */
-  --color-sage:       #1F8A70;  /* low risk, resolved, healthy */
-  --color-slate:      #64748B;  /* routine, informational */
+  --color-ink: #0b1f1c; /* primary text */
+  --color-ink-muted: #5a6b67; /* secondary text */
+  --color-surface: #fbfcfb; /* app background */
+  --color-panel: #ffffff; /* cards */
+  --color-line: #e3eae7; /* hairlines, 1px */
+  --color-pine: #0d4f45; /* primary brand, headers, primary buttons */
+  --color-pine-deep: #08332c; /* hover, dark surfaces */
+  --color-pine-wash: #edf5f2; /* selected rows, subtle fills */
+  --color-marigold: #e0a32e; /* accent, medium risk, pending states */
+  --color-clay: #b3261e; /* high risk, critical, destructive */
+  --color-sage: #1f8a70; /* low risk, resolved, healthy */
+  --color-slate: #64748b; /* routine, informational */
 }
 ```
 
@@ -131,6 +134,7 @@ Active voice. Buttons name the exact action and the resulting toast reuses the s
 ### 4.1 Doctor Clinical Portal
 
 **Dashboard**
+
 - KPI row: total patients, high-risk count, pending lab verifications, today's appointments. Each is a link, not decoration
 - High-risk alert feed, newest first, with patient name, triggering vital, time elapsed, and a one-click "Open patient" action
 - Patient roster with filter chips (All / High / Medium / Low), sorted so high risk is always at the top regardless of user sort. Columns: name, gestational week, risk level, last reading, last active, band connectivity
@@ -138,6 +142,7 @@ Active voice. Buttons name the exact action and the resulting toast reuses the s
 - AI insight panel: population-level observation with the reasoning shown and a link to the cohort it describes. Never a bare assertion
 
 **Patient detail (`/patients/[id]`)**
+
 - Header: name, age, gestational week and days, EDD, assigned NGO, band status, risk badge with model confidence
 - The Vitals Ribbon, then tabs: Vitals, Lab Reports, Risk History, Care Plans, Notes
 - Vitals tab: time range selector (24h / 7d / 30d / all), synchronized multi-metric charts, quick stats (blood type, weight, BMI)
@@ -145,6 +150,7 @@ Active voice. Buttons name the exact action and the resulting toast reuses the s
 - "Send instruction to patient" opens a composer with templates, pushes to the Flutter app, and logs delivery and read receipt
 
 **Lab verification queue (`/lab-verification`)**
+
 - Split view: source document (zoom, rotate, pan) on the left, extracted fields on the right
 - Every extracted field shows the OCR confidence. Fields below the confidence threshold are pre-flagged, highlighted, and cannot be submitted until explicitly touched by the doctor
 - Each field has an unchecked "Verified" checkbox. The submit button stays disabled until all fields are verified. Out-of-range values are flagged against reference ranges
@@ -174,6 +180,7 @@ Active voice. Buttons name the exact action and the resulting toast reuses the s
 **User management** — tabs for patients, doctors, NGOs. Approve, suspend, reactivate, audit. Doctor approval requires license verification with the uploaded credential visible in the approval dialog
 
 **Alert threshold configuration** — this is the most dangerous screen in the product. Treat it accordingly:
+
 - Editable thresholds for systolic BP, diastolic BP, SpO2, heart rate, temperature, and fetal heart rate high/low
 - Every field shows the current value, the clinical default, the source guideline (WHO or ACOG), and last modified by whom and when
 - Changes require a confirmation dialog that states in plain words how many patients the change affects and in which direction
@@ -201,6 +208,7 @@ Active voice. Buttons name the exact action and the resulting toast reuses the s
 This is health data. Build to a standard you could defend in an audit.
 
 **Authentication and authorization**
+
 - Firebase Auth, ID token verified server-side on every request, never trusted from the client
 - Role and scope in custom claims, checked in middleware, again in the BFF handler, and again in FastAPI. Three layers, no exceptions
 - Session cookies: `httpOnly`, `secure`, `sameSite=strict`, short expiry with silent refresh
@@ -208,6 +216,7 @@ This is health data. Build to a standard you could defend in an audit.
 - Row-level scoping: doctors see only assigned patients, NGOs see only their zones, enforced in the SQL query, never by filtering in the client
 
 **Data protection**
+
 - TLS 1.3 in transit, AES-256 at rest, encrypted database backups
 - Lab report images in a private bucket, accessed only via short-lived signed URLs, never a public path
 - **No PHI in URLs, query strings, logs, error messages, or analytics events.** Use opaque UUIDs for patient IDs, never national ID or phone numbers in a route
@@ -216,6 +225,7 @@ This is health data. Build to a standard you could defend in an audit.
 - Data retention and deletion policy implemented, not just documented
 
 **Application hardening**
+
 - Strict CSP with nonces, plus HSTS, `X-Content-Type-Options`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy`
 - Zod validation on every input at the boundary, parameterized queries only
 - Rate limiting per IP and per user, aggressive on auth endpoints, with account lockout and a notification email on repeated failures
@@ -230,14 +240,14 @@ This is health data. Build to a standard you could defend in an audit.
 
 Hard budgets. Fail the CI build if they regress.
 
-| Metric | Target |
-|---|---|
-| LCP | under 2.0s on 4G |
-| INP | under 200ms |
-| CLS | under 0.05 |
+| Metric               | Target              |
+| -------------------- | ------------------- |
+| LCP                  | under 2.0s on 4G    |
+| INP                  | under 200ms         |
+| CLS                  | under 0.05          |
 | Initial JS per route | under 180KB gzipped |
-| Patient detail TTI | under 2.5s |
-| API p95 | under 300ms |
+| Patient detail TTI   | under 2.5s          |
+| API p95              | under 300ms         |
 
 Techniques: RSC and streaming with meaningful Suspense boundaries, route-level code splitting, `next/font` self-hosting with subsetting for both Latin and Arabic ranges, `next/image` with AVIF and WebP, virtualized tables beyond 50 rows, cursor pagination not offset, TanStack Query with `staleTime` tuned per data type (thresholds cache long, vitals do not cache), Redis caching of aggregates, database indexes on every filter and sort column, and skeleton states that match final layout so nothing shifts.
 

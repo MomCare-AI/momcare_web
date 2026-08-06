@@ -54,11 +54,7 @@ export default function DataFreshness({
       } ${className}`}
       title={`Last reading: ${new Date(timestamp).toLocaleString()}`}
     >
-      {isStale ? (
-        <AlertTriangle size={12} aria-hidden />
-      ) : (
-        <Clock size={12} aria-hidden />
-      )}
+      {isStale ? <AlertTriangle size={12} aria-hidden /> : <Clock size={12} aria-hidden />}
       <span className="font-data">{text}</span>
     </span>
   )

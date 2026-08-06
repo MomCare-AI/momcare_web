@@ -1,13 +1,6 @@
 'use client'
 
-import {
-  Users,
-  AlertTriangle,
-  Wifi,
-  Siren,
-  Watch,
-  MapPin,
-} from 'lucide-react'
+import { Users, AlertTriangle, Wifi, Siren, Watch, MapPin } from 'lucide-react'
 import StatCard from '@/components/ui/StatCard'
 import RiskBadge from '@/components/ui/RiskBadge'
 import EmptyState from '@/components/ui/EmptyState'
@@ -22,22 +15,42 @@ const ZONE_SUMMARY = {
 }
 
 const RECENT_PATIENTS = [
-  { id: '1', name: 'Fatima Malik', zone: 'Orangi Town', risk: 'high' as const, bandStatus: 'connected' },
-  { id: '2', name: 'Amina Bibi', zone: 'Orangi Town', risk: 'medium' as const, bandStatus: 'connected' },
-  { id: '3', name: 'Nadia Hussain', zone: 'Lyari', risk: 'low' as const, bandStatus: 'disconnected' },
-  { id: '4', name: 'Sana Qureshi', zone: 'Orangi Town', risk: 'high' as const, bandStatus: 'connected' },
+  {
+    id: '1',
+    name: 'Fatima Malik',
+    zone: 'Orangi Town',
+    risk: 'high' as const,
+    bandStatus: 'connected',
+  },
+  {
+    id: '2',
+    name: 'Amina Bibi',
+    zone: 'Orangi Town',
+    risk: 'medium' as const,
+    bandStatus: 'connected',
+  },
+  {
+    id: '3',
+    name: 'Nadia Hussain',
+    zone: 'Lyari',
+    risk: 'low' as const,
+    bandStatus: 'disconnected',
+  },
+  {
+    id: '4',
+    name: 'Sana Qureshi',
+    zone: 'Orangi Town',
+    risk: 'high' as const,
+    bandStatus: 'connected',
+  },
 ]
 
 export default function NgoDashboard() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="font-display text-2xl font-semibold text-pine">
-          NGO Dashboard
-        </h1>
-        <p className="text-sm text-ink-muted">
-          {ZONE_SUMMARY.zone}
-        </p>
+        <h1 className="font-display text-2xl font-semibold text-pine">NGO Dashboard</h1>
+        <p className="text-sm text-ink-muted">{ZONE_SUMMARY.zone}</p>
       </div>
 
       {/* KPI Row */}
@@ -59,7 +72,7 @@ export default function NgoDashboard() {
           value={`${ZONE_SUMMARY.bandConnectivity}%`}
           icon={Wifi}
           href="/ngo/bands"
-          subtitle={`${Math.round(ZONE_SUMMARY.totalPatients * ZONE_SUMMARY.bandConnectivity / 100)} bands online`}
+          subtitle={`${Math.round((ZONE_SUMMARY.totalPatients * ZONE_SUMMARY.bandConnectivity) / 100)} bands online`}
         />
         <StatCard
           label="Open Emergencies"
@@ -74,13 +87,8 @@ export default function NgoDashboard() {
         {/* Patient summary */}
         <div className="col-span-2 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="font-display text-lg font-semibold text-pine">
-              Recent Patients
-            </h2>
-            <a
-              href="/ngo/patients"
-              className="text-xs font-medium text-pine hover:underline"
-            >
+            <h2 className="font-display text-lg font-semibold text-pine">Recent Patients</h2>
+            <a href="/ngo/patients" className="text-xs font-medium text-pine hover:underline">
               View all →
             </a>
           </div>
@@ -97,10 +105,7 @@ export default function NgoDashboard() {
               </thead>
               <tbody className="divide-y divide-line">
                 {RECENT_PATIENTS.map((p) => (
-                  <tr
-                    key={p.id}
-                    className="transition-colors duration-150 hover:bg-pine-wash/40"
-                  >
+                  <tr key={p.id} className="transition-colors duration-150 hover:bg-pine-wash/40">
                     <td className="px-4 py-3 font-medium text-pine">{p.name}</td>
                     <td className="px-4 py-3 text-xs text-ink-muted">
                       <span className="inline-flex items-center gap-1">
@@ -157,10 +162,7 @@ export default function NgoDashboard() {
             </div>
 
             <div className="border-t border-line pt-3">
-              <a
-                href="/ngo/bands"
-                className="text-xs font-medium text-pine hover:underline"
-              >
+              <a href="/ngo/bands" className="text-xs font-medium text-pine hover:underline">
                 Manage inventory →
               </a>
             </div>

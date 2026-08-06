@@ -59,7 +59,7 @@ export default function LabVerificationSplitView({ reportId }: { reportId: strin
   const [verifiedState, setVerifiedState] = useState<Record<string, boolean>>({})
   const [zoom, setZoom] = useState(1)
   const [rotation, setRotation] = useState(0)
-  
+
   // A field is required to be "touched" if confidence is < 0.85
   const CONFIDENCE_THRESHOLD = 0.85
 
@@ -73,9 +73,7 @@ export default function LabVerificationSplitView({ reportId }: { reportId: strin
   }
 
   function handleValueChange(id: string, newValue: string) {
-    setFields((prev) =>
-      prev.map((f) => (f.id === id ? { ...f, extractedValue: newValue } : f))
-    )
+    setFields((prev) => prev.map((f) => (f.id === id ? { ...f, extractedValue: newValue } : f)))
   }
 
   function handleSubmit() {
@@ -92,9 +90,7 @@ export default function LabVerificationSplitView({ reportId }: { reportId: strin
         <div className="flex items-center justify-between border-b border-line px-4 py-3">
           <div className="flex items-center gap-2">
             <FileText size={16} className="text-pine" />
-            <h2 className="font-display text-sm font-semibold text-pine">
-              Source Document
-            </h2>
+            <h2 className="font-display text-sm font-semibold text-pine">Source Document</h2>
           </div>
           <div className="flex items-center gap-1">
             <button
@@ -124,7 +120,7 @@ export default function LabVerificationSplitView({ reportId }: { reportId: strin
             </button>
           </div>
         </div>
-        
+
         <div className="relative flex-1 overflow-auto bg-pine-wash/20 p-8">
           <div className="flex h-full min-h-[500px] w-full items-center justify-center">
             {/* Placeholder for the actual S3 document image */}
@@ -136,9 +132,7 @@ export default function LabVerificationSplitView({ reportId }: { reportId: strin
               }}
             >
               <FileText size={48} className="text-line" />
-              <p className="text-sm font-medium text-ink-muted">
-                [CBC Report Image Rendered Here]
-              </p>
+              <p className="text-sm font-medium text-ink-muted">[CBC Report Image Rendered Here]</p>
             </div>
           </div>
         </div>
@@ -147,9 +141,7 @@ export default function LabVerificationSplitView({ reportId }: { reportId: strin
       {/* Right panel: Extracted Fields */}
       <div className="flex w-full flex-col bg-panel lg:w-[450px]">
         <div className="border-b border-line px-6 py-5">
-          <h1 className="font-display text-xl font-semibold text-pine">
-            Verify Extracted Data
-          </h1>
+          <h1 className="font-display text-xl font-semibold text-pine">Verify Extracted Data</h1>
           <p className="mt-1 text-sm text-ink-muted">
             Compare AI-extracted values against the source document. You must verify every field.
           </p>
@@ -167,15 +159,13 @@ export default function LabVerificationSplitView({ reportId }: { reportId: strin
                   isVerified
                     ? 'border-[var(--color-sage)]/30 bg-[var(--color-sage)]/5'
                     : isLowConfidence
-                    ? 'border-[var(--color-marigold)] bg-[var(--color-marigold)]/5'
-                    : 'border-line bg-surface'
+                      ? 'border-[var(--color-marigold)] bg-[var(--color-marigold)]/5'
+                      : 'border-line bg-surface'
                 }`}
               >
                 <div className="mb-3 flex items-start justify-between gap-4">
                   <div>
-                    <label className="text-sm font-medium text-pine">
-                      {field.name}
-                    </label>
+                    <label className="text-sm font-medium text-pine">{field.name}</label>
                     <div className="mt-0.5 flex items-center gap-2">
                       <span className="text-xs text-ink-muted">
                         Ref: {field.referenceRange} {field.unit}
@@ -187,7 +177,7 @@ export default function LabVerificationSplitView({ reportId }: { reportId: strin
                       )}
                     </div>
                   </div>
-                  
+
                   <div className="text-right">
                     <span
                       className={`inline-flex items-center gap-1 text-xs font-medium ${
@@ -246,10 +236,11 @@ export default function LabVerificationSplitView({ reportId }: { reportId: strin
           <div className="mb-4 flex items-start gap-2 rounded-lg bg-surface p-3 text-sm text-ink-muted shadow-sm border border-line">
             <Info size={16} className="mt-0.5 flex-shrink-0 text-pine" />
             <p>
-              Nothing enters the patient record without this signature. You are taking clinical responsibility for these values.
+              Nothing enters the patient record without this signature. You are taking clinical
+              responsibility for these values.
             </p>
           </div>
-          
+
           <div className="flex gap-3">
             <button className="rounded-lg border border-line bg-surface px-4 py-2.5 text-sm font-medium text-ink transition-colors hover:border-[var(--color-clay)] hover:text-[var(--color-clay)]">
               Flag unreadable

@@ -207,9 +207,7 @@ export default function DashboardClient() {
                   filteredPatients.map((patient) => (
                     <tr
                       key={patient.id}
-                      onClick={() =>
-                        router.push(`/doctor/patients/${patient.id}`)
-                      }
+                      onClick={() => router.push(`/doctor/patients/${patient.id}`)}
                       className="cursor-pointer transition-colors duration-150 hover:bg-pine-wash/40"
                     >
                       <td className="px-4 py-3">
@@ -225,35 +223,17 @@ export default function DashboardClient() {
                             <span className="text-xs text-ink-muted">Loading…</span>
                           ) : latestVitals ? (
                             <div className="flex gap-3 font-data text-xs">
-                              <span
-                                className="flex items-center gap-1"
-                                title="Blood Pressure"
-                              >
-                                <HeartPulse
-                                  size={12}
-                                  className="text-[var(--color-clay)]"
-                                />
-                                {latestVitals.systolic_bp ?? '—'}/
-                                {latestVitals.diastolic_bp ?? '—'}
+                              <span className="flex items-center gap-1" title="Blood Pressure">
+                                <HeartPulse size={12} className="text-[var(--color-clay)]" />
+                                {latestVitals.systolic_bp ?? '—'}/{latestVitals.diastolic_bp ?? '—'}
                               </span>
-                              <span
-                                className="flex items-center gap-1"
-                                title="Heart Rate"
-                              >
-                                <Activity
-                                  size={12}
-                                  className="text-[var(--color-marigold)]"
-                                />
+                              <span className="flex items-center gap-1" title="Heart Rate">
+                                <Activity size={12} className="text-[var(--color-marigold)]" />
                                 {latestVitals.heart_rate ?? '—'}
                               </span>
                               <span className="flex items-center gap-1" title="SpO2">
-                                <Droplets
-                                  size={12}
-                                  className="text-[var(--color-sage)]"
-                                />
-                                {latestVitals.spo2 != null
-                                  ? `${latestVitals.spo2}%`
-                                  : '—'}
+                                <Droplets size={12} className="text-[var(--color-sage)]" />
+                                {latestVitals.spo2 != null ? `${latestVitals.spo2}%` : '—'}
                               </span>
                             </div>
                           ) : (
@@ -266,9 +246,7 @@ export default function DashboardClient() {
                       <td className="px-4 py-3">
                         <DataFreshness
                           timestamp={
-                            patient.id === DEMO_PATIENT_ID
-                              ? latestVitals?.recorded_at
-                              : null
+                            patient.id === DEMO_PATIENT_ID ? latestVitals?.recorded_at : null
                           }
                         />
                       </td>
@@ -300,17 +278,12 @@ export default function DashboardClient() {
               <AlertCircle size={18} className="text-[var(--color-clay)]" />
               High-Risk Alerts
             </h2>
-            <span className="text-[10px] uppercase tracking-wide text-ink-muted">
-              Live
-            </span>
+            <span className="text-[10px] uppercase tracking-wide text-ink-muted">Live</span>
           </div>
 
           <div className="flex min-h-[400px] flex-col gap-3 rounded-[10px] border border-line bg-panel p-4">
             {loadingAlerts ? (
-              <EmptyState
-                title="Loading alerts…"
-                description="Checking for critical readings."
-              />
+              <EmptyState title="Loading alerts…" description="Checking for critical readings." />
             ) : alerts && alerts.length > 0 ? (
               alerts.map((alert) => (
                 <div
@@ -324,9 +297,7 @@ export default function DashboardClient() {
                   <div className="mb-1 flex items-start justify-between">
                     <p
                       className={`text-sm font-medium ${
-                        alert.status === 'pending'
-                          ? 'text-[var(--color-clay)]'
-                          : 'text-ink-muted'
+                        alert.status === 'pending' ? 'text-[var(--color-clay)]' : 'text-ink-muted'
                       }`}
                     >
                       {alert.alert_type.replace(/_/g, ' ').toUpperCase()}
@@ -335,9 +306,7 @@ export default function DashboardClient() {
                       {new Date(alert.triggered_at).toLocaleTimeString()}
                     </span>
                   </div>
-                  <p className="mb-2 text-xs text-ink">
-                    Fatima Malik • {alert.reading_summary}
-                  </p>
+                  <p className="mb-2 text-xs text-ink">Fatima Malik • {alert.reading_summary}</p>
 
                   {alert.status === 'pending' ? (
                     <button
@@ -346,8 +315,7 @@ export default function DashboardClient() {
                       className="flex items-center gap-1.5 rounded-lg bg-[var(--color-clay)] px-3 py-1.5 text-xs font-medium text-surface transition-opacity duration-150 hover:opacity-90 disabled:opacity-50"
                     >
                       <Check size={12} />
-                      {acknowledgeMutation.isPending &&
-                      acknowledgeMutation.variables === alert.id
+                      {acknowledgeMutation.isPending && acknowledgeMutation.variables === alert.id
                         ? 'Acknowledging…'
                         : 'Acknowledge'}
                     </button>

@@ -27,9 +27,7 @@ export default function NgoOnboarding() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-2xl font-semibold text-pine">
-          NGO Onboarding
-        </h1>
+        <h1 className="font-display text-2xl font-semibold text-pine">NGO Onboarding</h1>
         <p className="text-sm text-ink-muted">
           Register your organization to coordinate maternal care in your area.
         </p>
@@ -41,8 +39,8 @@ export default function NgoOnboarding() {
         <div>
           <p className="text-sm font-medium text-pine">Onboarding status: Not started</p>
           <p className="text-xs text-ink-muted">
-            Complete all three steps below, then submit for admin approval.
-            Status flow: Submitted → Under Review → Approved
+            Complete all three steps below, then submit for admin approval. Status flow: Submitted →
+            Under Review → Approved
           </p>
         </div>
       </div>
@@ -50,15 +48,10 @@ export default function NgoOnboarding() {
       {/* Step cards */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {STEPS.map((step) => (
-          <div
-            key={step.number}
-            className="rounded-[10px] border border-line bg-panel p-5"
-          >
+          <div key={step.number} className="rounded-[10px] border border-line bg-panel p-5">
             <div className="mb-3 flex items-center gap-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-pine-wash">
-                <span className="font-display text-sm font-semibold text-pine">
-                  {step.number}
-                </span>
+                <span className="font-display text-sm font-semibold text-pine">{step.number}</span>
               </div>
               <h3 className="text-sm font-semibold text-pine">{step.title}</h3>
             </div>
@@ -80,10 +73,10 @@ export default function NgoOnboarding() {
           Safety Disclaimer Requirement
         </p>
         <p className="mt-1 text-xs text-ink-muted">
-          When registering mothers who do not have a smartphone, the onboarding flow
-          must include an explicit, unskippable acknowledgment that MomCare is not an
-          emergency service, is not monitored 24/7, and that a suspected emergency
-          means calling Rescue 1122 or going to the nearest hospital immediately.
+          When registering mothers who do not have a smartphone, the onboarding flow must include an
+          explicit, unskippable acknowledgment that MomCare is not an emergency service, is not
+          monitored 24/7, and that a suspected emergency means calling Rescue 1122 or going to the
+          nearest hospital immediately.
         </p>
       </div>
     </div>

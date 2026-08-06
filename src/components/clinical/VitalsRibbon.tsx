@@ -25,14 +25,14 @@ const SAFE_RANGES = {
 function generateMockVitals() {
   const data = []
   const now = new Date()
-  
+
   // 1 reading every 15 mins for 24h = 96 points
   for (let i = 96; i >= 0; i--) {
     const timestamp = subMinutes(now, i * 15).getTime()
-    
+
     // Simulate a pre-eclampsia spike around 4 hours ago
     const isSpike = i > 12 && i < 20
-    
+
     data.push({
       timestamp,
       systolic: isSpike ? 150 + Math.random() * 15 : 110 + Math.random() * 20,
@@ -47,25 +47,34 @@ function generateMockVitals() {
   return data
 }
 
-function CustomTooltip({ active, payload, label }: any) {
-  if (!active || !payload || !payload.length) return null
+type TooltipPayloadEntry = {
+  color?: string
+  name?: string
+  value?: number
+}
+
+function CustomTooltip({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean
+  payload?: TooltipPayloadEntry[]
+  label?: string | number
+}) {
+  if (!active || !payload || !payload.length || label == null) return null
 
   return (
     <div className="rounded-lg border border-line bg-panel p-3 shadow-lg">
       <p className="mb-2 font-data text-xs font-semibold text-ink-muted">
         {format(new Date(label), 'HH:mm • MMM d')}
       </p>
-      {payload.map((entry: any, index: number) => (
+      {payload.map((entry, index) => (
         <div key={index} className="flex items-center gap-2">
-          <span
-            className="h-2 w-2 rounded-full"
-            style={{ backgroundColor: entry.color }}
-          />
-          <span className="text-sm font-medium text-ink uppercase">
-            {entry.name}:
-          </span>
+          <span className="h-2 w-2 rounded-full" style={{ backgroundColor: entry.color }} />
+          <span className="text-sm font-medium text-ink uppercase">{entry.name}:</span>
           <span className="font-data text-sm font-medium">
-            {Math.round(entry.value * 10) / 10}
+            {entry.value != null ? Math.round(entry.value * 10) / 10 : '—'}
           </span>
         </div>
       ))}
@@ -114,9 +123,7 @@ export default function VitalsRibbon() {
   return (
     <div className="flex flex-col rounded-[10px] border border-line bg-panel overflow-hidden">
       <div className="flex items-center justify-between border-b border-line bg-pine-wash/50 px-4 py-3">
-        <h3 className="font-display text-sm font-semibold text-pine">
-          24h Vitals Ribbon
-        </h3>
+        <h3 className="font-display text-sm font-semibold text-pine">24h Vitals Ribbon</h3>
         <span className="font-data text-[10px] uppercase tracking-wide text-ink-muted">
           Synchronized Timeline
         </span>
@@ -126,11 +133,9 @@ export default function VitalsRibbon() {
         {charts.map((chart, i) => (
           <div key={chart.id} className="relative h-24 w-full">
             <div className="absolute left-0 top-0 z-10 w-24">
-              <span className="text-xs font-medium text-ink-muted">
-                {chart.name}
-              </span>
+              <span className="text-xs font-medium text-ink-muted">{chart.name}</span>
             </div>
-            
+
             <div className="ml-24 h-full">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart
@@ -168,7 +173,11 @@ export default function VitalsRibbon() {
                   <YAxis domain={chart.domain} hide />
                   <Tooltip
                     content={<CustomTooltip />}
-                    cursor={{ stroke: 'var(--color-ink-muted)', strokeWidth: 1, strokeDasharray: '4 4' }}
+                    cursor={{
+                      stroke: 'var(--color-ink-muted)',
+                      strokeWidth: 1,
+                      strokeDasharray: '4 4',
+                    }}
                     isAnimationActive={false}
                   />
 
@@ -178,7 +187,6 @@ export default function VitalsRibbon() {
                     y2={chart.safeRange[1]}
                     fill="var(--color-pine-wash)"
                     fillOpacity={0.5}
-                    isFront={false}
                   />
 
                   {chart.lines.map((line) => (

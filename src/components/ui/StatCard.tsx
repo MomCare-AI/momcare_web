@@ -58,9 +58,7 @@ export default function StatCard({
       <p className={`mt-2 font-display text-3xl font-semibold tabular-nums ${styles.value}`}>
         {value}
       </p>
-      {subtitle && (
-        <p className="mt-1 text-xs text-ink-muted">{subtitle}</p>
-      )}
+      {subtitle && <p className="mt-1 text-xs text-ink-muted">{subtitle}</p>}
     </div>
   )
 
