@@ -1,0 +1,29 @@
+# Each rule below is a placeholder - replace the GitHub usernames with
+# real ones once the team's usernames are confirmed. Lower rules
+# override higher ones for overlapping paths, matching GitHub's own
+# CODEOWNERS precedence.
+
+# Default: whole repo
+* @Ahmed-Nawaz-11
+
+# Doctor Clinical Portal
+/src/app/doctor/ @Ahmed-Nawaz-11
+
+# NGO Coordination Portal
+/src/app/ngo/ @Ahmed-Nawaz-11
+
+# Super Admin Console
+/src/app/admin/ @Ahmed-Nawaz-11
+
+# Auth, middleware, BFF routes - security-sensitive, worth a closer look
+/src/middleware.ts @Ahmed-Nawaz-11
+/src/app/api/ @Ahmed-Nawaz-11
+/src/lib/supabase/ @Ahmed-Nawaz-11
+
+# Shared design system - changes here affect every portal
+/src/app/globals.css @Ahmed-Nawaz-11
+/src/components/ui/ @Ahmed-Nawaz-11
+
+# Auto-generated from the backend's OpenAPI spec - regenerate via
+# `npm run generate:types` (see CONTRIBUTING.md) rather than hand-editing
+/src/lib/api/schema.d.ts @Ahmed-Nawaz-11

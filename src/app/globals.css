@@ -1,0 +1,76 @@
+@import 'tailwindcss';
+
+@theme inline {
+  --color-ink: #0b1f1c;
+  --color-ink-muted: #5a6b67;
+  --color-surface: #fbfcfb;
+  --color-panel: #ffffff;
+  --color-line: #e3eae7;
+  --color-pine: #0d4f45;
+  --color-pine-deep: #08332c;
+  --color-pine-wash: #edf5f2;
+  --color-marigold: #e0a32e;
+  --color-clay: #b3261e;
+  --color-sage: #1f8a70;
+  --color-slate: #64748b;
+
+  --font-display: var(--font-bricolage);
+  --font-body: var(--font-inter);
+  --font-data: var(--font-ibm-plex);
+}
+
+body {
+  background-color: var(--color-surface);
+  color: var(--color-ink);
+}
+
+/* ───── Motion system (BRIEF.md §3) ───── */
+/* State changes: 150ms ease-out. Panel transitions: 250ms ease-out. */
+/* Live vital updates cross-fade — never slide or bounce. */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Skeleton loading pulse */
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+.skeleton {
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+  background-color: var(--color-line);
+  border-radius: 6px;
+}
+
+/* Refined scrollbars for data-dense clinical UI */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-line);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-ink-muted);
+}
