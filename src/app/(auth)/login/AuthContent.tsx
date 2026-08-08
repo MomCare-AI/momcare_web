@@ -2,44 +2,81 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { useAuth } from "@/features/auth/hooks/useAuth";
 
 export default function AuthContent() {
   const [isLogin, setIsLogin] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const { login, register, loading, error } = useAuth();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isLogin) {
+      await login({ email, password });
+    } else {
+      await register({ name, email, password });
+    }
+  };
+
+  const switchMode = () => {
+    setIsLogin(!isLogin);
+    setName("");
+    setEmail("");
+    setPassword("");
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-pink-50 font-sans p-4">
       <div className="bg-white rounded-[32px] shadow-xl w-full max-w-[1000px] flex overflow-hidden h-[700px] transition-all duration-300">
-        
+
         {/* Left Side - Hero Area */}
         <div className="hidden md:flex w-1/2 relative overflow-hidden bg-pink-200">
           <Image src="/Mom Art.png" alt="MomCare Art" fill className="object-cover" priority />
-          {/* Subtle pink overlay to blend the image with the theme */}
           <div className="absolute inset-0 bg-pink-500/10 mix-blend-multiply pointer-events-none z-10"></div>
         </div>
 
         {/* Right Side - Form Area */}
         <div className="w-full md:w-1/2 p-10 lg:p-14 flex flex-col justify-center bg-white relative">
           <button className="absolute top-6 right-6 text-slate-400 hover:text-slate-600 transition-colors">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
           </button>
-          
+
           <h1 className="text-3xl font-bold text-slate-800 text-center mb-8">
             {isLogin ? "Login" : "Sign Up"}
           </h1>
 
-          <form className="flex flex-col gap-4">
+          {/* Error Message */}
+          {error && (
+            <div className="mb-4 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-sm text-red-600 text-center">
+              {error}
+            </div>
+          )}
+
+          <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
             {!isLogin && (
               <div className="flex flex-col gap-2 animate-in fade-in slide-in-from-top-4 duration-300">
                 <label htmlFor="name" className="text-sm font-semibold text-slate-700">Full Name</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
                   </div>
-                  <input 
-                    type="text" 
-                    id="name" 
-                    className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 bg-white text-[15px] text-slate-800 outline-none transition-all duration-300 focus:border-pink-500 focus:ring-4 focus:ring-pink-500/10 placeholder-slate-400" 
-                    placeholder="Jane Doe" 
+                  <input
+                    type="text"
+                    id="name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 bg-white text-[15px] text-slate-800 outline-none transition-all duration-300 focus:border-pink-500 focus:ring-4 focus:ring-pink-500/10 placeholder-slate-400"
+                    placeholder="Jane Doe"
                     required={!isLogin}
                   />
                 </div>
@@ -50,14 +87,19 @@ export default function AuthContent() {
               <label htmlFor="email" className="text-sm font-semibold text-slate-700">Email</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path></svg>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                    <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+                  </svg>
                 </div>
-                <input 
-                  type="email" 
-                  id="email" 
-                  className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 bg-white text-[15px] text-slate-800 outline-none transition-all duration-300 focus:border-pink-500 focus:ring-4 focus:ring-pink-500/10 placeholder-slate-400" 
-                  placeholder="jane.doe@example.com" 
-                  required 
+                <input
+                  type="email"
+                  id="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 bg-white text-[15px] text-slate-800 outline-none transition-all duration-300 focus:border-pink-500 focus:ring-4 focus:ring-pink-500/10 placeholder-slate-400"
+                  placeholder="jane.doe@example.com"
+                  required
                 />
               </div>
             </div>
@@ -66,17 +108,36 @@ export default function AuthContent() {
               <label htmlFor="password" className="text-sm font-semibold text-slate-700">Password</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                  </svg>
                 </div>
-                <input 
-                  type="password" 
-                  id="password" 
-                  className="w-full pl-11 pr-11 py-3 rounded-xl border border-slate-200 bg-white text-[15px] text-slate-800 outline-none transition-all duration-300 focus:border-pink-500 focus:ring-4 focus:ring-pink-500/10 placeholder-slate-400" 
-                  placeholder="••••••••" 
-                  required 
+                <input
+                  type={showPassword ? "text" : "password"}
+                  id="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full pl-11 pr-11 py-3 rounded-xl border border-slate-200 bg-white text-[15px] text-slate-800 outline-none transition-all duration-300 focus:border-pink-500 focus:ring-4 focus:ring-pink-500/10 placeholder-slate-400"
+                  placeholder="••••••••"
+                  required
                 />
-                <button type="button" className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-slate-600 transition-colors">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
+                >
+                  {showPassword ? (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                      <line x1="1" y1="1" x2="23" y2="23"></line>
+                    </svg>
+                  ) : (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path>
+                      <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                  )}
                 </button>
               </div>
             </div>
@@ -89,8 +150,21 @@ export default function AuthContent() {
               </div>
             )}
 
-            <button type="submit" className="bg-pink-500 text-white border-none py-3.5 rounded-xl text-base font-semibold cursor-pointer transition-all duration-300 shadow-md hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 mt-2">
-              {isLogin ? "Log In" : "Sign Up"}
+            <button
+              type="submit"
+              disabled={loading}
+              className="bg-pink-500 text-white border-none py-3.5 rounded-xl text-base font-semibold cursor-pointer transition-all duration-300 shadow-md hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 mt-2 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+            >
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="animate-spin" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                  </svg>
+                  {isLogin ? "Logging in..." : "Creating account..."}
+                </span>
+              ) : (
+                isLogin ? "Log In" : "Sign Up"
+              )}
             </button>
           </form>
 
@@ -123,9 +197,9 @@ export default function AuthContent() {
 
           <div className="text-center text-sm text-slate-500 mt-10">
             {isLogin ? "Don't have an account?" : "Already have an account?"}
-            <button 
+            <button
               type="button"
-              onClick={() => setIsLogin(!isLogin)} 
+              onClick={switchMode}
               className="text-slate-700 font-semibold ml-1.5 hover:underline bg-transparent border-none p-0 cursor-pointer"
             >
               {isLogin ? "Sign Up here" : "Log In here"}
