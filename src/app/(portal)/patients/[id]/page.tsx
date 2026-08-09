@@ -1,3 +1,0 @@
-export default function PatientDetailPage() {
-  return <div>Patient Detail</div>
-}

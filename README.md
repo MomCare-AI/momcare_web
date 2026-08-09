@@ -1,36 +1,120 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MomCare — Frontend
 
-## Getting Started
+A Next.js frontend for a maternal healthcare platform, serving three role-based
+portals — **doctor**, **ngo**, and **admin** — from a single app. It's a pure
+client for a separate **Django REST API** backend; there is no database or
+server-owned data layer in this repo.
 
-First, run the development server:
+Auth is token-based: the API returns a token on login, which is attached to
+every request via the `Authorization` header (see `src/core/api/api-client.ts`).
+
+## Tech stack
+
+| Purpose                      | Library                                                                                                                                                      |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Framework                    | [Next.js](https://nextjs.org) 16 (App Router)                                                                                                                |
+| UI                           | [React](https://react.dev) 19                                                                                                                                |
+| Language                     | TypeScript                                                                                                                                                   |
+| Styling                      | [Tailwind CSS](https://tailwindcss.com) v4, `clsx` + `tailwind-merge` for conditional classes                                                                |
+| HTTP client                  | [axios](https://axios-http.com) (see `core/api/api-client.ts`)                                                                                               |
+| Server data fetching/caching | [TanStack Query](https://tanstack.com/query) (see `core/query/`)                                                                                             |
+| Client-only global state     | _Not yet added_ — planned: [Zustand](https://zustand-demo.pmnd.rs), once a feature actually needs shared client state (see `docs/architecture-decisions.md`) |
+| Testing                      | [Vitest](https://vitest.dev) + [React Testing Library](https://testing-library.com/react)                                                                    |
+| Linting / formatting         | ESLint, Prettier                                                                                                                                             |
+| Pre-commit enforcement       | [Husky](https://typicode.github.io/husky) + [lint-staged](https://github.com/lint-staged/lint-staged)                                                        |
+
+## Architecture at a glance
+
+- `src/app/` — routing only, via Next.js App Router. `(auth)` and `(portal)`
+  are route groups: `(portal)` further splits into `doctor/`, `ngo/`, and
+  `admin/`, one mini-portal per role.
+- `src/core/` — infrastructure aware of this specific app (auth, the shared
+  API client, authorization, config, and `query/` — a shared TanStack Query
+  client for fetching data from Django) but not tied to one clinical domain.
+- `src/features/` — one folder per business domain (e.g. `dashboard`), each
+  owning its own `components/`, `hooks/`, `services/`, and `types.ts`. This
+  is where actual clinical/business logic lives — `app/` should never
+  contain it directly.
+- `src/shared/`, `src/hooks/`, `src/lib/` — code with zero awareness of this
+  app at all; usable in any project unchanged.
+- Server Actions live inside whichever feature owns the mutation (not a flat
+  top-level folder), used selectively — see `docs/conventions.md`.
+
+Full rules for where new code goes: **`docs/conventions.md`**.
+
+## Prerequisites
+
+- Node.js 20.9+ (minimum required by Next.js 16)
+- npm
+
+## Quick start
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install                  # installs dependencies and wires up the pre-commit hook
+cp .env.example .env.local   # then set NEXT_PUBLIC_API_URL to your Django backend
+npm run dev                  # dev server at http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Environment
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Configuration is read from `.env.local` (see `.env.example`). Only variable
+currently required:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `NEXT_PUBLIC_API_URL` — base URL of the Django REST API this app talks to
+  (e.g. the staging backend during development).
 
-## Learn More
+## Testing
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run test          # Vitest, watch mode
+npx vitest run         # single run (non-interactive, used by the pre-commit hook)
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Test files sit next to the code they test (`useAuth.ts` + `useAuth.test.ts`).
+Write tests alongside the feature they cover, not after.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Code quality
 
-## Deploy on Vercel
+Enforced locally via a Husky pre-commit hook (`.husky/pre-commit`) — runs
+automatically on every `git commit`, no separate command needed:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+npx lint-staged        # Prettier on staged files
+npm run typecheck      # next typegen + tsc --noEmit
+npx vitest run          # full test suite
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Run any of these manually at any time; `npm run lint` (ESLint) is also
+available but not currently part of the commit gate.
+
+## Project structure
+
+```text
+src/
+  app/          routes only (App Router)
+  core/         app-aware infrastructure — auth/, api/, authorization/,
+                config/, guards/, notifications/, query/
+  features/     business domains — dashboard (template), more as they're built
+  shared/       zero-business-awareness UI (ui/, components/, widgets/,
+                charts/, forms/)
+  hooks/        generic cross-feature hooks
+  lib/          plain utility functions
+  types/        shared TypeScript types
+  proxy.ts      runs before every request (Next.js 16's middleware equivalent)
+docs/           architecture decisions, conventions, API Postman collection
+public/         static assets + locales (en, ur)
+mockData/       fake JSON data for UI work ahead of real Django endpoints
+```
+
+Folders with no code yet still exist (as placeholders) — that's intentional,
+not incomplete. See `docs/conventions.md` for why.
+
+## Documentation
+
+- [`docs/conventions.md`](docs/conventions.md) — where new code goes, and the
+  rules behind this structure
+- [`docs/architecture-decisions.md`](docs/architecture-decisions.md) —
+  significant decisions and why they were made
+- [`docs/postman_collection.json`](docs/postman_collection.json) — the
+  contract with the Django backend team: real endpoints, shared and kept
+  current by the backend team as they're staged
