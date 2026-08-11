@@ -7,6 +7,8 @@ server-owned data layer in this repo.
 
 Auth is token-based: the API returns a token on login, which is attached to
 every request via the `Authorization` header (see `src/core/api/api-client.ts`).
+No Django backend is connected yet — `authService.login`/`register` check
+`src/mockData/users.json` directly for now (see `docs/conventions.md`).
 
 ## Tech stack
 
@@ -100,10 +102,11 @@ src/
   hooks/        generic cross-feature hooks
   lib/          plain utility functions
   types/        shared TypeScript types
+  mockData/     static fixture data (not a fake server) for UI work ahead
+                of real Django endpoints — see docs/conventions.md
   proxy.ts      runs before every request (Next.js 16's middleware equivalent)
 docs/           architecture decisions, conventions, API Postman collection
 public/         static assets + locales (en, ur)
-mockData/       fake JSON data for UI work ahead of real Django endpoints
 ```
 
 Folders with no code yet still exist (as placeholders) — that's intentional,
