@@ -190,3 +190,59 @@ directly to `false`, no effect, no unused setter. The return shape
 to change when real token verification is added later — that's the point
 at which the `useEffect` legitimately comes back, doing real async work
 instead of immediately flipping a boolean.
+
+## 2026-08-10 — PR #6 (login/signup) merged; mock auth moved off fake API routes
+
+A teammate's separate PR added a real login/signup UI, a landing page, and
+mock authentication (`app/api/auth/login/route.ts` and
+`app/api/auth/register/route.ts` — Next.js Route Handlers returning
+hardcoded fake users/tokens) so the form could be tested before Django
+exists. Two problems surfaced after merging and pulling it locally:
+
+1. **A real, verified bug:** `authService` called `/auth/login/`, but the
+   mock handler lived at `/api/auth/login` — different path entirely.
+   Confirmed by actually running the dev server and `curl`-ing both: the
+   called path returned a 308 redirect (not a login response); the actual
+   mock route returned 200 with the fake token. The form's login would
+   have silently failed for anyone who pulled this without noticing.
+2. **A structural problem, not just a routing typo:** a live route that
+   validates credentials and issues tokens is backend logic running on
+   the Next.js server — exactly what this repo's README says it doesn't
+   have. It also meant the frontend invented the endpoint's contract
+   (URL, field names, status codes) unilaterally, risking drift from
+   whatever the real Django endpoint ends up looking like once the
+   backend team builds it independently.
+
+Fixed by removing `app/api/` entirely and switching to static data:
+`src/mockData/users.json` (moved from a project-root `mockData/` — see
+below) holds the fake accounts, and `authService.login`/`register` check
+it directly in plain JS, no HTTP call at all right now. `useAuth.ts` was
+updated to match the flattened return shape (no more axios `.data`
+wrapper, since there's no axios call to unwrap). This is the same pattern
+observed firsthand in a comparable production RPM frontend: mock _data_,
+never a fake server standing in for the real backend, with the real
+contract owned by whoever builds the backend
+(`docs/postman_collection.json`), not guessed from the frontend side.
+
+**Correction to the 2026-08-09 entry above:** `mockData/` was originally
+placed at the project root, outside `src/`. Moved into `src/mockData/`
+instead — the `@/` alias only resolves inside `src/`, so the root
+placement would have forced ugly relative imports
+(`../../../../mockData/...`), which `conventions.md` already says not to
+do. Also matches where the comparable reference project actually put it
+(`src/mockData/`, not project root).
+
+**Also found while testing, not yet fixed:** `useAuth`'s `login`/
+`register` both `router.push("/dashboard")` on success, but no
+`/dashboard` route exists in this app — the real routes are
+`/doctor`/`/ngo`/`/admin`. Flagged for whoever owns the login flow next;
+not fixed here since it wasn't part of what this pass was addressing.
+
+A second, pre-existing bug was also caught and fixed while verifying this
+change: `useAuth.test.ts` (written before this PR) didn't mock
+`next/navigation`, so it failed once `useAuth` started calling
+`useRouter()`. Updated the test to mock the router and to test the hook's
+actual current behavior (login/register success and failure) instead of
+its old, now-stale "no backend yet" behavior. A new `auth.test.ts` was
+also added for `authService.login`/`register`, since they're now real,
+testable logic instead of a network call.
