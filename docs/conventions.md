@@ -145,12 +145,34 @@ Always import via the `@/` alias (`@/core/auth/...`, `@/core/api/api-client`,
 `@/features/dashboard/...`), which maps to `src/`. Don't use deep relative
 paths like `../../../core/auth`.
 
-## `mockData/`
+## `src/mockData/`
 
-Fake JSON data (project root, outside `src/`) shaped like what a real
-Django endpoint will eventually return, so UI work isn't blocked waiting
-for the backend team to stage an endpoint. Swap for the real API call once
-it exists; delete or keep the mock for tests, team's call at that point.
+Static JSON fixtures — **data, not a fake server** — so UI work isn't
+blocked waiting for the backend team to stage a real endpoint. Lives inside
+`src/` (not the project root) specifically so it's reachable via the `@/`
+alias like everything else: `@/mockData/users.json`.
+
+**Do not build fake API routes** (e.g. `app/api/.../route.ts`) to simulate
+a backend, even temporarily. Two reasons:
+
+1. This repo has no server-owned data layer, on purpose — a live route
+   that validates credentials and issues tokens is backend logic running
+   on the Next.js server, which is exactly what we said this repo doesn't
+   have.
+2. It invites **contract drift**: if the frontend invents its own
+   endpoint shape (URL, field names, status codes) without the backend
+   team's input, there's a real chance the actual Django endpoint ends up
+   different, and integration becomes a rewrite instead of a config swap.
+   The real contract belongs in `docs/postman_collection.json`, defined
+   by whoever owns the Django side — even before the endpoint is built —
+   not guessed from the frontend.
+
+Instead: a `services/*.ts` function reads the mock data directly (e.g.
+`authService.login` checks `mockData/users.json` in plain JS) and returns
+whatever shape the real endpoint is expected to return. When the real
+endpoint exists, that function gets rewritten to call `api` instead — this
+_is_ a real code change, not just a URL swap, and that's fine; pretending
+otherwise is what got us into this in the first place.
 
 ## Pre-commit gate
 
