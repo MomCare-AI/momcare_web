@@ -1,13 +1,53 @@
-"use client";
-import { useState } from "react";
-import type { User } from "@/core/auth/types";
+"use client"
+
+import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { authService } from "@/core/auth/services/auth"
+import type { User, LoginCredentials, RegisterCredentials } from "@/core/auth/types"
 
 export function useAuth() {
-  // No backend to check a token against yet, so there's nothing to load.
-  // Once real token verification exists, this becomes a useEffect that
-  // sets user/loading after an actual async check.
-  const [user] = useState<User | null>(null);
-  const [loading] = useState(false);
+  const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const router = useRouter()
 
-  return { user, loading };
+  const login = async (credentials: LoginCredentials) => {
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await authService.login(credentials)
+      localStorage.setItem("token", res.data.token)
+      localStorage.setItem("user", JSON.stringify(res.data.user))
+      setUser(res.data.user)
+      router.push("/dashboard")
+    } catch {
+      setError("Invalid email or password")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const register = async (credentials: RegisterCredentials) => {
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await authService.register(credentials)
+      localStorage.setItem("token", res.data.token)
+      localStorage.setItem("user", JSON.stringify(res.data.user))
+      setUser(res.data.user)
+      router.push("/dashboard")
+    } catch {
+      setError("Registration failed. Try again.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const logout = () => {
+    authService.logout()
+    setUser(null)
+    router.push("/login")
+  }
+
+  return { user, loading, error, login, register, logout }
 }
