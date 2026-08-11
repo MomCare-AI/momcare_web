@@ -1,11 +1,17 @@
-import api from "@/core/api/api-client";
-import type { User } from "@/core/auth/types";
+import api from "@/core/api/api-client"
+import type { AuthResponse, LoginCredentials, RegisterCredentials, User } from "@/core/auth/types"
 
 export const authService = {
-  login: (email: string, password: string) =>
-    api.post<{ token: string; user: User }>("/auth/login", { email, password }),
-  me: () => api.get<User>("/auth/me"),
+  login: (credentials: LoginCredentials) =>
+    api.post<AuthResponse>("/auth/login/", credentials),
+
+  register: (credentials: RegisterCredentials) =>
+    api.post<AuthResponse>("/auth/register/", credentials),
+
+  me: () => api.get<User>("/auth/me/"),
+
   logout: () => {
-    localStorage.removeItem("token");
+    localStorage.removeItem("token")
+    localStorage.removeItem("user")
   },
-};
+}
