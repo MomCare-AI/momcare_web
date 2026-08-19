@@ -6,6 +6,6 @@ export const metadata: Metadata = {
   description: "Register your hospital or organization on MomCare",
 };
 
-export default function RegisterPage() {
+export default function DoctorOnboardingPage() {
   return <HospitalWizard />;
 }

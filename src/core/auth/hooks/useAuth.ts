@@ -23,7 +23,7 @@ export function useAuth() {
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
       setUser(user);
-      router.push("/dashboard");
+      router.push(`/${user.role}`);
     } catch {
       setError("Invalid email or password");
     } finally {
@@ -39,7 +39,7 @@ export function useAuth() {
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
       setUser(user);
-      router.push("/dashboard");
+      router.push(`/${user.role}`);
     } catch {
       setError("Registration failed. Try again.");
     } finally {
