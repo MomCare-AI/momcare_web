@@ -1,4 +1,4 @@
-import HospitalWizard from "@/core/auth/components/hospital-reg/HospitalWizard";
+import HospitalWizard from "@/features/hospital-onboarding/components/HospitalWizard";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -6,6 +6,6 @@ export const metadata: Metadata = {
   description: "Register your hospital or organization on MomCare",
 };
 
-export default function DoctorOnboardingPage() {
+export default function RegisterPage() {
   return <HospitalWizard />;
 }
