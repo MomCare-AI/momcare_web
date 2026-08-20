@@ -1,11 +1,10 @@
-import HospitalWizard from "@/core/auth/components/hospital-reg/HospitalWizard";
-import type { Metadata } from "next";
+import AuthContent from "./AuthContent";
 
-export const metadata: Metadata = {
-  title: "Register — MomCare",
-  description: "Register your hospital or organization on MomCare",
+export const metadata = {
+  title: "Login / Sign Up - MomCare",
+  description: "Access your MomCare account",
 };
 
-export default function RegisterPage() {
-  return <HospitalWizard />;
+export default function LoginPage() {
+  return <AuthContent />;
 }
