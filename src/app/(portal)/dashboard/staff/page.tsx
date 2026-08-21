@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   AlertCircle,
   Check,
@@ -11,8 +12,7 @@ import {
   X,
 } from "lucide-react";
 import { usePortal } from "../layout";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+import { authFetch, authJson, SessionExpiredError } from "@/core/api/authFetch";
 
 const ROLES = [
   { code: "provider", label: "Doctor / Provider" },
@@ -51,11 +51,13 @@ const EMPTY_FORM = {
 
 export default function StaffPage() {
   const { isHospitalAdmin, refresh } = usePortal();
+  const router = useRouter();
 
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [invites, setInvites] = useState<Invite[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
 
   const [showForm, setShowForm] = useState(false);
@@ -63,30 +65,31 @@ export default function StaffPage() {
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const headers = useCallback(() => {
-    const token = localStorage.getItem("access_token");
-    return { Authorization: `Bearer ${token}` };
-  }, []);
-
   const load = useCallback(async () => {
+    setError(null);
     try {
-      const staffRes = await fetch(`${API_BASE}/api/staff/`, {
-        headers: headers(),
-      });
-      if (staffRes.ok) setStaff(await staffRes.json());
+      // A failed request must not render as "no staff yet" — an empty team and
+      // a broken server look identical to the user otherwise, which is a bad
+      // failure mode in clinical software.
+      setStaff(await authJson<StaffMember[]>("/api/staff/"));
 
       if (isHospitalAdmin) {
-        const inviteRes = await fetch(`${API_BASE}/api/staff/invites/`, {
-          headers: headers(),
-        });
-        if (inviteRes.ok) setInvites(await inviteRes.json());
+        setInvites(await authJson<Invite[]>("/api/staff/invites/"));
       }
-    } catch {
-      setError("Could not reach the server.");
+      setLoadFailed(false);
+    } catch (err) {
+      if (err instanceof SessionExpiredError) {
+        router.replace("/login");
+        return;
+      }
+      setLoadFailed(true);
+      setError(
+        err instanceof Error ? err.message : "Could not load your team."
+      );
     } finally {
       setLoading(false);
     }
-  }, [headers, isHospitalAdmin]);
+  }, [isHospitalAdmin, router]);
 
   useEffect(() => {
     load();
@@ -102,9 +105,9 @@ export default function StaffPage() {
     setFormError(null);
     setSubmitting(true);
     try {
-      const res = await fetch(`${API_BASE}/api/staff/invites/`, {
+      const res = await authFetch("/api/staff/invites/", {
         method: "POST",
-        headers: { ...headers(), "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
       const body = await res.json();
@@ -117,7 +120,11 @@ export default function StaffPage() {
       setForm(EMPTY_FORM);
       setShowForm(false);
       await load();
-    } catch {
+    } catch (err) {
+      if (err instanceof SessionExpiredError) {
+        router.replace("/login");
+        return;
+      }
       setFormError("Could not reach the server.");
     } finally {
       setSubmitting(false);
@@ -125,11 +132,13 @@ export default function StaffPage() {
   };
 
   const revoke = async (id: string) => {
-    await fetch(`${API_BASE}/api/staff/invites/${id}/revoke/`, {
-      method: "POST",
-      headers: headers(),
-    });
-    await load();
+    try {
+      await authFetch(`/api/staff/invites/${id}/revoke/`, { method: "POST" });
+      await load();
+    } catch (err) {
+      if (err instanceof SessionExpiredError) router.replace("/login");
+      else setError("Could not revoke that invitation.");
+    }
   };
 
   const copyLink = async (token: string) => {
@@ -328,7 +337,23 @@ export default function StaffPage() {
             </div>
           </div>
         </div>
-        {staff.length === 0 ? (
+        {loadFailed ? (
+          <div className="mc-empty">
+            <span className="mc-empty-icon">
+              <AlertCircle size={20} strokeWidth={1.9} aria-hidden />
+            </span>
+            <span className="mc-empty-title">Couldn&apos;t load your team</span>
+            <span className="mc-empty-text">
+              This is a problem reaching the server, not an empty team — your
+              staff records are unaffected.
+            </span>
+            <span className="mc-empty-actions">
+              <button className="mc-btn" onClick={() => load()}>
+                Try again
+              </button>
+            </span>
+          </div>
+        ) : staff.length === 0 ? (
           <div className="mc-empty">
             <span className="mc-empty-icon">
               <Stethoscope size={20} strokeWidth={1.9} aria-hidden />

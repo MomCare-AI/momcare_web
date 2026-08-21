@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { setAccessToken } from "@/core/api/authFetch";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -41,8 +42,7 @@ export default function LoginPage() {
         return;
       }
 
-      // Store access token and redirect to dashboard
-      localStorage.setItem("access_token", data.access);
+      setAccessToken(data.access);
       router.push("/dashboard");
     } catch {
       setError(

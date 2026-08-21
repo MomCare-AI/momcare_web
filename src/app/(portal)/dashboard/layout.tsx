@@ -23,9 +23,12 @@ import {
   Users,
   X,
 } from "lucide-react";
+import {
+  authJson,
+  clearAccessToken,
+  SessionExpiredError,
+} from "@/core/api/authFetch";
 import "../../portal.css";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 export interface OrgSummary {
   id: string;
@@ -118,33 +121,23 @@ export default function DashboardLayout({
   const [menuOpen, setMenuOpen] = useState(false);
 
   const load = useCallback(async () => {
-    const token = localStorage.getItem("access_token");
-    if (!token) {
-      router.replace("/login");
-      return;
-    }
-    const headers = { Authorization: `Bearer ${token}` };
-
     try {
-      const [orgRes, meRes] = await Promise.all([
-        fetch(`${API_BASE}/api/organization/me/`, { headers }),
-        fetch(`${API_BASE}/api/auth/me/`, { headers }),
+      // authFetch refreshes once on a 401, so an hour-old session recovers
+      // silently instead of bouncing the user out mid-task.
+      const [org, me] = await Promise.all([
+        authJson<OrgSummary>("/api/organization/me/"),
+        authJson<CurrentUser>("/api/auth/me/"),
       ]);
-
-      if (orgRes.status === 401 || meRes.status === 401) {
-        localStorage.removeItem("access_token");
+      setOrg(org);
+      setUser(me);
+    } catch (err) {
+      if (err instanceof SessionExpiredError) {
         router.replace("/login");
         return;
       }
-      if (!orgRes.ok) {
-        const body = await orgRes.json();
-        setError(body.detail ?? "Could not load your hospital.");
-        return;
-      }
-      setOrg(await orgRes.json());
-      setUser(await meRes.json());
-    } catch {
-      setError("Could not reach the server.");
+      setError(
+        err instanceof Error ? err.message : "Could not reach the server."
+      );
     }
   }, [router]);
 
@@ -157,7 +150,7 @@ export default function DashboardLayout({
   }, [pathname]);
 
   const signOut = () => {
-    localStorage.removeItem("access_token");
+    clearAccessToken();
     router.replace("/login");
   };
 
