@@ -129,9 +129,12 @@ export default function LandingPage() {
             <a href="#contact" className="nav-link">
               Contact
             </a>
+            <Link href="/login" className="nav-link">
+              Log in
+            </Link>
             <motion.div whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.96 }}>
-              <Link href="/login" className="nav-cta">
-                Doctor Onboard
+              <Link href="/register" className="nav-cta">
+                Register Hospital
               </Link>
             </motion.div>
           </div>
@@ -170,8 +173,8 @@ export default function LandingPage() {
                 whileHover={{ scale: 1.05, y: -2 }}
                 whileTap={{ scale: 0.97 }}
               >
-                <Link href="/login" className="btn-primary">
-                  Start Onboarding
+                <Link href="/register" className="btn-primary">
+                  Register your hospital
                 </Link>
               </motion.div>
               <motion.a href="#how" className="btn-ghost" whileHover={{ x: 6 }}>
@@ -516,8 +519,8 @@ export default function LandingPage() {
               whileHover={{ scale: 1.05, y: -2 }}
               whileTap={{ scale: 0.97 }}
             >
-              <Link href="/login" className="btn-primary btn-lg">
-                Doctor Onboarding
+              <Link href="/register" className="btn-primary btn-lg">
+                Get started
               </Link>
             </motion.div>
             <motion.a
