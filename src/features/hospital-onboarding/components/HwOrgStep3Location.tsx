@@ -2,7 +2,11 @@
 
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { orgStep3Schema, type OrgStep3Data } from "./hwSchemas";
+import {
+  orgStep3Schema,
+  LICENSE_AUTHORITIES,
+  type OrgStep3Data,
+} from "./hwSchemas";
 
 const COUNTRIES = [
   "Afghanistan",
@@ -263,13 +267,41 @@ export default function HwOrgStep3Location({
 
         <div className="hw-field hw-mt-lg">
           <label className="hw-label">
+            Issuing authority <span className="hw-req">*</span>
+          </label>
+          <select
+            {...register("licenseAuthority")}
+            defaultValue=""
+            className={`hw-input hw-select${errors.licenseAuthority ? " hw-input-err" : ""}`}
+          >
+            <option value="" disabled>
+              Select the regulator that licensed your facility
+            </option>
+            {LICENSE_AUTHORITIES.map((a) => (
+              <option key={a.value} value={a.value}>
+                {a.label}
+              </option>
+            ))}
+          </select>
+          <span className="hw-hint">
+            Hospitals and clinics are licensed provincially, not by PMDC.
+          </span>
+          {errors.licenseAuthority && (
+            <span className="hw-err-msg">
+              {errors.licenseAuthority.message}
+            </span>
+          )}
+        </div>
+
+        <div className="hw-field hw-mt">
+          <label className="hw-label">
             Self-declared license / registration no.{" "}
             <span className="hw-req">*</span>
           </label>
           <input
             {...register("licenseNo")}
             type="text"
-            placeholder="e.g. MOH-2024-12345 or CQC-12345"
+            placeholder="e.g. PHC-2026-LHR-441"
             className={`hw-input${errors.licenseNo ? " hw-input-err" : ""}`}
           />
           <div className="hw-info-badge">

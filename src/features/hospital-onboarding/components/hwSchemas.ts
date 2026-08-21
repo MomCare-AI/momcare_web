@@ -45,7 +45,24 @@ export const orgStep3Schema = z.object({
   postalCode: z.string().min(2, "Postal code is required"),
   country: z.string().min(1, "Country is required"),
   licenseNo: z.string().min(2, "License / registration number is required"),
+  licenseAuthority: z
+    .string()
+    .min(1, "Select the authority that issued your licence"),
 });
+
+/** Facilities in Pakistan are licensed provincially — PMDC registers individual
+ *  practitioners, not establishments. Capturing the issuer tells the reviewer
+ *  which public register to search. Values must match LICENSE_AUTHORITY_CHOICES
+ *  in the backend's organization/models.py. */
+export const LICENSE_AUTHORITIES = [
+  { value: "phc", label: "Punjab Healthcare Commission (PHC)" },
+  { value: "shcc", label: "Sindh Healthcare Commission (SHCC)" },
+  { value: "kphcc", label: "KP Healthcare Commission" },
+  { value: "bhcc", label: "Balochistan Healthcare Commission" },
+  { value: "ihra", label: "Islamabad Healthcare Regulatory Authority (IHRA)" },
+  { value: "ajk_gb", label: "AJK / Gilgit-Baltistan health department" },
+  { value: "other", label: "Other / not listed" },
+] as const;
 
 export type Step1Data = z.infer<typeof step1Schema>;
 export type OrgStep1Data = z.infer<typeof orgStep1Schema>;

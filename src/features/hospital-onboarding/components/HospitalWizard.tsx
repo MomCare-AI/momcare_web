@@ -14,6 +14,7 @@ import type {
   OrgStep2Data,
   OrgStep3Data,
 } from "./hwSchemas";
+import { registerHospital, type WizardFormData } from "../api/registerHospital";
 
 type WizardData = Partial<
   Step1Data & OrgStep1Data & OrgStep2Data & OrgStep3Data
@@ -30,12 +31,31 @@ export default function HospitalWizard() {
   const [step, setStep] = useState(0);
   const [data, setData] = useState<WizardData>({});
   const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const advance = (stepData: WizardData) => {
     setData((d) => ({ ...d, ...stepData }));
     setStep((s) => s + 1);
   };
   const back = () => setStep((s) => Math.max(0, s - 1));
+
+  const handleFinalSubmit = async (stepData: WizardData) => {
+    const merged = { ...data, ...stepData } as WizardFormData;
+    setIsSubmitting(true);
+    setSubmitError(null);
+    try {
+      await registerHospital(merged);
+      setData(merged);
+      setStep(STEPS.length);
+    } catch (err) {
+      setSubmitError(
+        err instanceof Error ? err.message : "Registration failed."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const isDone = step >= STEPS.length;
 
@@ -150,7 +170,7 @@ export default function HospitalWizard() {
               {step === 3 && (
                 <HwOrgStep3Location
                   defaultValues={data}
-                  onSubmit={(d) => advance(d)}
+                  onSubmit={handleFinalSubmit}
                   onBack={back}
                 />
               )}
@@ -162,9 +182,19 @@ export default function HospitalWizard() {
         {/* Fixed bottom action bar — outside AnimatePresence so it never scrolls */}
         {!isDone && (
           <div className="hw-actions-wrap">
+            {submitError && (
+              <div className="hw-error-banner" role="alert">
+                {submitError}
+              </div>
+            )}
             <div className="hw-actions">
               {step > 0 && (
-                <button type="button" onClick={back} className="hw-btn-ghost">
+                <button
+                  type="button"
+                  onClick={back}
+                  disabled={isSubmitting}
+                  className="hw-btn-ghost"
+                >
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                     <path
                       d="M13 8H3M7 12l-4-4 4-4"
@@ -180,18 +210,25 @@ export default function HospitalWizard() {
               <button
                 type="submit"
                 form="hw-step-form"
+                disabled={isSubmitting}
                 className="hw-btn-primary"
               >
-                {step === STEPS.length - 1 ? "Submit application" : "Continue"}
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                  <path
-                    d="M3 8h10M9 4l4 4-4 4"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
+                {isSubmitting
+                  ? "Submitting…"
+                  : step === STEPS.length - 1
+                    ? "Submit application"
+                    : "Continue"}
+                {!isSubmitting && (
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path
+                      d="M3 8h10M9 4l4 4-4 4"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                )}
               </button>
             </div>
           </div>

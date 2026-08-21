@@ -2434,6 +2434,20 @@ body {
   display: none;
 }
 
+/* Submission error banner */
+.hw-error-banner {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13.5px;
+  margin-bottom: 10px;
+  max-width: 620px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
 /* Action bar wrapper — sits outside the scroll area, always visible */
 .hw-actions-wrap {
   flex-shrink: 0;
