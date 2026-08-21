@@ -51,18 +51,18 @@ export default function HwSuccess() {
         {[
           {
             step: "01",
-            title: "Email confirmation",
-            body: "A verification link has been sent to your inbox. Confirm it to activate your personal account.",
+            title: "Application received",
+            body: "A confirmation has been sent to your inbox. If it doesn't arrive, your address may be wrong — tell us before the decision is sent to it.",
           },
           {
             step: "02",
-            title: "Admin review",
-            body: "A platform admin reviews your organization details — name, address, and phone — against public records.",
+            title: "Licence review",
+            body: "A platform admin checks your licence against the register of the authority that issued it, and may call you on a number published there to confirm your role.",
           },
           {
             step: "03",
             title: "Access granted",
-            body: "Once approved, you receive full owner access and can start onboarding staff and doctors.",
+            body: "You can't sign in until the review is complete. We'll email you either way, and once approved you can start inviting your clinical team.",
           },
         ].map((item, i) => (
           <motion.div

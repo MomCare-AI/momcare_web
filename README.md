@@ -5,10 +5,17 @@ portals — **doctor**, **ngo**, and **admin** — from a single app. It's a pur
 client for a separate **Django REST API** backend; there is no database or
 server-owned data layer in this repo.
 
-Auth is token-based: the API returns a token on login, which is attached to
-every request via the `Authorization` header (see `src/core/api/api-client.ts`).
-No Django backend is connected yet — `authService.login`/`register` check
-`src/mockData/users.json` directly for now (see `docs/conventions.md`).
+Auth is token-based and **connected to the real Django API**. Login returns a JWT
+access token; the refresh token lives in an HttpOnly cookie and never passes
+through JavaScript. Authenticated requests go through `src/core/api/authFetch.ts`,
+which attaches the token and, on a 401, refreshes once and retries before giving
+up — so an hour-old session recovers silently instead of dumping a clinician at
+the login screen mid-task.
+
+Registration is an **application**, not a sign-up: `/register` submits a hospital
+for review and receives no token, and sign-in is refused until a platform admin
+approves it. Clinical staff never self-register — a hospital admin invites them,
+and they set their own password at `/invite/<token>`.
 
 ## Tech stack
 
