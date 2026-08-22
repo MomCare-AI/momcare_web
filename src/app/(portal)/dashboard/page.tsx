@@ -72,7 +72,7 @@ export default function OverviewPage() {
           </span>
         </Link>
 
-        <div className="mc-kpi">
+        <Link href="/dashboard/patients" className="mc-kpi">
           <div className="mc-kpi-top">
             <span className="mc-kpi-label">Patients</span>
             <span className="mc-kpi-icon">
@@ -80,8 +80,12 @@ export default function OverviewPage() {
             </span>
           </div>
           <span className="mc-kpi-value">{org.patient_count}</span>
-          <span className="mc-kpi-foot">Enrolment not yet available</span>
-        </div>
+          <span className="mc-kpi-foot">
+            {hasPatients
+              ? "Enrolled at this hospital"
+              : "No patients enrolled yet"}
+          </span>
+        </Link>
 
         <div className="mc-kpi">
           <div className="mc-kpi-top">
@@ -108,13 +112,16 @@ export default function OverviewPage() {
 
       {isHospitalAdmin && (
         <div className="mc-actions">
-          <Link href="/dashboard/staff" className="mc-btn">
+          <Link href="/dashboard/patients/new" className="mc-btn">
             <UserPlus size={15} strokeWidth={2} aria-hidden />
+            Enrol patient
+          </Link>
+          <Link href="/dashboard/staff" className="mc-btn-ghost">
             Invite staff
           </Link>
           <span className="mc-badge mc-badge-neutral">
             <Info size={12} strokeWidth={2.2} aria-hidden />
-            Patient &amp; monitoring actions arrive with the clinical module
+            Monitoring and alerts arrive with the next module
           </span>
         </div>
       )}

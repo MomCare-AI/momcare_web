@@ -78,7 +78,7 @@ export function usePortal(): PortalValue {
 const NAV = [
   { href: "/dashboard", label: "Overview", Icon: LayoutDashboard },
   { href: "/dashboard/staff", label: "Doctors & Staff", Icon: Stethoscope },
-  { href: "/dashboard/patients", label: "Patients", Icon: Users, soon: true },
+  { href: "/dashboard/patients", label: "Patients", Icon: Users },
   {
     href: "/dashboard/monitoring",
     label: "Health Monitoring",
@@ -203,12 +203,20 @@ export default function DashboardLayout({
         </span>
       );
     }
+    // Sub-pages keep their section highlighted — /dashboard/patients/new should
+    // still show Patients as current. Overview matches exactly, or it would
+    // light up on every page.
+    const isCurrent =
+      item.href === "/dashboard"
+        ? pathname === item.href
+        : pathname.startsWith(item.href);
+
     return (
       <Link
         key={item.href}
         href={item.href}
         className="mc-navlink"
-        aria-current={pathname === item.href ? "page" : undefined}
+        aria-current={isCurrent ? "page" : undefined}
       >
         <Icon size={16} strokeWidth={1.9} aria-hidden />
         {item.label}

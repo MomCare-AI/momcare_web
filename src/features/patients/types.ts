@@ -1,0 +1,128 @@
+/** Mirrors the backend serializers in core/patients/api/serializers.py. */
+
+export type RiskAnswer = "yes" | "no" | "unknown";
+
+export type PregnancyStatus =
+  | "active"
+  | "delivered"
+  | "miscarriage"
+  | "termination"
+  | "stillbirth"
+  | "ended_other";
+
+export const RISK_FACTORS = [
+  { field: "previous_c_section", label: "Previous C-section" },
+  { field: "previous_preeclampsia", label: "Previous preeclampsia" },
+  {
+    field: "previous_gestational_diabetes",
+    label: "Previous gestational diabetes",
+  },
+  { field: "previous_preterm_birth", label: "Previous preterm birth" },
+  { field: "chronic_hypertension", label: "Chronic hypertension" },
+  { field: "diabetes", label: "Diabetes" },
+  { field: "multiple_pregnancy", label: "Multiple pregnancy" },
+] as const;
+
+export type RiskFactorField = (typeof RISK_FACTORS)[number]["field"];
+
+export interface PregnancyRiskFactors extends Record<
+  RiskFactorField,
+  RiskAnswer
+> {
+  id: string;
+  present_factors: RiskFactorField[];
+  unanswered_factors: RiskFactorField[];
+}
+
+export interface Pregnancy {
+  id: string;
+  lmp: string | null;
+  edd: string | null;
+  edd_source: "lmp" | "ultrasound" | "clinical";
+  edd_source_display: string;
+  edd_confirmed_at: string | null;
+  /** Derived from EDD on every read — never stored, so it cannot go stale. */
+  gestational_age_weeks: number | null;
+  gestational_age_days: number | null;
+  gestational_age_display: string;
+  gravida: number | null;
+  para: number | null;
+  assigned_staff: string | null;
+  assigned_staff_name: string;
+  assigned_staff_is_active: boolean;
+  /** False when nobody is assigned OR the assigned clinician has left. Both are
+   *  the same silent failure once alerts start routing to a named person. */
+  has_responsible_clinician: boolean;
+  status: PregnancyStatus;
+  status_display: string;
+  outcome_date: string | null;
+  notes: string;
+  risk_factors: PregnancyRiskFactors | null;
+  created_at: string;
+}
+
+export interface Consent {
+  id: string;
+  status: "granted" | "withdrawn";
+  status_display: string;
+  recorded_at: string;
+  version: string;
+  method: string;
+  method_display: string;
+  recorded_by_name: string;
+  note: string;
+}
+
+export interface PatientListItem {
+  id: string;
+  mrn: string | null;
+  full_name: string;
+  phone: string;
+  cnic: string;
+  date_of_birth: string | null;
+  gestational_age_display: string | null;
+  pregnancy_status: PregnancyStatus | null;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface PatientDetail {
+  id: string;
+  mrn: string | null;
+  first_name: string;
+  last_name: string;
+  full_name: string;
+  date_of_birth: string | null;
+  gender: string;
+  phone: string;
+  cnic: string;
+  blood_group: string;
+  emergency_contact_name: string;
+  emergency_contact_phone: string;
+  emergency_contact_relation: string;
+  has_app_account: boolean;
+  location_name: string;
+  current_pregnancy: Pregnancy | null;
+  consents: Consent[];
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface Paginated<T> {
+  count: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
+}
+
+export const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
+
+/** Clinical state, so it earns colour. Never colour alone — each carries a label. */
+export function pregnancyTone(status: PregnancyStatus | null): string {
+  if (status === "active") return "stable";
+  if (status === "delivered") return "info";
+  return "neutral";
+}
