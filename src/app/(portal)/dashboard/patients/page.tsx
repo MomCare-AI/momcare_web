@@ -14,6 +14,7 @@ import {
 
 import { SessionExpiredError } from "@/core/api/authFetch";
 import { usePatientList } from "@/features/patients/hooks/usePatients";
+import { RiskBadge } from "@/features/monitoring/components/RiskBadge";
 import { pregnancyTone } from "@/features/patients/types";
 import { usePortal } from "../layout";
 
@@ -145,13 +146,16 @@ export default function PatientsPage() {
                 {p.gestational_age_display && (
                   <span className="mc-ga">{p.gestational_age_display}</span>
                 )}
-                {p.pregnancy_status ? (
+                {p.pregnancy_status === "active" ? (
+                  /* Risk is what decides which row to open first, so for an
+                     active pregnancy it replaces the status badge rather than
+                     crowding in beside it. */
+                  <RiskBadge level={p.risk_level} />
+                ) : p.pregnancy_status ? (
                   <span
                     className={`mc-badge mc-badge-${pregnancyTone(p.pregnancy_status)}`}
                   >
-                    {p.pregnancy_status === "active"
-                      ? "Pregnant"
-                      : "No active pregnancy"}
+                    No active pregnancy
                   </span>
                 ) : (
                   <span className="mc-badge mc-badge-neutral">

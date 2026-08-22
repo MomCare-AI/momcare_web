@@ -1,3 +1,5 @@
+import type { RiskLevel } from "@/features/monitoring/types";
+
 /** Mirrors the backend serializers in core/patients/api/serializers.py. */
 
 export type RiskAnswer = "yes" | "no" | "unknown";
@@ -80,8 +82,12 @@ export interface PatientListItem {
   phone: string;
   cnic: string;
   date_of_birth: string | null;
+  pregnancy_id: string | null;
   gestational_age_display: string | null;
   pregnancy_status: PregnancyStatus | null;
+  /** Null means never assessed — which the list must not render as "stable". */
+  risk_level: RiskLevel | null;
+  risk_assessed_at: string | null;
   is_active: boolean;
   created_at: string;
 }

@@ -906,6 +906,85 @@ select.mc-input {
   border-color: #cfe8e0;
 }
 
+/* ── Vitals ──────────────────────────────────────────────────────────── */
+.mc-vitals-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1px;
+  background: var(--c-border-soft);
+  border-top: 1px solid var(--c-border-soft);
+  border-bottom: 1px solid var(--c-border-soft);
+}
+
+.mc-vital {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 15px 18px;
+  background: var(--c-card);
+  border: none;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.mc-vital:hover {
+  background: var(--c-teal-wash);
+}
+/* The selected measurement is the one plotted below. */
+.mc-vital[aria-pressed="true"] {
+  background: var(--c-teal-wash);
+  box-shadow: inset 3px 0 0 var(--c-teal);
+}
+.mc-vital-missing {
+  cursor: default;
+  opacity: 0.72;
+}
+
+.mc-vital-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--c-faint);
+}
+.mc-vital-value {
+  font-size: 21px;
+  font-weight: 700;
+  color: var(--c-ink);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.15;
+}
+.mc-vital-age {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11.5px;
+  color: var(--c-faint);
+}
+/* Stale readings are called out: a panel that looks calm because data stopped
+   arriving is worse than one showing a bad number. */
+.mc-vital-age.is-stale {
+  color: #96631a;
+  font-weight: 600;
+}
+
+/* Simulated data must never be mistaken for a measurement. */
+.mc-sim-tag {
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #2b5f94;
+  background: #eef4fa;
+  border: 1px solid #d3e2f0;
+  border-radius: 3px;
+  padding: 1px 4px;
+}
+
 /* ── AI insight — decision support, not science fiction ──────────────── */
 .mc-ai {
   border: 1px solid #d3e2f0;
@@ -1022,5 +1101,393 @@ select.mc-input {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   RISK — the clinical judgement surface
+
+   Colour here is meaning, never decoration, and it never travels alone:
+   every level carries its word, and severity is also encoded in the left
+   rail of a queue row so a scan works before any colour is read.
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* An unreviewed assessment stays visibly unreviewed. */
+.mc-badge-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  margin-left: 1px;
+}
+
+.mc-foot-note {
+  font-size: 12.5px;
+  color: var(--c-faint);
+}
+
+.mc-note-line {
+  font-size: 13px;
+  color: var(--c-body);
+  margin: 10px 0 0;
+}
+.mc-note-line strong {
+  color: var(--c-ink);
+  font-weight: 600;
+}
+
+/* ── Findings ────────────────────────────────────────────────────────── */
+.mc-findings {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.mc-finding {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13.5px;
+  color: var(--c-ink);
+  line-height: 1.5;
+}
+.mc-finding-mark {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-top: 7px;
+  background: var(--c-faint);
+}
+.mc-finding.is-moderate .mc-finding-mark {
+  background: var(--c-moderate);
+}
+.mc-finding.is-high .mc-finding-mark {
+  background: var(--c-high);
+}
+.mc-finding.is-critical .mc-finding-mark {
+  background: var(--c-critical);
+}
+
+/* ── Transition history ──────────────────────────────────────────────── */
+.mc-timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 9px;
+}
+.mc-timeline-row {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  flex-wrap: wrap;
+  font-size: 12.5px;
+}
+.mc-timeline-when {
+  color: var(--c-faint);
+  font-variant-numeric: tabular-nums;
+}
+.mc-timeline-why {
+  color: var(--c-body);
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+/* ── Attention queue ─────────────────────────────────────────────────── */
+.mc-queue {
+  display: grid;
+  gap: 1px;
+  background: var(--c-border-soft);
+}
+.mc-queue-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 13px 18px 13px 15px;
+  background: var(--c-card);
+  text-decoration: none;
+  /* Severity is in the rail as well as the badge, so the eye sorts the list
+     before it reads a single word. */
+  border-left: 3px solid var(--c-border);
+  transition: background 0.12s ease;
+}
+.mc-queue-row:hover {
+  background: var(--c-teal-wash);
+}
+.mc-queue-row:focus-visible {
+  outline: 2px solid var(--c-teal);
+  outline-offset: -2px;
+}
+.mc-queue-row.is-moderate {
+  border-left-color: var(--c-moderate);
+}
+.mc-queue-row.is-high {
+  border-left-color: var(--c-high);
+}
+.mc-queue-row.is-critical {
+  border-left-color: var(--c-critical);
+}
+
+.mc-queue-main {
+  min-width: 0;
+  flex: 1 1 260px;
+}
+.mc-queue-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.mc-queue-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--c-ink);
+}
+.mc-queue-reasons {
+  display: grid;
+  gap: 2px;
+  margin-top: 4px;
+  font-size: 12.5px;
+  color: var(--c-body);
+}
+.mc-queue-meta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--c-faint);
+  font-variant-numeric: tabular-nums;
+  padding-top: 2px;
+}
+.mc-queue-meta .is-stale {
+  color: var(--c-moderate);
+  font-weight: 600;
+}
+.mc-queue-unassigned {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--c-high);
+  font-weight: 600;
+}
+.mc-queue-more {
+  background: var(--c-card);
+  padding: 10px 18px;
+  font-size: 12.5px;
+  color: var(--c-faint);
+}
+
+@media (max-width: 640px) {
+  .mc-queue-meta {
+    gap: 10px;
+  }
+  .mc-queue-row {
+    padding: 12px 14px;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   ALERTS — the push side of monitoring
+
+   The badge counts only unanswered alerts. A number that stays after the
+   work is done is a number people stop reading, and this one has to keep
+   working at 3am on the fifth night of a run of shifts.
+   ══════════════════════════════════════════════════════════════════════ */
+
+.mc-bell-wrap {
+  position: relative;
+}
+
+.mc-bell-count {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--c-critical);
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  border: 2px solid var(--c-card);
+  box-sizing: content-box;
+}
+
+.mc-bell-panel {
+  position: absolute;
+  top: calc(100% + 9px);
+  right: 0;
+  width: 400px;
+  max-width: calc(100vw - 24px);
+  max-height: min(560px, calc(100vh - 110px));
+  overflow-y: auto;
+  background: var(--c-card);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-card);
+  box-shadow: var(--shadow-pop);
+  z-index: 60;
+}
+
+.mc-bell-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--c-border-soft);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--c-ink);
+  position: sticky;
+  top: 0;
+  background: var(--c-card);
+}
+.mc-bell-head-count {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--c-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.mc-bell-empty {
+  padding: 22px 16px;
+  font-size: 12.5px;
+  color: var(--c-faint);
+  line-height: 1.55;
+}
+
+.mc-bell-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.mc-bell-item {
+  padding: 12px 16px 12px 13px;
+  border-bottom: 1px solid var(--c-border-soft);
+  /* Severity in the rail as well as the badge, so a glance sorts the panel. */
+  border-left: 3px solid var(--c-border);
+}
+.mc-bell-item:last-child {
+  border-bottom: none;
+}
+.mc-bell-item.is-moderate {
+  border-left-color: var(--c-moderate);
+}
+.mc-bell-item.is-high {
+  border-left-color: var(--c-high);
+}
+.mc-bell-item.is-critical {
+  border-left-color: var(--c-critical);
+}
+/* Answered alerts stay visible — the patient is still unwell — but recede so
+   the unanswered ones keep the eye. */
+.mc-bell-item.is-answered {
+  background: var(--c-ground);
+}
+
+.mc-bell-item-top {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+.mc-bell-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--c-ink);
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.mc-bell-when {
+  font-size: 11.5px;
+  color: var(--c-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.mc-bell-reasons {
+  display: grid;
+  gap: 2px;
+  margin-top: 5px;
+  font-size: 12.5px;
+  color: var(--c-body);
+  line-height: 1.45;
+}
+
+.mc-bell-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+  font-size: 11.5px;
+  color: var(--c-faint);
+}
+.mc-bell-unassigned {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--c-high);
+  font-weight: 600;
+}
+
+.mc-bell-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+.mc-bell-clock {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11.5px;
+  color: var(--c-faint);
+  font-variant-numeric: tabular-nums;
+}
+/* The last few minutes before a supervisor is paged. */
+.mc-bell-clock.is-imminent {
+  color: var(--c-critical);
+  font-weight: 600;
+}
+.mc-bell-answered {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--c-stable);
+}
+.mc-bell-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--c-teal);
+  text-decoration: none;
+}
+.mc-bell-open:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 640px) {
+  .mc-bell-panel {
+    position: fixed;
+    top: 62px;
+    right: 12px;
+    left: 12px;
+    width: auto;
   }
 }

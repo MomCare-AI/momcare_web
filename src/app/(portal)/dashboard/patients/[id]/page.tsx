@@ -8,7 +8,6 @@ import {
   AlertCircle,
   AlertTriangle,
   ArrowLeft,
-  Brain,
   CheckCircle2,
   HeartPulse,
   ShieldCheck,
@@ -20,6 +19,8 @@ import {
   usePregnancies,
 } from "@/features/patients/hooks/usePatients";
 import { RISK_FACTORS, pregnancyTone } from "@/features/patients/types";
+import { RiskPanel } from "@/features/monitoring/components/RiskPanel";
+import { VitalsPanel } from "@/features/monitoring/components/VitalsPanel";
 
 type Tab = "overview" | "pregnancy" | "history" | "consent";
 
@@ -178,39 +179,9 @@ export default function PatientProfilePage({
             </div>
           </section>
 
-          <div className="mc-grid-even">
-            <section className="mc-card">
-              <div className="mc-card-head">
-                <div className="mc-card-title">Vitals</div>
-              </div>
-              <div className="mc-empty">
-                <span className="mc-empty-icon">
-                  <HeartPulse size={20} strokeWidth={1.9} aria-hidden />
-                </span>
-                <span className="mc-empty-title">No readings yet</span>
-                <span className="mc-empty-text">
-                  Blood pressure, heart rate and temperature will appear here
-                  once a monitoring band is paired.
-                </span>
-              </div>
-            </section>
+          {current && <VitalsPanel pregnancyId={current.id} />}
 
-            <section className="mc-card">
-              <div className="mc-card-head">
-                <div className="mc-card-title">Risk assessment</div>
-              </div>
-              <div className="mc-empty">
-                <span className="mc-empty-icon">
-                  <Brain size={20} strokeWidth={1.9} aria-hidden />
-                </span>
-                <span className="mc-empty-title">Not yet assessed</span>
-                <span className="mc-empty-text">
-                  Risk scoring runs on incoming readings. Recorded history is
-                  shown under Pregnancy.
-                </span>
-              </div>
-            </section>
-          </div>
+          {current && <RiskPanel pregnancyId={current.id} />}
         </>
       )}
 
