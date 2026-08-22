@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -12,12 +12,11 @@ import {
 } from "lucide-react";
 
 import { SessionExpiredError } from "@/core/api/authFetch";
+import type { EnrolmentInput } from "@/features/patients/api";
 import {
-  enrolPatient,
-  listClinicians,
-  type EnrolmentInput,
-  type StaffOption,
-} from "@/features/patients/api";
+  useClinicians,
+  useEnrolPatient,
+} from "@/features/patients/hooks/usePatients";
 import {
   BLOOD_GROUPS,
   RISK_FACTORS,
@@ -79,19 +78,17 @@ export default function EnrolPatientPage() {
       ) as Record<RiskFactorField, RiskAnswer>
   );
   const [assignedStaff, setAssignedStaff] = useState("");
-  const [clinicians, setClinicians] = useState<StaffOption[]>([]);
   const [consentGiven, setConsentGiven] = useState(false);
   const [consentMethod, setConsentMethod] = useState("in_person");
 
-  useEffect(() => {
-    // Convenience only — the API scopes this list to the hospital and
-    // re-validates the choice on save, so a tampered value cannot get through.
-    listClinicians()
-      .then(setClinicians)
-      .catch(() => setClinicians([]));
-  }, []);
+  // Convenience only — the API scopes this list to the hospital and
+  // re-validates the choice on save, so a tampered value cannot get through.
+  const { data: clinicians = [] } = useClinicians();
+  const enrol = useEnrolPatient();
 
-  const [submitting, setSubmitting] = useState(false);
+  // Pending state comes from the mutation rather than a parallel boolean, so
+  // the button can never disagree with whether a request is actually in flight.
+  const submitting = enrol.isPending;
   const [error, setError] = useState<string | null>(null);
 
   // Shown live so the person entering the LMP can sanity-check it against what
@@ -146,9 +143,10 @@ export default function EnrolPatientPage() {
       };
     }
 
-    setSubmitting(true);
     try {
-      const patient = await enrolPatient(payload);
+      // The mutation invalidates the patient list and the dashboard count, so
+      // both are correct by the time the profile renders.
+      const patient = await enrol.mutateAsync(payload);
       router.push(`/dashboard/patients/${patient.id}?enrolled=1`);
     } catch (err) {
       if (err instanceof SessionExpiredError) {
@@ -158,8 +156,6 @@ export default function EnrolPatientPage() {
       setError(
         err instanceof Error ? err.message : "Could not enrol this patient."
       );
-    } finally {
-      setSubmitting(false);
     }
   };
 

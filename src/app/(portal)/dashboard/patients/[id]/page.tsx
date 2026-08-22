@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useCallback, useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -15,13 +15,11 @@ import {
 } from "lucide-react";
 
 import { SessionExpiredError } from "@/core/api/authFetch";
-import { getPatient, listPregnancies } from "@/features/patients/api";
 import {
-  RISK_FACTORS,
-  pregnancyTone,
-  type PatientDetail,
-  type Pregnancy,
-} from "@/features/patients/types";
+  usePatient,
+  usePregnancies,
+} from "@/features/patients/hooks/usePatients";
+import { RISK_FACTORS, pregnancyTone } from "@/features/patients/types";
 
 type Tab = "overview" | "pregnancy" | "history" | "consent";
 
@@ -41,38 +39,21 @@ export default function PatientProfilePage({
   const router = useRouter();
   const justEnrolled = useSearchParams().get("enrolled") === "1";
 
-  const [patient, setPatient] = useState<PatientDetail | null>(null);
-  const [pregnancies, setPregnancies] = useState<Pregnancy[]>([]);
   const [tab, setTab] = useState<Tab>("overview");
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
 
-  const load = useCallback(async () => {
-    try {
-      const [detail, history] = await Promise.all([
-        getPatient(id),
-        listPregnancies(id),
-      ]);
-      setPatient(detail);
-      setPregnancies(history);
-    } catch (err) {
-      if (err instanceof SessionExpiredError) {
-        router.replace("/login");
-        return;
-      }
-      setError(
-        err instanceof Error ? err.message : "Could not load this patient."
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, [id, router]);
+  const patientQuery = usePatient(id);
+  const pregnancyQuery = usePregnancies(id);
+
+  const patient = patientQuery.data;
+  const pregnancies = pregnancyQuery.data ?? [];
+  const error = patientQuery.error ?? pregnancyQuery.error;
 
   useEffect(() => {
-    load();
-  }, [load]);
+    if (error instanceof SessionExpiredError) router.replace("/login");
+  }, [error, router]);
 
-  if (loading) return <div className="mc-loading">Loading patient…</div>;
+  if (patientQuery.isPending)
+    return <div className="mc-loading">Loading patient…</div>;
 
   if (error || !patient) {
     return (
@@ -82,7 +63,7 @@ export default function PatientProfilePage({
         </Link>
         <p className="mc-alert mc-alert-error" style={{ marginTop: 16 }}>
           <AlertCircle size={15} strokeWidth={2} aria-hidden />
-          {error ?? "Patient not found."}
+          {error instanceof Error ? error.message : "Patient not found."}
         </p>
       </>
     );

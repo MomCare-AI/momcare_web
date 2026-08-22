@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   AlertCircle,
@@ -12,7 +12,13 @@ import {
   X,
 } from "lucide-react";
 import { usePortal } from "../layout";
-import { authFetch, authJson, SessionExpiredError } from "@/core/api/authFetch";
+import { SessionExpiredError } from "@/core/api/authFetch";
+import {
+  useCreateInvite,
+  useInvites,
+  useRevokeInvite,
+  useStaffList,
+} from "@/features/staff/hooks/useStaff";
 
 const ROLES = [
   { code: "provider", label: "Doctor / Provider" },
@@ -20,27 +26,6 @@ const ROLES = [
   { code: "care_manager", label: "Care manager" },
   { code: "hospital_admin", label: "Hospital admin" },
 ];
-
-interface StaffMember {
-  id: string;
-  employee_id: string;
-  full_name: string;
-  email: string;
-  role_name: string;
-  role_code: string;
-  is_user_active: boolean;
-}
-
-interface Invite {
-  id: string;
-  email: string;
-  first_name: string;
-  last_name: string;
-  role_name: string;
-  token: string;
-  status: "pending" | "accepted" | "revoked" | "expired";
-  expires_at: string;
-}
 
 const EMPTY_FORM = {
   email: "",
@@ -53,93 +38,61 @@ export default function StaffPage() {
   const { isHospitalAdmin, refresh } = usePortal();
   const router = useRouter();
 
-  const [staff, setStaff] = useState<StaffMember[]>([]);
-  const [invites, setInvites] = useState<Invite[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [loadFailed, setLoadFailed] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
-
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
-  const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    setError(null);
-    try {
-      // A failed request must not render as "no staff yet" — an empty team and
-      // a broken server look identical to the user otherwise, which is a bad
-      // failure mode in clinical software.
-      setStaff(await authJson<StaffMember[]>("/api/staff/"));
+  const staffQuery = useStaffList();
+  const invitesQuery = useInvites(isHospitalAdmin);
+  const createInvite = useCreateInvite();
+  const revokeInvite = useRevokeInvite();
 
-      if (isHospitalAdmin) {
-        setInvites(await authJson<Invite[]>("/api/staff/invites/"));
-      }
-      setLoadFailed(false);
-    } catch (err) {
-      if (err instanceof SessionExpiredError) {
-        router.replace("/login");
-        return;
-      }
-      setLoadFailed(true);
-      setError(
-        err instanceof Error ? err.message : "Could not load your team."
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, [isHospitalAdmin, router]);
+  const staff = staffQuery.data ?? [];
+  const invites = invitesQuery.data ?? [];
+  const submitting = createInvite.isPending;
+
+  // A failed request must not render as "no staff yet" — an empty team and a
+  // broken server look identical to the user otherwise, which is a bad failure
+  // mode in clinical software.
+  const loadFailed = staffQuery.isError;
+  const error =
+    staffQuery.error && !(staffQuery.error instanceof SessionExpiredError)
+      ? staffQuery.error instanceof Error
+        ? staffQuery.error.message
+        : "Could not load your team."
+      : null;
 
   useEffect(() => {
-    load();
-  }, [load]);
+    if (staffQuery.error instanceof SessionExpiredError)
+      router.replace("/login");
+  }, [staffQuery.error, router]);
 
+  // The shell shows the staff count, so it refetches once the team is known.
   useEffect(() => {
-    if (!loading) refresh();
+    if (!staffQuery.isPending) refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [staff.length]);
 
   const submitInvite = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
-    setSubmitting(true);
     try {
-      const res = await authFetch("/api/staff/invites/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-      const body = await res.json();
-      if (!res.ok) {
-        setFormError(
-          body.email?.[0] ?? body.detail ?? "Could not create the invitation."
-        );
-        return;
-      }
+      await createInvite.mutateAsync(form);
       setForm(EMPTY_FORM);
       setShowForm(false);
-      await load();
     } catch (err) {
       if (err instanceof SessionExpiredError) {
         router.replace("/login");
         return;
       }
-      setFormError("Could not reach the server.");
-    } finally {
-      setSubmitting(false);
+      setFormError(
+        err instanceof Error ? err.message : "Could not reach the server."
+      );
     }
   };
 
-  const revoke = async (id: string) => {
-    try {
-      await authFetch(`/api/staff/invites/${id}/revoke/`, { method: "POST" });
-      await load();
-    } catch (err) {
-      if (err instanceof SessionExpiredError) router.replace("/login");
-      else setError("Could not revoke that invitation.");
-    }
-  };
+  const revoke = (id: string) => revokeInvite.mutate(id);
 
   const copyLink = async (token: string) => {
     await navigator.clipboard.writeText(
@@ -149,7 +102,8 @@ export default function StaffPage() {
     setTimeout(() => setCopied(null), 2000);
   };
 
-  if (loading) return <div className="mc-loading">Loading your team…</div>;
+  if (staffQuery.isPending)
+    return <div className="mc-loading">Loading your team…</div>;
 
   const pending = invites.filter((i) => i.status === "pending");
 
@@ -348,7 +302,7 @@ export default function StaffPage() {
               staff records are unaffected.
             </span>
             <span className="mc-empty-actions">
-              <button className="mc-btn" onClick={() => load()}>
+              <button className="mc-btn" onClick={() => staffQuery.refetch()}>
                 Try again
               </button>
             </span>

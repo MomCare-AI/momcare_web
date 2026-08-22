@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -23,40 +17,19 @@ import {
   Users,
   X,
 } from "lucide-react";
+import { clearAccessToken, SessionExpiredError } from "@/core/api/authFetch";
 import {
-  authJson,
-  clearAccessToken,
-  SessionExpiredError,
-} from "@/core/api/authFetch";
+  useCurrentUser,
+  useOrganization,
+  useRefreshPortal,
+  type CurrentUser,
+  type OrgSummary,
+} from "@/features/portal/hooks/usePortalData";
 import "../../portal.css";
 
-export interface OrgSummary {
-  id: string;
-  name: string;
-  status: "pending" | "approved" | "rejected" | "suspended";
-  status_display: string;
-  email: string;
-  phone: string;
-  license_no: string;
-  license_authority_display: string;
-  address_line1: string;
-  address_line2: string;
-  city: string;
-  state: string;
-  country: string;
-  owner_name: string;
-  staff_count: number;
-  patient_count: number;
-  location_count: number;
-}
-
-export interface CurrentUser {
-  id: string;
-  email: string;
-  first_name: string;
-  last_name: string;
-  role_code: string;
-}
+// Re-exported so pages can keep importing these from the layout they already
+// depend on; the shapes themselves live with the queries that fetch them.
+export type { CurrentUser, OrgSummary };
 
 interface PortalValue {
   org: OrgSummary;
@@ -115,35 +88,27 @@ export default function DashboardLayout({
   const router = useRouter();
   const pathname = usePathname();
 
-  const [org, setOrg] = useState<OrgSummary | null>(null);
-  const [user, setUser] = useState<CurrentUser | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const load = useCallback(async () => {
-    try {
-      // authFetch refreshes once on a 401, so an hour-old session recovers
-      // silently instead of bouncing the user out mid-task.
-      const [org, me] = await Promise.all([
-        authJson<OrgSummary>("/api/organization/me/"),
-        authJson<CurrentUser>("/api/auth/me/"),
-      ]);
-      setOrg(org);
-      setUser(me);
-    } catch (err) {
-      if (err instanceof SessionExpiredError) {
-        router.replace("/login");
-        return;
-      }
-      setError(
-        err instanceof Error ? err.message : "Could not reach the server."
-      );
-    }
-  }, [router]);
+  // authFetch refreshes once on a 401 underneath these, so an hour-old session
+  // recovers silently instead of bouncing the user out mid-task.
+  const orgQuery = useOrganization();
+  const userQuery = useCurrentUser();
+  const refresh = useRefreshPortal();
+
+  const org = orgQuery.data;
+  const user = userQuery.data;
+  const queryError = orgQuery.error ?? userQuery.error;
+  const error =
+    queryError && !(queryError instanceof SessionExpiredError)
+      ? queryError instanceof Error
+        ? queryError.message
+        : "Could not reach the server."
+      : null;
 
   useEffect(() => {
-    load();
-  }, [load]);
+    if (queryError instanceof SessionExpiredError) router.replace("/login");
+  }, [queryError, router]);
 
   useEffect(() => {
     setMenuOpen(false);
@@ -185,7 +150,7 @@ export default function DashboardLayout({
     org,
     user,
     isHospitalAdmin: user.role_code === "hospital_admin",
-    refresh: load,
+    refresh: async () => refresh(),
   };
 
   const renderLink = (item: (typeof NAV)[number]) => {

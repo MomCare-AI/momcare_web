@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -13,46 +13,26 @@ import {
 } from "lucide-react";
 
 import { SessionExpiredError } from "@/core/api/authFetch";
-import { listPatients } from "@/features/patients/api";
-import { pregnancyTone, type PatientListItem } from "@/features/patients/types";
+import { usePatientList } from "@/features/patients/hooks/usePatients";
+import { pregnancyTone } from "@/features/patients/types";
 import { usePortal } from "../layout";
 
 export default function PatientsPage() {
   const { isHospitalAdmin } = usePortal();
   const router = useRouter();
 
-  const [patients, setPatients] = useState<PatientListItem[]>([]);
-  const [count, setCount] = useState(0);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState("");
   const [query, setQuery] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
 
-  const load = useCallback(async () => {
-    setError(null);
-    try {
-      // Searching and paging happen on the server — the browser never receives
-      // rows it would then filter away.
-      const data = await listPatients({ search: query, page });
-      setPatients(data.results);
-      setCount(data.count);
-      setTotalPages(data.total_pages || 1);
-    } catch (err) {
-      if (err instanceof SessionExpiredError) {
-        router.replace("/login");
-        return;
-      }
-      setError(err instanceof Error ? err.message : "Could not load patients.");
-    } finally {
-      setLoading(false);
-    }
-  }, [query, page, router]);
+  // Searching and paging happen on the server — the browser never receives
+  // rows it would then filter away.
+  const { data, isPending, error } = usePatientList(query, page);
 
+  // An expired session is a routing concern, not something to render.
   useEffect(() => {
-    load();
-  }, [load]);
+    if (error instanceof SessionExpiredError) router.replace("/login");
+  }, [error, router]);
 
   const submitSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,8 +40,11 @@ export default function PatientsPage() {
     setQuery(search.trim());
   };
 
-  if (loading) return <div className="mc-loading">Loading patients…</div>;
+  if (isPending) return <div className="mc-loading">Loading patients…</div>;
 
+  const patients = data?.results ?? [];
+  const count = data?.count ?? 0;
+  const totalPages = data?.total_pages || 1;
   const isSearching = query.length > 0;
 
   return (
@@ -81,10 +64,10 @@ export default function PatientsPage() {
         </Link>
       </div>
 
-      {error && (
+      {error && !(error instanceof SessionExpiredError) && (
         <p className="mc-alert mc-alert-error">
           <AlertCircle size={15} strokeWidth={2} aria-hidden />
-          {error}
+          {error instanceof Error ? error.message : "Could not load patients."}
         </p>
       )}
 
