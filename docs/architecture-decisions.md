@@ -246,3 +246,48 @@ actual current behavior (login/register success and failure) instead of
 its old, now-stale "no backend yet" behavior. A new `auth.test.ts` was
 also added for `authService.login`/`register`, since they're now real,
 testable logic instead of a network call.
+
+## 2026-08-22 — Mock auth path removed; `authFetch` is the one API client
+
+Django is connected, so the mock login layer described in the 2026-08-10
+entry above is now dead code that contradicted itself: `auth.ts` still
+carried the comment "No Django backend yet" while real authentication ran
+elsewhere. Anyone reading `core/auth/` would have found a login flow that
+hadn't worked for weeks.
+
+Removed as one connected subgraph, verified to have no external importers
+before deletion: `core/auth/hooks/useAuth.ts`, `core/auth/services/auth.ts`,
+`core/auth/types.ts`, `core/api/api-client.ts` (axios, imported only by the
+mock service) and `src/mockData/users.json`. `axios` is left in
+`package.json` rather than touching dependencies mid-project — noted as
+minor remaining debt.
+
+`core/api/authFetch.ts` is now the single authoritative client. Its
+refresh-on-401 behaviour was previously untested despite being the riskiest
+code in the frontend — an expired token either recovers silently or dumps a
+clinician at the login screen mid-consultation. The seven tests that
+covered the deleted mock code were replaced with eleven covering the real
+client, including that two simultaneous 401s trigger exactly one refresh
+(the portal shell loads the organization and the user in parallel, so a
+race there would rotate away the token that had just been stored).
+
+## 2026-08-22 — `proxy.ts` deleted; route protection is client-side by design
+
+`proxy.ts` existed as a no-op returning `NextResponse.next()`, described in
+the 2026-08-09 entry as route-gating "UX polish". It could never have done
+that job: the access token lives in `localStorage`, `proxy.ts` runs on the
+server, and server middleware can only read cookies. That entry already
+anticipated this, listing a separate role cookie as a "future option, not
+yet needed".
+
+Rather than add that cookie, the file is removed. Protection already works
+where it can: `(portal)/dashboard/layout.tsx` redirects to `/login` when
+there is no token, and `authFetch` redirects when a refresh fails. Django
+re-validates every request and remains the real authorization boundary, so
+nothing security-relevant depended on the middleware.
+
+The trade-off accepted is a brief flash of the portal shell before an
+unauthenticated user is redirected. The alternative — mirroring identity
+into a cookie so the edge can gate routes — introduces a second source of
+truth about who someone is, for a cosmetic gain. Revisit only if
+server-side redirects become genuinely worth that cost.
