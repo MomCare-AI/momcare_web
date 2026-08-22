@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import {
-  Activity,
   AlertTriangle,
   Brain,
   Building2,
@@ -14,6 +13,8 @@ import {
   UserPlus,
   Users,
 } from "lucide-react";
+import { AttentionQueue } from "@/features/monitoring/components/AttentionQueue";
+import { useAttentionQueue } from "@/features/monitoring/hooks/useMonitoring";
 import { usePortal } from "./layout";
 
 function greeting(d: Date) {
@@ -26,6 +27,12 @@ function greeting(d: Date) {
 export default function OverviewPage() {
   const { org, user, isHospitalAdmin } = usePortal();
   const now = new Date();
+  const queue = useAttentionQueue();
+
+  // Undefined while loading or on error — rendered as "—" rather than 0,
+  // because a confident zero we cannot vouch for is the wrong thing to show
+  // on a monitoring dashboard.
+  const attentionCount = queue.isSuccess ? queue.data.count : undefined;
 
   const hasStaff = org.staff_count > 0;
   const hasPatients = org.patient_count > 0;
@@ -51,7 +58,7 @@ export default function OverviewPage() {
               year: "numeric",
             })}
           </div>
-          <div>Clinical modules in development</div>
+          <div>Monitoring live · alerts in development</div>
         </div>
       </div>
 
@@ -100,13 +107,21 @@ export default function OverviewPage() {
 
         <div className="mc-kpi">
           <div className="mc-kpi-top">
-            <span className="mc-kpi-label">Active alerts</span>
+            <span className="mc-kpi-label">Needing attention</span>
             <span className="mc-kpi-icon">
               <AlertTriangle size={17} strokeWidth={1.9} aria-hidden />
             </span>
           </div>
-          <span className="mc-kpi-value">—</span>
-          <span className="mc-kpi-foot">Monitoring not yet available</span>
+          <span className="mc-kpi-value">{attentionCount ?? "—"}</span>
+          <span className="mc-kpi-foot">
+            {attentionCount === undefined
+              ? queue.isError
+                ? "Queue unavailable"
+                : "Checking…"
+              : attentionCount === 0
+                ? "No patient outside range"
+                : "Patients outside clinical range"}
+          </span>
         </div>
       </section>
 
@@ -121,7 +136,7 @@ export default function OverviewPage() {
           </Link>
           <span className="mc-badge mc-badge-neutral">
             <Info size={12} strokeWidth={2.2} aria-hidden />
-            Monitoring and alerts arrive with the next module
+            Vitals and risk scoring are live; alerting arrives next
           </span>
         </div>
       )}
@@ -179,18 +194,21 @@ export default function OverviewPage() {
 
           <section className="mc-card">
             <div className="mc-card-head">
-              <div className="mc-card-title">Patients requiring attention</div>
+              <div>
+                <div className="mc-card-title">
+                  Patients requiring attention
+                </div>
+                <div className="mc-card-sub">
+                  Most severe first, unreviewed above reviewed
+                </div>
+              </div>
+              {attentionCount ? (
+                <span className="mc-badge mc-badge-neutral">
+                  {attentionCount}
+                </span>
+              ) : null}
             </div>
-            <div className="mc-empty">
-              <span className="mc-empty-icon">
-                <Activity size={20} strokeWidth={1.9} aria-hidden />
-              </span>
-              <span className="mc-empty-title">Nothing to review</span>
-              <span className="mc-empty-text">
-                High-risk patients will be listed here with their latest vitals
-                once monitoring is live.
-              </span>
-            </div>
+            <AttentionQueue limit={5} />
           </section>
         </div>
       </div>

@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Activity,
-  Bell,
   Brain,
   CalendarDays,
   Heart,
@@ -18,6 +17,8 @@ import {
   X,
 } from "lucide-react";
 import { clearAccessToken, SessionExpiredError } from "@/core/api/authFetch";
+import { clearQueryCache } from "@/core/query/queryClient";
+import { AlertBell } from "@/features/alerts/components/AlertBell";
 import {
   useCurrentUser,
   useOrganization,
@@ -116,6 +117,9 @@ export default function DashboardLayout({
 
   const signOut = () => {
     clearAccessToken();
+    // The token alone is not the session. Everything fetched for this person is
+    // still in the query cache, and it must not outlive them.
+    clearQueryCache();
     router.replace("/login");
   };
 
@@ -219,13 +223,7 @@ export default function DashboardLayout({
           </nav>
 
           <div className="mc-nav-right">
-            <button
-              className="mc-iconbtn"
-              aria-label="Notifications"
-              title="Notifications"
-            >
-              <Bell size={17} strokeWidth={1.9} />
-            </button>
+            <AlertBell />
             <div className="mc-user">
               <span className="mc-avatar" aria-hidden>
                 {initials}
