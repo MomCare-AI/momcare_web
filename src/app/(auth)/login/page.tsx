@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { setAccessToken } from "@/core/api/authFetch";
+import { clearQueryCache } from "@/core/query/queryClient";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -42,6 +43,10 @@ export default function LoginPage() {
         return;
       }
 
+      // Belt and braces. Signing out clears the cache, but not every route into
+      // this page goes through it - an expired session, a bookmarked /login, or
+      // a second person using the same browser all arrive here directly.
+      clearQueryCache();
       setAccessToken(data.access);
       router.push("/dashboard");
     } catch {
