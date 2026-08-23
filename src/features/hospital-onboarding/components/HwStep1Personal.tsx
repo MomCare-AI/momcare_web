@@ -39,6 +39,7 @@ export default function HwStep1Personal({ defaultValues, onSubmit }: Props) {
             <input
               {...register("firstName")}
               type="text"
+              autoComplete="given-name"
               placeholder="John"
               className={`hw-input${errors.firstName ? " hw-input-err" : ""}`}
             />
@@ -53,6 +54,7 @@ export default function HwStep1Personal({ defaultValues, onSubmit }: Props) {
             <input
               {...register("lastName")}
               type="text"
+              autoComplete="family-name"
               placeholder="Smith"
               className={`hw-input${errors.lastName ? " hw-input-err" : ""}`}
             />
@@ -69,6 +71,7 @@ export default function HwStep1Personal({ defaultValues, onSubmit }: Props) {
           <input
             {...register("email")}
             type="email"
+            autoComplete="username"
             placeholder="owner@yourhospital.com"
             className={`hw-input${errors.email ? " hw-input-err" : ""}`}
           />
@@ -89,6 +92,7 @@ export default function HwStep1Personal({ defaultValues, onSubmit }: Props) {
             <input
               {...register("password")}
               type="password"
+              autoComplete="new-password"
               placeholder="Min. 8 characters"
               className={`hw-input${errors.password ? " hw-input-err" : ""}`}
             />
@@ -106,6 +110,7 @@ export default function HwStep1Personal({ defaultValues, onSubmit }: Props) {
             <input
               {...register("confirmPassword")}
               type="password"
+              autoComplete="new-password"
               placeholder="Repeat password"
               className={`hw-input${errors.confirmPassword ? " hw-input-err" : ""}`}
             />

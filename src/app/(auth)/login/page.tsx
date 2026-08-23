@@ -10,18 +10,31 @@ import { API_BASE } from "@/core/api/apiBase";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   // A hospital still under review isn't a failed login — it's a status update,
   // so it gets its own calmer treatment rather than the red error style.
   const [notice, setNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
     setNotice(null);
+
+    // Read the fields themselves rather than React state. A password manager
+    // filling this form on page load sets the DOM value without firing the
+    // events React listens for, so state would still be empty while the boxes
+    // visibly hold the right credentials - and the user is told their own
+    // saved password is wrong.
+    const form = new FormData(e.currentTarget);
+    const email = String(form.get("email") ?? "").trim();
+    const password = String(form.get("password") ?? "");
+
+    if (!email || !password) {
+      setError("Enter your email and password.");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -72,11 +85,14 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} noValidate>
           <div style={styles.field}>
-            <label style={styles.label}>Email address</label>
+            <label htmlFor="email" style={styles.label}>
+              Email address
+            </label>
             <input
+              id="email"
+              name="email"
               type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              autoComplete="username"
               placeholder="owner@yourhospital.com"
               required
               style={styles.input}
@@ -84,11 +100,14 @@ export default function LoginPage() {
           </div>
 
           <div style={styles.field}>
-            <label style={styles.label}>Password</label>
+            <label htmlFor="password" style={styles.label}>
+              Password
+            </label>
             <input
+              id="password"
+              name="password"
               type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
               placeholder="••••••••"
               required
               style={styles.input}

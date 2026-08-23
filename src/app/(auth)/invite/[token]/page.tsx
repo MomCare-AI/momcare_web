@@ -30,8 +30,6 @@ export default function AcceptInvitePage({
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirm, setConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
@@ -52,9 +50,22 @@ export default function AcceptInvitePage({
       .finally(() => setLoading(false));
   }, [token]);
 
-  const submit = async (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
+
+    // Straight from the fields, not from React state. A password manager can
+    // fill these without firing the events React listens for, and here that
+    // would be worse than a failed login - the person would be told their
+    // passwords don't match while both boxes plainly show a value.
+    const form = new FormData(e.currentTarget);
+    const password = String(form.get("password") ?? "");
+    const confirm = String(form.get("confirm") ?? "");
+
+    if (!password) {
+      setError("Choose a password.");
+      return;
+    }
     if (password !== confirm) {
       setError("The two passwords don't match.");
       return;
@@ -143,10 +154,27 @@ export default function AcceptInvitePage({
         </div>
 
         <form onSubmit={submit} noValidate>
+          {/* The address is fixed by the invitation and shown above as text.
+              A password manager still needs a username field to file the new
+              password against, or it saves it under no account at all. */}
+          <input
+            type="text"
+            name="username"
+            autoComplete="username"
+            value={preview?.email ?? ""}
+            readOnly
+            hidden
+          />
+
           <div style={s.grid2}>
             <div style={s.field}>
-              <label style={s.label}>First name</label>
+              <label htmlFor="firstName" style={s.label}>
+                First name
+              </label>
               <input
+                id="firstName"
+                name="firstName"
+                autoComplete="given-name"
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
                 required
@@ -154,8 +182,13 @@ export default function AcceptInvitePage({
               />
             </div>
             <div style={s.field}>
-              <label style={s.label}>Last name</label>
+              <label htmlFor="lastName" style={s.label}>
+                Last name
+              </label>
               <input
+                id="lastName"
+                name="lastName"
+                autoComplete="family-name"
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
                 required
@@ -165,11 +198,14 @@ export default function AcceptInvitePage({
           </div>
 
           <div style={s.field}>
-            <label style={s.label}>Create password</label>
+            <label htmlFor="password" style={s.label}>
+              Create password
+            </label>
             <input
+              id="password"
+              name="password"
               type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="new-password"
               placeholder="At least 8 characters"
               required
               style={s.input}
@@ -177,11 +213,14 @@ export default function AcceptInvitePage({
           </div>
 
           <div style={s.field}>
-            <label style={s.label}>Confirm password</label>
+            <label htmlFor="confirm" style={s.label}>
+              Confirm password
+            </label>
             <input
+              id="confirm"
+              name="confirm"
               type="password"
-              value={confirm}
-              onChange={(e) => setConfirm(e.target.value)}
+              autoComplete="new-password"
               placeholder="••••••••"
               required
               style={s.input}
