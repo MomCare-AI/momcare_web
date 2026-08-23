@@ -58,12 +58,12 @@ export default function OverviewPage() {
               year: "numeric",
             })}
           </div>
-          <div>Monitoring live · alerts in development</div>
+          <div>Monitoring live · alerts escalating</div>
         </div>
       </div>
 
-      {/* Metrics reflect what the database actually holds. Patient, appointment
-          and alert counts stay at zero until those modules exist — a dashboard
+      {/* Metrics reflect what the database actually holds. Scheduling does not
+          exist yet and its tile says so rather than showing a zero — a dashboard
           that invents clinical numbers is worse than one that admits it has none. */}
       <section className="mc-kpis">
         <Link href="/dashboard/staff" className="mc-kpi">
