@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { setAccessToken } from "@/core/api/authFetch";
 import { clearQueryCache } from "@/core/query/queryClient";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+import { API_BASE } from "@/core/api/apiBase";
 
 export default function LoginPage() {
   const router = useRouter();

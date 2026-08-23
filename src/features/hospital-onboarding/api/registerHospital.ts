@@ -5,7 +5,7 @@ import type {
   OrgStep3Data,
 } from "../components/hwSchemas";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+import { API_BASE } from "@/core/api/apiBase";
 
 export type WizardFormData = Step1Data &
   OrgStep1Data &

@@ -9,7 +9,8 @@
  * through JavaScript; only the refresh call needs `credentials: "include"`.
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+import { API_BASE } from "./apiBase";
+
 const TOKEN_KEY = "access_token";
 
 export function getAccessToken(): string | null {
