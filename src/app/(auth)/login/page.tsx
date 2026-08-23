@@ -7,6 +7,8 @@ import { setAccessToken } from "@/core/api/authFetch";
 import { clearQueryCache } from "@/core/query/queryClient";
 
 import { API_BASE } from "@/core/api/apiBase";
+import { PulseField } from "./PulseField";
+import styles from "./login.module.css";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -72,20 +74,44 @@ export default function LoginPage() {
   };
 
   return (
-    <div style={styles.page}>
-      <div style={styles.card}>
-        {/* Brand */}
-        <div style={styles.brand}>
-          <span style={styles.heart}>♥</span>
-          <span style={styles.brandName}>MomCare</span>
+    <div className={styles.page}>
+      <section className={styles.field}>
+        <PulseField />
+
+        <div className={styles.mark}>
+          <span className={styles.markName}>MomCare</span>
+          <span className={styles.markRule} />
+          <span className={styles.markKind}>Remote Patient Monitoring</span>
         </div>
 
-        <h1 style={styles.heading}>Welcome back</h1>
-        <p style={styles.sub}>Sign in to your hospital account</p>
+        <p className={styles.claim}>
+          Every reading, <em>watched</em>.
+        </p>
 
-        <form onSubmit={handleSubmit} noValidate>
-          <div style={styles.field}>
-            <label htmlFor="email" style={styles.label}>
+        <div className={styles.readout}>
+          <span>
+            <b>Continuous</b>Vitals from wearables
+          </span>
+          <span>
+            <b>Graded</b>Risk on every reading
+          </span>
+          <span>
+            <b>Escalating</b>Until someone answers
+          </span>
+        </div>
+      </section>
+
+      <section className={styles.panel}>
+        <form onSubmit={handleSubmit} noValidate className={styles.form}>
+          <span className={styles.eyebrow}>Clinical Access</span>
+          <h1 className={styles.heading}>Sign in</h1>
+          <p className={styles.sub}>
+            For registered hospital staff. Your account is created by your
+            hospital administrator.
+          </p>
+
+          <div className={styles.field2}>
+            <label htmlFor="email" className={styles.label}>
               Email address
             </label>
             <input
@@ -95,12 +121,12 @@ export default function LoginPage() {
               autoComplete="username"
               placeholder="owner@yourhospital.com"
               required
-              style={styles.input}
+              className={styles.input}
             />
           </div>
 
-          <div style={styles.field}>
-            <label htmlFor="password" style={styles.label}>
+          <div className={styles.field2}>
+            <label htmlFor="password" className={styles.label}>
               Password
             </label>
             <input
@@ -110,118 +136,25 @@ export default function LoginPage() {
               autoComplete="current-password"
               placeholder="••••••••"
               required
-              style={styles.input}
+              className={styles.input}
             />
           </div>
 
-          {error && <p style={styles.error}>{error}</p>}
-          {notice && <p style={styles.notice}>{notice}</p>}
+          {error && <p className={styles.error}>{error}</p>}
+          {notice && <p className={styles.notice}>{notice}</p>}
 
-          <button type="submit" disabled={loading} style={styles.btn}>
+          <button type="submit" disabled={loading} className={styles.button}>
             {loading ? "Signing in…" : "Sign in"}
           </button>
-        </form>
 
-        <p style={styles.footer}>
-          Don&apos;t have an account?{" "}
-          <Link href="/register" style={styles.link}>
-            Register your hospital
-          </Link>
-        </p>
-      </div>
+          <p className={styles.footer}>
+            Registering a hospital for the first time?{" "}
+            <Link href="/register" className={styles.link}>
+              Apply for access
+            </Link>
+          </p>
+        </form>
+      </section>
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  page: {
-    minHeight: "100vh",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    background: "#ede8f5",
-    padding: "24px",
-  },
-  card: {
-    background: "#ffffff",
-    borderRadius: "16px",
-    padding: "40px 44px",
-    width: "100%",
-    maxWidth: "420px",
-    boxShadow: "0 4px 24px rgba(139,120,196,0.12)",
-  },
-  brand: {
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-    marginBottom: "28px",
-  },
-  heart: { color: "#e07060", fontSize: "20px" },
-  brandName: { fontWeight: 700, fontSize: "18px", color: "#2d1f5e" },
-  heading: {
-    fontSize: "24px",
-    fontWeight: 700,
-    color: "#1a1a2e",
-    marginBottom: "6px",
-  },
-  sub: { fontSize: "14px", color: "#6b7280", marginBottom: "28px" },
-  field: { marginBottom: "18px" },
-  label: {
-    display: "block",
-    fontSize: "13px",
-    fontWeight: 600,
-    color: "#374151",
-    marginBottom: "6px",
-    textTransform: "uppercase",
-    letterSpacing: "0.05em",
-  },
-  input: {
-    width: "100%",
-    padding: "11px 14px",
-    border: "1.5px solid #e5e7eb",
-    borderRadius: "9px",
-    fontSize: "15px",
-    outline: "none",
-    boxSizing: "border-box",
-    color: "#1a1a2e",
-    background: "#f9f8fc",
-  },
-  error: {
-    background: "#fef2f2",
-    border: "1px solid #fecaca",
-    color: "#991b1b",
-    borderRadius: "8px",
-    padding: "10px 14px",
-    fontSize: "13.5px",
-    marginBottom: "16px",
-  },
-  notice: {
-    background: "#fffbeb",
-    border: "1px solid #fde68a",
-    color: "#92400e",
-    borderRadius: "8px",
-    padding: "10px 14px",
-    fontSize: "13.5px",
-    marginBottom: "16px",
-    lineHeight: 1.5,
-  },
-  btn: {
-    width: "100%",
-    padding: "13px",
-    background: "#8b78c4",
-    color: "#fff",
-    border: "none",
-    borderRadius: "9px",
-    fontSize: "15px",
-    fontWeight: 700,
-    cursor: "pointer",
-    marginTop: "4px",
-  },
-  footer: {
-    textAlign: "center",
-    fontSize: "14px",
-    color: "#6b7280",
-    marginTop: "24px",
-  },
-  link: { color: "#8b78c4", fontWeight: 600, textDecoration: "none" },
-};

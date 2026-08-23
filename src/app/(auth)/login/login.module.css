@@ -1,0 +1,338 @@
+/*
+ * Sign-in.
+ *
+ * Deliberately a single committed look rather than a themed one: this page is
+ * the threshold to a monitoring system, and instruments do not have a light
+ * mode. Ink on the left, paper on the right, one arterial red between them.
+ *
+ * No card, no radius, no soft shadow. The structure is the design — hairlines
+ * and alignment doing the work that a floating box would otherwise be asked to
+ * do.
+ */
+
+.page {
+  --ink: #0a0c0f;
+  --bone: #e8e4dc;
+  --pulse: #e2483b;
+  --slate: #6b7076;
+  --rule: #1c2026;
+  --rule-light: #cfc9bd;
+
+  position: fixed;
+  inset: 0;
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  background: var(--bone);
+  overflow: hidden;
+}
+
+/* ── Left: the monitoring field ─────────────────────────────────────────── */
+
+.field {
+  position: relative;
+  background: var(--ink);
+  overflow: hidden;
+}
+
+.field canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Reads as a machine's own faint illumination rather than a decorative glow. */
+.field::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    62% 52% at 46% 46%,
+    rgba(226, 72, 59, 0.11),
+    transparent 70%
+  );
+  pointer-events: none;
+}
+
+.mark {
+  position: absolute;
+  top: 40px;
+  left: 44px;
+  z-index: 2;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.markName {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--bone);
+}
+
+.markRule {
+  width: 34px;
+  height: 1px;
+  background: var(--pulse);
+}
+
+.markKind {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--slate);
+}
+
+.claim {
+  position: absolute;
+  left: 44px;
+  bottom: 132px;
+  z-index: 2;
+  max-width: 15ch;
+  margin: 0;
+  font-size: clamp(34px, 3.6vw, 56px);
+  font-weight: 800;
+  line-height: 0.98;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+  color: var(--bone);
+}
+
+.claim em {
+  font-style: normal;
+  color: var(--pulse);
+}
+
+.readout {
+  position: absolute;
+  left: 44px;
+  right: 44px;
+  bottom: 40px;
+  z-index: 2;
+  display: flex;
+  gap: 40px;
+  padding-top: 18px;
+  border-top: 1px solid var(--rule);
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--slate);
+}
+
+.readout b {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+  color: rgba(232, 228, 220, 0.72);
+}
+
+/* ── Right: the form ────────────────────────────────────────────────────── */
+
+.panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 56px clamp(40px, 6vw, 88px);
+  overflow-y: auto;
+}
+
+.form {
+  width: 100%;
+  max-width: 380px;
+}
+
+.eyebrow {
+  display: block;
+  margin-bottom: 14px;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--slate);
+}
+
+.heading {
+  margin: 0 0 8px;
+  font-size: clamp(30px, 3vw, 40px);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.02;
+  color: var(--ink);
+}
+
+.sub {
+  margin: 0 0 40px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--slate);
+}
+
+.field2 {
+  margin-bottom: 26px;
+}
+
+.label {
+  display: block;
+  margin-bottom: 9px;
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--slate);
+}
+
+/* A rule, not a box. The field is defined by the line it sits on. */
+.input {
+  width: 100%;
+  padding: 8px 0 11px;
+  border: 0;
+  border-bottom: 1px solid var(--rule-light);
+  border-radius: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 16px;
+  color: var(--ink);
+  outline: none;
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.input::placeholder {
+  color: #a9a294;
+}
+
+.input:focus {
+  border-bottom-color: var(--pulse);
+  box-shadow: 0 1px 0 0 var(--pulse);
+}
+
+/* Chrome paints autofilled fields a pale yellow that fights the palette. */
+.input:-webkit-autofill,
+.input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--ink);
+  box-shadow: inset 0 0 0 100px var(--bone);
+  transition: background-color 100000s ease 0s;
+}
+
+.button {
+  width: 100%;
+  margin-top: 14px;
+  padding: 16px;
+  border: 0;
+  border-radius: 0;
+  background: var(--ink);
+  color: var(--bone);
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background-color 140ms ease;
+}
+
+.button:hover:not(:disabled) {
+  background: var(--pulse);
+}
+
+.button:disabled {
+  background: var(--slate);
+  cursor: progress;
+}
+
+.button:focus-visible,
+.link:focus-visible {
+  outline: 2px solid var(--pulse);
+  outline-offset: 3px;
+}
+
+/* Messages carry a rule on the leading edge - the same structural device as
+   everything else on the page, rather than a tinted rounded panel. */
+.error,
+.notice {
+  margin: 0 0 22px;
+  padding: 2px 0 2px 14px;
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+.error {
+  border-left: 2px solid var(--pulse);
+  color: #8f2418;
+}
+
+.notice {
+  border-left: 2px solid #9a7b21;
+  color: #6d5714;
+}
+
+.footer {
+  margin-top: 36px;
+  padding-top: 20px;
+  border-top: 1px solid var(--rule-light);
+  font-size: 13px;
+  color: var(--slate);
+}
+
+.link {
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 1px solid var(--pulse);
+  padding-bottom: 1px;
+}
+
+.link:hover {
+  color: var(--pulse);
+}
+
+/* ── Narrow ─────────────────────────────────────────────────────────────── */
+
+@media (max-width: 900px) {
+  .page {
+    position: relative;
+    min-height: 100dvh;
+    grid-template-columns: 1fr;
+    grid-template-rows: 40vh auto;
+    overflow: visible;
+  }
+
+  .mark,
+  .claim,
+  .readout {
+    left: 28px;
+  }
+
+  .mark {
+    top: 26px;
+  }
+
+  .claim {
+    bottom: 34px;
+    font-size: clamp(28px, 8vw, 40px);
+  }
+
+  /* The readout is supporting detail; on a phone it costs more than it says. */
+  .readout {
+    display: none;
+  }
+
+  .panel {
+    padding: 44px 28px 56px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .input,
+  .button {
+    transition: none;
+  }
+}
