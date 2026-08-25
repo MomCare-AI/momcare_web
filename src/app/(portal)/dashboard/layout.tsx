@@ -10,6 +10,7 @@ import {
   Heart,
   LayoutDashboard,
   LogOut,
+  Settings,
   MapPin,
   Menu,
   Stethoscope,
@@ -71,6 +72,7 @@ const NAV = [
     Icon: Brain,
     soon: true,
   },
+  { href: "/dashboard/settings", label: "Settings", Icon: Settings },
 ];
 
 /** Approval state maps to a clinical badge; never colour alone — each carries a label. */

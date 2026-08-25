@@ -146,6 +146,19 @@ export function PulseField() {
     let frame = 0;
     const started = performance.now();
 
+    // The first synchronous render can land before the browser has laid the
+    // element out, leaving a one-pixel canvas. The animation loop corrects that
+    // on its next frame - but a tab that is not being composited never gets one,
+    // and a reader who has asked for reduced motion has no loop at all. Both
+    // would be left with an empty panel, so size changes are watched directly.
+    const observer =
+      typeof ResizeObserver === "function"
+        ? new ResizeObserver(() =>
+            render(still ? 6 : (performance.now() - started) / 1000)
+          )
+        : null;
+    observer?.observe(canvas);
+
     const loop = (now: number) => {
       render((now - started) / 1000);
       frame = requestAnimationFrame(loop);
@@ -153,7 +166,10 @@ export function PulseField() {
 
     if (!still) frame = requestAnimationFrame(loop);
 
-    return () => cancelAnimationFrame(frame);
+    return () => {
+      cancelAnimationFrame(frame);
+      observer?.disconnect();
+    };
   }, []);
 
   return <canvas ref={ref} aria-hidden="true" />;
