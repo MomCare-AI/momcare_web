@@ -26,6 +26,10 @@ export interface OrgSummary {
   city: string;
   state: string;
   country: string;
+  /** Derived from country on the server, never stored. null when the risk
+   *  model has no training data for that population. */
+  region: "asia" | "africa" | "americas" | null;
+  region_display: string;
   owner_name: string;
   staff_count: number;
   patient_count: number;

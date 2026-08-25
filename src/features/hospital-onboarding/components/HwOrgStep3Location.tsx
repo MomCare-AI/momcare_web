@@ -7,6 +7,7 @@ import {
   LICENSE_AUTHORITIES,
   type OrgStep3Data,
 } from "./hwSchemas";
+import { isSupported, regionLabelFor } from "../regions";
 
 const COUNTRIES = [
   "Afghanistan",
@@ -147,11 +148,19 @@ export default function HwOrgStep3Location({
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<OrgStep3Data>({
     resolver: zodResolver(orgStep3Schema),
     defaultValues,
   });
+
+  // Shown, never submitted. The server derives the region from the country on
+  // save; this only lets someone see the consequence of the choice they are
+  // making instead of discovering it afterwards.
+  const country = watch("country");
+  const regionLabel = regionLabelFor(country);
+  const regionKnown = isSupported(country);
 
   return (
     <div>
@@ -160,7 +169,8 @@ export default function HwOrgStep3Location({
         <h1 className="hw-title">Address &amp; registration details</h1>
         <p className="hw-desc">
           Used by our review team to cross-check your organization against
-          public records. City is used for the reviewer's public lookup check.
+          public records. City is used for the reviewer&apos;s public lookup
+          check.
         </p>
       </div>
 
@@ -204,7 +214,7 @@ export default function HwOrgStep3Location({
               className={`hw-input${errors.city ? " hw-input-err" : ""}`}
             />
             <span className="hw-hint">
-              Used for reviewer's public lookup check.
+              Used for reviewer&apos;s public lookup check.
             </span>
             {errors.city && (
               <span className="hw-err-msg">{errors.city.message}</span>
@@ -263,6 +273,28 @@ export default function HwOrgStep3Location({
               <span className="hw-err-msg">{errors.country.message}</span>
             )}
           </div>
+
+          {country && (
+            <div className="hw-field">
+              <label className="hw-label" htmlFor="risk-region">
+                Risk model region
+              </label>
+              <input
+                id="risk-region"
+                className="hw-input"
+                value={regionLabel}
+                readOnly
+                disabled
+                tabIndex={-1}
+                aria-describedby="risk-region-hint"
+              />
+              <span className="hw-hint" id="risk-region-hint">
+                {regionKnown
+                  ? "Set automatically from the country. Risk predictions use data for this population."
+                  : "No model has been trained for this population, so risk is assessed by clinical rules instead."}
+              </span>
+            </div>
+          )}
         </div>
 
         <div className="hw-field hw-mt-lg">
@@ -320,8 +352,8 @@ export default function HwOrgStep3Location({
                 strokeLinecap="round"
               />
             </svg>
-            Not verified against a live registry — strengthens the reviewer's
-            judgment call.
+            Not verified against a live registry — strengthens the
+            reviewer&apos;s judgment call.
           </div>
           {errors.licenseNo && (
             <span className="hw-err-msg">{errors.licenseNo.message}</span>

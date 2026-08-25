@@ -266,6 +266,11 @@ export default function OverviewPage() {
                 .filter(Boolean)
                 .join(", ")}
             />
+            {/* Which population the risk model judges these patients as.
+                Derived from the country above, so the two can never disagree.
+                Shown because a hospital outside the model's training gets
+                clinical rules instead, and should be able to see that. */}
+            <Pair label="Risk model region" value={org.region_display} />
           </div>
         </div>
         {hasPatients && (
