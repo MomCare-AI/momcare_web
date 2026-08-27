@@ -136,26 +136,13 @@ export default function SettingsPage() {
         </div>
         <div className="mc-card-body">
           <div className="mc-pairs">
-            <div>
-              <span className="mc-pair-label">Name</span>
-              <span className="mc-pair-value">
-                {user.first_name} {user.last_name}
-              </span>
-            </div>
-            <div>
-              <span className="mc-pair-label">Email</span>
-              <span className="mc-pair-value">{user.email}</span>
-            </div>
-            <div>
-              <span className="mc-pair-label">Role</span>
-              <span className="mc-pair-value">
-                {user.role_code.replace(/_/g, " ")}
-              </span>
-            </div>
-            <div>
-              <span className="mc-pair-label">Hospital</span>
-              <span className="mc-pair-value">{org.name}</span>
-            </div>
+            <Pair
+              label="Name"
+              value={`${user.first_name} ${user.last_name}`.trim()}
+            />
+            <Pair label="Email" value={user.email} />
+            <Pair label="Role" value={user.role_code.replace(/_/g, " ")} />
+            <Pair label="Hospital" value={org.name} />
           </div>
           <p className="mc-foot-note">
             Your email is how you sign in, and your role and hospital are
@@ -192,12 +179,11 @@ export default function SettingsPage() {
               required
             />
             <span className="mc-hint">
-              Asked for even though you are signed in — an unlocked screen
-              should not be enough to take an account over.
+              Confirms it is you, not whoever found the screen unlocked.
             </span>
           </div>
 
-          <div className="mc-formgrid">
+          <div className="mc-formgrid" style={{ marginTop: 18 }}>
             <div>
               <label className="mc-label" htmlFor="new_password">
                 New password <span className="mc-req">*</span>
@@ -245,5 +231,16 @@ export default function SettingsPage() {
         </form>
       </section>
     </>
+  );
+}
+
+/** Matches the dashboard's own pair renderer. The label and value are block
+ *  elements: as spans they sit on one line and read as "EMAILyou@example.com". */
+function Pair({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <div className="mc-pair-label">{label}</div>
+      <div className="mc-pair-value">{value || "—"}</div>
+    </div>
   );
 }

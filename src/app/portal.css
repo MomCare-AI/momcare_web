@@ -1491,3 +1491,77 @@ select.mc-input {
     width: auto;
   }
 }
+
+/* ── Header crowding ──────────────────────────────────────────────────────
+   The horizontal navigation needs roughly 1050px before the drawer takes
+   over at 860px, so between those widths the links, the brand and the user
+   block competed for space the header did not have — and because nothing
+   clipped or wrapped, they simply drew on top of each other.
+
+   Two changes, widest-first: the user's name and role are the least load
+   bearing thing in the bar (the avatar still identifies them), so they go
+   first; below that the drawer takes over entirely. */
+
+@media (max-width: 1200px) {
+  .mc-user-text {
+    display: none;
+  }
+  .mc-user {
+    padding-left: 0;
+    border-left: none;
+  }
+}
+
+@media (max-width: 1024px) {
+  .mc-navlinks {
+    display: none;
+  }
+  .mc-burger {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--r-control);
+    border: 1px solid var(--c-border);
+    background: var(--c-card);
+    color: var(--c-ink);
+    cursor: pointer;
+    flex: none;
+  }
+}
+
+/* A last line of defence. If the links ever outgrow their room again they
+   scroll rather than overlapping whatever sits beside them — a bar that
+   scrolls is recoverable, one that overlaps is unreadable. */
+.mc-navlinks {
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.mc-navlinks::-webkit-scrollbar {
+  display: none;
+}
+.mc-navlink {
+  flex: none;
+}
+
+/* The count a severity tab is filtering to. It is the reason to press the tab,
+   so it belongs on the tab rather than being discovered after switching. */
+.mc-tab-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  margin-left: 8px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: var(--c-bg);
+  color: var(--c-body);
+  font-size: 11.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  vertical-align: middle;
+}
+.mc-tab[aria-current="page"] .mc-tab-count {
+  background: var(--c-teal);
+  color: #fff;
+}

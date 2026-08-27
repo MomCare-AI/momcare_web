@@ -5,8 +5,6 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Activity,
-  Brain,
-  CalendarDays,
   Heart,
   LayoutDashboard,
   LogOut,
@@ -52,27 +50,9 @@ export function usePortal(): PortalValue {
 
 const NAV = [
   { href: "/dashboard", label: "Overview", Icon: LayoutDashboard },
-  { href: "/dashboard/staff", label: "Doctors & Staff", Icon: Stethoscope },
+  { href: "/dashboard/attention", label: "Needs attention", Icon: Activity },
   { href: "/dashboard/patients", label: "Patients", Icon: Users },
-  {
-    href: "/dashboard/monitoring",
-    label: "Health Monitoring",
-    Icon: Activity,
-    soon: true,
-  },
-  {
-    href: "/dashboard/appointments",
-    label: "Appointments",
-    Icon: CalendarDays,
-    soon: true,
-  },
-  {
-    href: "/dashboard/insights",
-    label: "AI Insights",
-    Icon: Brain,
-    soon: true,
-  },
-  { href: "/dashboard/settings", label: "Settings", Icon: Settings },
+  { href: "/dashboard/staff", label: "Doctors & Staff", Icon: Stethoscope },
 ];
 
 /** Approval state maps to a clinical badge; never colour alone — each carries a label. */
@@ -161,19 +141,6 @@ export default function DashboardLayout({
 
   const renderLink = (item: (typeof NAV)[number]) => {
     const { Icon } = item;
-    if (item.soon) {
-      return (
-        <span
-          key={item.href}
-          className="mc-navlink"
-          aria-disabled="true"
-          title="Coming soon"
-        >
-          <Icon size={16} strokeWidth={1.9} aria-hidden />
-          {item.label}
-        </span>
-      );
-    }
     // Sub-pages keep their section highlighted — /dashboard/patients/new should
     // still show Patients as current. Overview matches exactly, or it would
     // light up on every page.
@@ -241,6 +208,14 @@ export default function DashboardLayout({
                 </span>
               </span>
             </div>
+            <Link
+              href="/dashboard/settings"
+              className="mc-iconbtn"
+              aria-label="Settings"
+              title="Settings"
+            >
+              <Settings size={17} strokeWidth={1.9} />
+            </Link>
             <button
               className="mc-iconbtn"
               onClick={signOut}
