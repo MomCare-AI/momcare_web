@@ -1565,3 +1565,190 @@ select.mc-input {
   background: var(--c-teal);
   color: #fff;
 }
+
+/* ── Alerts ───────────────────────────────────────────────────────────────
+   A row is a summary that opens into the record of what happened to it. The
+   severity stripe runs down the leading edge so a list can be scanned by
+   colour and still read by label. */
+
+.mc-alertlist {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mc-alertrow {
+  border: 1px solid var(--c-border);
+  border-left: 3px solid var(--c-border);
+  border-radius: var(--r-card);
+  background: var(--c-card);
+  overflow: hidden;
+}
+.mc-alertrow.is-critical {
+  border-left-color: var(--c-critical);
+}
+.mc-alertrow.is-high {
+  border-left-color: var(--c-high);
+}
+.mc-alertrow.is-moderate {
+  border-left-color: var(--c-moderate);
+}
+.mc-alertrow.is-stable {
+  border-left-color: var(--c-teal);
+}
+
+.mc-alertrow-head {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  width: 100%;
+  padding: 14px 18px;
+  border: none;
+  background: none;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.mc-alertrow-head:hover {
+  background: var(--c-bg);
+}
+.mc-alertrow-head:focus-visible {
+  outline: 2px solid var(--c-teal);
+  outline-offset: -2px;
+}
+
+.mc-alertrow-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.mc-alertrow-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+.mc-alertrow-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--c-ink);
+}
+
+.mc-alertrow-reasons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  font-size: 13px;
+  color: var(--c-body);
+}
+
+.mc-alertrow-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: none;
+  text-align: right;
+  font-size: 12.5px;
+  color: var(--c-faint);
+  font-variant-numeric: tabular-nums;
+}
+/* A deadline is the one thing on this row that changes on its own. */
+.mc-alertrow-next {
+  color: var(--c-teal);
+  font-weight: 600;
+}
+
+.mc-alertrow-chev {
+  flex: none;
+  color: var(--c-faint);
+  transition: transform 160ms ease;
+}
+.mc-alertrow-chev.is-open {
+  transform: rotate(180deg);
+}
+
+/* ── The escalation trail ───────────────────────────────────────────────── */
+
+.mc-trail-wrap {
+  padding: 4px 18px 18px 18px;
+  border-top: 1px solid var(--c-border);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.mc-trail {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0 0 0 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.mc-trail-item {
+  position: relative;
+  display: flex;
+  gap: 14px;
+  padding-left: 16px;
+}
+/* The line joining the dots — drawn on every item but the last, so the trail
+   reads as one sequence rather than a stack of separate notes. */
+.mc-trail-item::before {
+  content: "";
+  position: absolute;
+  left: 3px;
+  top: 14px;
+  bottom: -18px;
+  width: 1px;
+  background: var(--c-border);
+}
+.mc-trail-item:last-child::before {
+  display: none;
+}
+
+.mc-trail-dot {
+  position: absolute;
+  left: 0;
+  top: 6px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--c-teal);
+}
+
+.mc-trail-what {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--c-ink);
+}
+.mc-trail-detail {
+  font-size: 13.5px;
+  color: var(--c-body);
+}
+.mc-trail-when {
+  font-size: 12px;
+  color: var(--c-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.mc-trail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+@media (max-width: 700px) {
+  .mc-alertrow-head {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .mc-alertrow-meta {
+    text-align: left;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 4px 14px;
+  }
+}

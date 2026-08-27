@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Activity,
+  BellRing,
   Heart,
   LayoutDashboard,
   LogOut,
@@ -35,8 +36,14 @@ interface PortalValue {
   org: OrgSummary;
   user: CurrentUser;
   isHospitalAdmin: boolean;
+  /** May make a clinical judgement — acknowledge an alert, review an
+   *  assessment. Mirrors the server's IsClinician, which is what actually
+   *  enforces it; this only decides what is worth putting on screen. */
+  isClinician: boolean;
   refresh: () => Promise<void>;
 }
+
+const CLINICAL_ROLES = new Set(["provider", "nurse", "care_manager"]);
 
 const PortalContext = createContext<PortalValue | null>(null);
 
@@ -50,7 +57,13 @@ export function usePortal(): PortalValue {
 
 const NAV = [
   { href: "/dashboard", label: "Overview", Icon: LayoutDashboard },
-  { href: "/dashboard/attention", label: "Needs attention", Icon: Activity },
+  {
+    href: "/dashboard/attention",
+    label: "Needs attention",
+    Icon: Activity,
+    clinicalOnly: true,
+  },
+  { href: "/dashboard/alerts", label: "Alerts", Icon: BellRing },
   { href: "/dashboard/patients", label: "Patients", Icon: Users },
   { href: "/dashboard/staff", label: "Doctors & Staff", Icon: Stethoscope },
 ];
@@ -136,8 +149,16 @@ export default function DashboardLayout({
     org,
     user,
     isHospitalAdmin: user.role_code === "hospital_admin",
+    isClinician: CLINICAL_ROLES.has(user.role_code),
     refresh: async () => refresh(),
   };
+
+  const visibleNav = NAV.filter(
+    // Hidden rather than disabled. A greyed-out link tells somebody only
+    // that they are not trusted with it, without saying why.
+    (item) =>
+      !("clinicalOnly" in item && item.clinicalOnly) || value.isClinician
+  );
 
   const renderLink = (item: (typeof NAV)[number]) => {
     const { Icon } = item;
@@ -188,7 +209,7 @@ export default function DashboardLayout({
           </Link>
 
           <nav className="mc-navlinks" aria-label="Main">
-            {NAV.map(renderLink)}
+            {visibleNav.map(renderLink)}
           </nav>
 
           <div className="mc-nav-right">
@@ -237,7 +258,7 @@ export default function DashboardLayout({
             aria-label="Mobile"
             onClick={(e) => e.stopPropagation()}
           >
-            {NAV.map(renderLink)}
+            {visibleNav.map(renderLink)}
           </nav>
         </div>
 
