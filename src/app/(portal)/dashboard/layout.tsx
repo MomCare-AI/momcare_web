@@ -14,6 +14,7 @@ import {
   Menu,
   Stethoscope,
   Users,
+  Watch,
   X,
 } from "lucide-react";
 import { clearAccessToken, SessionExpiredError } from "@/core/api/authFetch";
@@ -64,6 +65,7 @@ const NAV = [
     clinicalOnly: true,
   },
   { href: "/dashboard/alerts", label: "Alerts", Icon: BellRing },
+  { href: "/dashboard/devices", label: "Devices", Icon: Watch },
   { href: "/dashboard/patients", label: "Patients", Icon: Users },
   { href: "/dashboard/staff", label: "Doctors & Staff", Icon: Stethoscope },
 ];
@@ -153,12 +155,15 @@ export default function DashboardLayout({
     refresh: async () => refresh(),
   };
 
-  const visibleNav = NAV.filter(
+  const visibleNav = NAV.filter((item) => {
     // Hidden rather than disabled. A greyed-out link tells somebody only
     // that they are not trusted with it, without saying why.
-    (item) =>
-      !("clinicalOnly" in item && item.clinicalOnly) || value.isClinician
-  );
+    if ("clinicalOnly" in item && item.clinicalOnly && !value.isClinician)
+      return false;
+    if ("adminOnly" in item && item.adminOnly && !value.isHospitalAdmin)
+      return false;
+    return true;
+  });
 
   const renderLink = (item: (typeof NAV)[number]) => {
     const { Icon } = item;
