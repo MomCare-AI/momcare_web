@@ -44,9 +44,36 @@ export interface CurrentUser {
   role_code: string;
 }
 
+export interface DashboardRisk {
+  critical: number;
+  high: number;
+  moderate: number;
+  stable: number;
+  /** Enrolled, but no assessment has ever been written for this pregnancy —
+   *  kept apart from "stable" everywhere in this app: a patient nobody has
+   *  measured is not a patient who is well. */
+  not_assessed: number;
+  total: number;
+  needing_attention: number;
+}
+
+export interface DashboardActivity {
+  action: string;
+  resource: string;
+  /** Empty when the acting account has since been deactivated. */
+  actor: string;
+  at: string;
+}
+
+export interface DashboardSummary {
+  risk: DashboardRisk;
+  activity: DashboardActivity[];
+}
+
 export const portalKeys = {
   organization: ["organization"] as const,
   currentUser: ["current-user"] as const,
+  dashboardSummary: ["dashboard-summary"] as const,
 };
 
 function retryUnlessSessionExpired(failureCount: number, error: unknown) {
@@ -67,6 +94,17 @@ export function useCurrentUser() {
     queryKey: portalKeys.currentUser,
     queryFn: () => authJson<CurrentUser>("/api/auth/me/"),
     retry: retryUnlessSessionExpired,
+  });
+}
+
+export function useDashboardSummary() {
+  return useQuery({
+    queryKey: portalKeys.dashboardSummary,
+    queryFn: () => authJson<DashboardSummary>("/api/dashboard/summary/"),
+    retry: retryUnlessSessionExpired,
+    // Aggregates, not a live clock — reused across a normal page visit rather
+    // than refetched on every focus, unlike the attention queue and alerts.
+    staleTime: 60 * 1000,
   });
 }
 

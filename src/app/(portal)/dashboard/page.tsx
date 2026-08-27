@@ -6,6 +6,7 @@ import {
   Brain,
   Building2,
   CalendarDays,
+  Clock,
   HeartPulse,
   Info,
   MapPin,
@@ -15,7 +16,44 @@ import {
 } from "lucide-react";
 import { AttentionQueue } from "@/features/monitoring/components/AttentionQueue";
 import { useAttentionQueue } from "@/features/monitoring/hooks/useMonitoring";
+import {
+  useDashboardSummary,
+  type DashboardActivity,
+  type DashboardRisk,
+} from "@/features/portal/hooks/usePortalData";
 import { usePortal } from "./layout";
+
+const RISK_LEVELS: {
+  key: keyof Pick<
+    DashboardRisk,
+    "critical" | "high" | "moderate" | "stable" | "not_assessed"
+  >;
+  label: string;
+  badge: string;
+}[] = [
+  { key: "critical", label: "Critical", badge: "mc-badge-critical" },
+  { key: "high", label: "High", badge: "mc-badge-high" },
+  { key: "moderate", label: "Moderate", badge: "mc-badge-moderate" },
+  { key: "stable", label: "Stable", badge: "mc-badge-stable" },
+  { key: "not_assessed", label: "Not yet assessed", badge: "mc-badge-neutral" },
+];
+
+/** "READ patients" -> "Read patients". Kept close to the raw log on purpose —
+ *  this is an audit trail, not a marketing feed, and paraphrasing it risks
+ *  saying something the log itself did not. */
+function describeActivity(entry: DashboardActivity): string {
+  const verb = entry.action.charAt(0) + entry.action.slice(1).toLowerCase();
+  return entry.resource ? `${verb} ${entry.resource}` : verb;
+}
+
+function timeAgo(iso: string): string {
+  const minutes = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+  if (minutes < 1) return "just now";
+  if (minutes < 60) return `${minutes} min ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.floor(hours / 24)}d ago`;
+}
 
 function greeting(d: Date) {
   const h = d.getHours();
@@ -28,6 +66,7 @@ export default function OverviewPage() {
   const { org, user, isHospitalAdmin } = usePortal();
   const now = new Date();
   const queue = useAttentionQueue();
+  const summary = useDashboardSummary();
 
   // Undefined while loading or on error — rendered as "—" rather than 0,
   // because a confident zero we cannot vouch for is the wrong thing to show
@@ -136,7 +175,7 @@ export default function OverviewPage() {
           </Link>
           <span className="mc-badge mc-badge-neutral">
             <Info size={12} strokeWidth={2.2} aria-hidden />
-            Vitals and risk scoring are live; alerting arrives next
+            Vitals, risk scoring and alert escalation are all live
           </span>
         </div>
       )}
@@ -147,20 +186,63 @@ export default function OverviewPage() {
             <div>
               <div className="mc-card-title">Maternal health overview</div>
               <div className="mc-card-sub">
-                Patient health trends across your organization
+                Active pregnancies by current risk level
               </div>
             </div>
           </div>
-          <div className="mc-empty">
-            <span className="mc-empty-icon">
-              <HeartPulse size={20} strokeWidth={1.9} aria-hidden />
-            </span>
-            <span className="mc-empty-title">No health data yet</span>
-            <span className="mc-empty-text">
-              Blood pressure, heart rate and other vitals will chart here once
-              patients are enrolled and wearable monitoring is connected.
-            </span>
-          </div>
+
+          {summary.isError && (
+            <div className="mc-empty">
+              <span className="mc-empty-title">Overview unavailable</span>
+              <span className="mc-empty-text">
+                This is not a statement that no patient needs review — the
+                summary could not be loaded. Refresh to try again.
+              </span>
+            </div>
+          )}
+
+          {summary.isSuccess && summary.data.risk.total === 0 && (
+            <div className="mc-empty">
+              <span className="mc-empty-icon">
+                <HeartPulse size={20} strokeWidth={1.9} aria-hidden />
+              </span>
+              <span className="mc-empty-title">No health data yet</span>
+              <span className="mc-empty-text">
+                A breakdown by risk level will appear here once patients are
+                enrolled and their readings begin arriving.
+              </span>
+            </div>
+          )}
+
+          {summary.isSuccess && summary.data.risk.total > 0 && (
+            <div className="mc-card-body">
+              <div className="mc-risklist">
+                {RISK_LEVELS.map(({ key, label, badge }) => (
+                  <div key={key} className="mc-riskrow">
+                    <span className="mc-riskrow-label">
+                      <span className={`mc-badge ${badge}`}>{label}</span>
+                    </span>
+                    <span
+                      style={{
+                        fontWeight: 600,
+                        fontVariantNumeric: "tabular-nums",
+                      }}
+                    >
+                      {summary.data.risk[key]}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <div className="mc-hint" style={{ marginTop: 12 }}>
+                {summary.data.risk.needing_attention} of{" "}
+                {summary.data.risk.total} active{" "}
+                {summary.data.risk.total === 1
+                  ? "pregnancy needs"
+                  : "pregnancies need"}{" "}
+                review right now.
+              </div>
+            </div>
+          )}
         </section>
 
         <div className="mc-stack">
@@ -210,6 +292,46 @@ export default function OverviewPage() {
             </div>
             <AttentionQueue limit={5} />
           </section>
+
+          {isHospitalAdmin && (
+            <section className="mc-card">
+              <div className="mc-card-head">
+                <div>
+                  <div className="mc-card-title">Recent activity</div>
+                  <div className="mc-card-sub">
+                    Who touched patient data, and when
+                  </div>
+                </div>
+              </div>
+              <div className="mc-card-body">
+                {summary.isSuccess && summary.data.activity.length === 0 && (
+                  <div className="mc-hint">Nothing has been recorded yet.</div>
+                )}
+                {summary.isSuccess && summary.data.activity.length > 0 && (
+                  <ol className="mc-trail">
+                    {summary.data.activity.map((entry, index) => (
+                      <li
+                        key={`${entry.at}-${index}`}
+                        className="mc-trail-item"
+                      >
+                        <span className="mc-trail-dot" aria-hidden />
+                        <div>
+                          <div className="mc-trail-what">
+                            {describeActivity(entry)}
+                          </div>
+                          <div className="mc-trail-when">
+                            <Clock size={11} strokeWidth={2.2} aria-hidden />{" "}
+                            {timeAgo(entry.at)}
+                            {entry.actor ? ` · ${entry.actor}` : ""}
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+                )}
+              </div>
+            </section>
+          )}
         </div>
       </div>
 
