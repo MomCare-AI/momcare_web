@@ -408,6 +408,14 @@ a.mc-kpi:hover {
   border-color: var(--c-border);
 }
 
+/* Every dashboard section full-width, stacked — no card squeezed into a
+   narrow middle column fighting a sidebar for room. */
+.mc-fullstack {
+  display: grid;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
 /* ── Layout grids ────────────────────────────────────────────────────── */
 .mc-grid-2 {
   display: grid;
@@ -1751,4 +1759,208 @@ select.mc-input {
     flex-wrap: wrap;
     gap: 4px 14px;
   }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   OVERVIEW — hero band, coloured KPI chips, risk donut
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* A soft wash behind the greeting instead of a bare heading, so the page
+   the day actually starts on reads as the primary surface, not one card
+   among equals. */
+.mc-hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--r-card);
+  padding: 26px 28px;
+  margin-bottom: 22px;
+  background:
+    radial-gradient(
+      560px 200px at 88% -20%,
+      rgba(8, 127, 115, 0.09),
+      transparent 70%
+    ),
+    linear-gradient(180deg, var(--c-teal-wash) 0%, var(--c-card) 130%);
+  border: 1px solid var(--c-border-soft);
+}
+.mc-hero .mc-head {
+  margin-bottom: 0;
+  position: relative;
+  z-index: 1;
+}
+.mc-hero-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--c-teal);
+}
+.mc-hero-pill::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--c-teal);
+  box-shadow: 0 0 0 3px rgba(8, 127, 115, 0.16);
+}
+
+/* Cards worth noticing get a little lift, not just a border tint — kept off
+   .mc-card generally since most cards (forms, tables) sit still. */
+.mc-kpi,
+.mc-lift {
+  transition:
+    box-shadow 0.18s ease,
+    border-color 0.18s ease,
+    transform 0.18s ease;
+}
+a.mc-kpi:hover,
+.mc-lift:hover {
+  box-shadow: var(--shadow-pop);
+  transform: translateY(-2px);
+}
+
+/* Icon chip: a tinted circle instead of a bare glyph, colour carrying the
+   same clinical meaning the badges use rather than one brand colour for
+   everything — a KPI about risk should not look as calm as one about staff. */
+.mc-kpi-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--c-border-soft);
+  color: var(--c-body);
+}
+.mc-kpi-icon-teal {
+  background: var(--c-teal-wash);
+  color: var(--c-teal);
+}
+.mc-kpi-icon-coral {
+  background: #fdf0ee;
+  color: var(--c-coral);
+}
+.mc-kpi-icon-attn {
+  background: #fdf5e8;
+  color: #b3791f;
+}
+.mc-kpi-icon-attn.mc-kpi-icon-alert {
+  background: #fdf0ef;
+  color: var(--c-high);
+}
+.mc-kpi-icon-info {
+  background: #eef4fa;
+  color: var(--c-info);
+}
+.mc-kpi-icon-neutral {
+  background: var(--c-border-soft);
+  color: var(--c-faint);
+}
+
+/* A section card reads as bare without something to anchor the title —
+   an icon chip plus a faint tint on the header, rather than a plain white
+   strip, gives every card on the overview page some weight of its own. */
+.mc-section-head {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+.mc-section-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+
+/* Keeps the donut + bar legend from stretching into a field of near-empty
+   grey track once the card spans the full page width. */
+.mc-donut-wrap {
+  max-width: 620px;
+}
+
+/* Risk breakdown: a donut for the shape of the ward at a glance, a bar per
+   row for the exact count — the two answer different questions ("how bad,
+   overall" vs "how many, exactly") and neither replaces the other. */
+.mc-donut-wrap {
+  display: flex;
+  align-items: center;
+  gap: 26px;
+  flex-wrap: wrap;
+}
+.mc-donut {
+  width: 128px;
+  height: 128px;
+  border-radius: 50%;
+  flex: none;
+  position: relative;
+}
+.mc-donut-hole {
+  position: absolute;
+  inset: 20px;
+  border-radius: 50%;
+  background: var(--c-card);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  text-align: center;
+}
+.mc-donut-value {
+  font-size: 25px;
+  font-weight: 700;
+  color: var(--c-ink);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+.mc-donut-label {
+  font-size: 10px;
+  color: var(--c-faint);
+  line-height: 1.3;
+  max-width: 12ch;
+}
+.mc-riskbars {
+  flex: 1;
+  min-width: 200px;
+  display: grid;
+  gap: 10px;
+}
+.mc-riskbar-row {
+  display: grid;
+  grid-template-columns: 96px 1fr 26px;
+  align-items: center;
+  gap: 10px;
+}
+.mc-riskbar-tag {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--c-ink);
+}
+.mc-riskbar-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+}
+.mc-riskbar-track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--c-border-soft);
+  overflow: hidden;
+}
+.mc-riskbar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+.mc-riskbar-count {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--c-ink);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }

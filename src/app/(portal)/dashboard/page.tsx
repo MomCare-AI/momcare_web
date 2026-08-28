@@ -30,13 +30,53 @@ const RISK_LEVELS: {
   >;
   label: string;
   badge: string;
+  color: string;
 }[] = [
-  { key: "critical", label: "Critical", badge: "mc-badge-critical" },
-  { key: "high", label: "High", badge: "mc-badge-high" },
-  { key: "moderate", label: "Moderate", badge: "mc-badge-moderate" },
-  { key: "stable", label: "Stable", badge: "mc-badge-stable" },
-  { key: "not_assessed", label: "Not yet assessed", badge: "mc-badge-neutral" },
+  {
+    key: "critical",
+    label: "Critical",
+    badge: "mc-badge-critical",
+    color: "var(--c-critical)",
+  },
+  {
+    key: "high",
+    label: "High",
+    badge: "mc-badge-high",
+    color: "var(--c-high)",
+  },
+  {
+    key: "moderate",
+    label: "Moderate",
+    badge: "mc-badge-moderate",
+    color: "var(--c-moderate)",
+  },
+  {
+    key: "stable",
+    label: "Stable",
+    badge: "mc-badge-stable",
+    color: "var(--c-stable)",
+  },
+  {
+    key: "not_assessed",
+    label: "Not assessed",
+    badge: "mc-badge-neutral",
+    color: "var(--c-faint)",
+  },
 ];
+
+/** CSS conic-gradient stops for the risk donut — no charting library needed
+ *  for five static segments, and it stays crisp at any size. */
+function donutGradient(risk: DashboardRisk): string {
+  const total = risk.total || 1;
+  let cursor = 0;
+  const stops = RISK_LEVELS.map(({ key, color }) => {
+    const pct = (risk[key] / total) * 100;
+    const from = cursor;
+    cursor += pct;
+    return `${color} ${from}% ${cursor}%`;
+  });
+  return `conic-gradient(${stops.join(", ")})`;
+}
 
 /** "READ patients" -> "Read patients". Kept close to the raw log on purpose —
  *  this is an audit trail, not a marketing feed, and paraphrasing it risks
@@ -78,26 +118,30 @@ export default function OverviewPage() {
 
   return (
     <>
-      <div className="mc-head">
-        <div>
-          <h1 className="mc-h1">
-            {greeting(now)}, {user.first_name || "there"}
-          </h1>
-          <p className="mc-sub">
-            {isHospitalAdmin
-              ? "Your hospital's maternal health overview."
-              : "Your hospital at a glance."}
-          </p>
-        </div>
-        <div className="mc-head-aside">
-          <div className="mc-head-date">
-            {now.toLocaleDateString(undefined, {
-              day: "numeric",
-              month: "short",
-              year: "numeric",
-            })}
+      <div className="mc-hero">
+        <div className="mc-head">
+          <div>
+            <h1 className="mc-h1">
+              {greeting(now)}, {user.first_name || "there"}
+            </h1>
+            <p className="mc-sub">
+              {isHospitalAdmin
+                ? "Your hospital's maternal health overview."
+                : "Your hospital at a glance."}
+            </p>
           </div>
-          <div>Monitoring live · alerts escalating</div>
+          <div className="mc-head-aside">
+            <div className="mc-head-date">
+              {now.toLocaleDateString(undefined, {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+              })}
+            </div>
+            <div className="mc-hero-pill">
+              Monitoring live · alerts escalating
+            </div>
+          </div>
         </div>
       </div>
 
@@ -108,7 +152,7 @@ export default function OverviewPage() {
         <Link href="/dashboard/staff" className="mc-kpi">
           <div className="mc-kpi-top">
             <span className="mc-kpi-label">Doctors &amp; staff</span>
-            <span className="mc-kpi-icon">
+            <span className="mc-kpi-icon mc-kpi-icon-teal">
               <Stethoscope size={17} strokeWidth={1.9} aria-hidden />
             </span>
           </div>
@@ -121,7 +165,7 @@ export default function OverviewPage() {
         <Link href="/dashboard/patients" className="mc-kpi">
           <div className="mc-kpi-top">
             <span className="mc-kpi-label">Patients</span>
-            <span className="mc-kpi-icon">
+            <span className="mc-kpi-icon mc-kpi-icon-coral">
               <Users size={17} strokeWidth={1.9} aria-hidden />
             </span>
           </div>
@@ -147,7 +191,11 @@ export default function OverviewPage() {
         <div className="mc-kpi">
           <div className="mc-kpi-top">
             <span className="mc-kpi-label">Needing attention</span>
-            <span className="mc-kpi-icon">
+            <span
+              className={`mc-kpi-icon mc-kpi-icon-attn${
+                attentionCount ? " mc-kpi-icon-alert" : ""
+              }`}
+            >
               <AlertTriangle size={17} strokeWidth={1.9} aria-hidden />
             </span>
           </div>
@@ -180,13 +228,18 @@ export default function OverviewPage() {
         </div>
       )}
 
-      <div className="mc-grid-2">
+      <div className="mc-fullstack">
         <section className="mc-card">
           <div className="mc-card-head">
-            <div>
-              <div className="mc-card-title">Maternal health overview</div>
-              <div className="mc-card-sub">
-                Active pregnancies by current risk level
+            <div className="mc-section-head">
+              <span className="mc-section-icon mc-kpi-icon-teal">
+                <HeartPulse size={17} strokeWidth={1.9} aria-hidden />
+              </span>
+              <div>
+                <div className="mc-card-title">Maternal health overview</div>
+                <div className="mc-card-sub">
+                  Active pregnancies by current risk level
+                </div>
               </div>
             </div>
           </div>
@@ -216,24 +269,50 @@ export default function OverviewPage() {
 
           {summary.isSuccess && summary.data.risk.total > 0 && (
             <div className="mc-card-body">
-              <div className="mc-risklist">
-                {RISK_LEVELS.map(({ key, label, badge }) => (
-                  <div key={key} className="mc-riskrow">
-                    <span className="mc-riskrow-label">
-                      <span className={`mc-badge ${badge}`}>{label}</span>
+              <div className="mc-donut-wrap">
+                <div
+                  className="mc-donut"
+                  style={{ background: donutGradient(summary.data.risk) }}
+                  role="img"
+                  aria-label={`${summary.data.risk.total} active pregnancies, ${summary.data.risk.needing_attention} needing review`}
+                >
+                  <div className="mc-donut-hole">
+                    <span className="mc-donut-value">
+                      {summary.data.risk.total}
                     </span>
-                    <span
-                      style={{
-                        fontWeight: 600,
-                        fontVariantNumeric: "tabular-nums",
-                      }}
-                    >
-                      {summary.data.risk[key]}
-                    </span>
+                    <span className="mc-donut-label">active pregnancies</span>
                   </div>
-                ))}
+                </div>
+                <div className="mc-riskbars">
+                  {RISK_LEVELS.map(({ key, label, color }) => {
+                    const count = summary.data.risk[key];
+                    const pct =
+                      summary.data.risk.total > 0
+                        ? Math.round((count / summary.data.risk.total) * 100)
+                        : 0;
+                    return (
+                      <div key={key} className="mc-riskbar-row">
+                        <span className="mc-riskbar-tag">
+                          <span
+                            className="mc-riskbar-dot"
+                            style={{ background: color }}
+                            aria-hidden
+                          />
+                          {label}
+                        </span>
+                        <div className="mc-riskbar-track">
+                          <div
+                            className="mc-riskbar-fill"
+                            style={{ width: `${pct}%`, background: color }}
+                          />
+                        </div>
+                        <span className="mc-riskbar-count">{count}</span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-              <div className="mc-hint" style={{ marginTop: 12 }}>
+              <div className="mc-hint" style={{ marginTop: 14 }}>
                 {summary.data.risk.needing_attention} of{" "}
                 {summary.data.risk.total} active{" "}
                 {summary.data.risk.total === 1
@@ -245,9 +324,12 @@ export default function OverviewPage() {
           )}
         </section>
 
-        <div className="mc-stack">
-          <section className="mc-card">
-            <div className="mc-card-head">
+        <section className="mc-card">
+          <div className="mc-card-head">
+            <div className="mc-section-head">
+              <span className="mc-section-icon mc-kpi-icon-info">
+                <Brain size={17} strokeWidth={1.9} aria-hidden />
+              </span>
               <div>
                 <div className="mc-card-title">AI clinical insights</div>
                 <div className="mc-card-sub">
@@ -255,27 +337,36 @@ export default function OverviewPage() {
                 </div>
               </div>
             </div>
-            <div className="mc-card-body">
-              <div className="mc-ai">
-                <span className="mc-ai-tag">
-                  <Brain size={12} strokeWidth={2.3} aria-hidden />
-                  AI insight
-                </span>
-                <div style={{ fontSize: 13.5, color: "var(--c-body)" }}>
-                  The maternal risk model is being trained and is not connected
-                  yet. Insights will appear here once it is, each labelled with
-                  its confidence and the readings behind it.
-                </div>
-                <p className="mc-ai-note">
-                  AI output is decision support only and is never a diagnosis. A
-                  clinician reviews every insight before it informs care.
-                </p>
+          </div>
+          <div className="mc-card-body">
+            <div className="mc-ai">
+              <span className="mc-ai-tag">
+                <Brain size={12} strokeWidth={2.3} aria-hidden />
+                AI insight
+              </span>
+              <div style={{ fontSize: 13.5, color: "var(--c-body)" }}>
+                The maternal risk model is being trained and is not connected
+                yet. Insights will appear here once it is, each labelled with
+                its confidence and the readings behind it.
               </div>
+              <p className="mc-ai-note">
+                AI output is decision support only and is never a diagnosis. A
+                clinician reviews every insight before it informs care.
+              </p>
             </div>
-          </section>
+          </div>
+        </section>
 
-          <section className="mc-card">
-            <div className="mc-card-head">
+        <section className="mc-card mc-lift">
+          <div className="mc-card-head">
+            <div className="mc-section-head">
+              <span
+                className={`mc-section-icon mc-kpi-icon-attn${
+                  attentionCount ? " mc-kpi-icon-alert" : ""
+                }`}
+              >
+                <AlertTriangle size={17} strokeWidth={1.9} aria-hidden />
+              </span>
               <div>
                 <div className="mc-card-title">
                   Patients requiring attention
@@ -284,18 +375,23 @@ export default function OverviewPage() {
                   Most severe first, unreviewed above reviewed
                 </div>
               </div>
-              {attentionCount ? (
-                <span className="mc-badge mc-badge-neutral">
-                  {attentionCount}
-                </span>
-              ) : null}
             </div>
-            <AttentionQueue limit={5} />
-          </section>
+            {attentionCount ? (
+              <span className="mc-badge mc-badge-neutral">
+                {attentionCount}
+              </span>
+            ) : null}
+          </div>
+          <AttentionQueue limit={5} />
+        </section>
 
-          {isHospitalAdmin && (
-            <section className="mc-card">
-              <div className="mc-card-head">
+        {isHospitalAdmin && (
+          <section className="mc-card">
+            <div className="mc-card-head">
+              <div className="mc-section-head">
+                <span className="mc-section-icon mc-kpi-icon-neutral">
+                  <Clock size={17} strokeWidth={1.9} aria-hidden />
+                </span>
                 <div>
                   <div className="mc-card-title">Recent activity</div>
                   <div className="mc-card-sub">
@@ -303,36 +399,33 @@ export default function OverviewPage() {
                   </div>
                 </div>
               </div>
-              <div className="mc-card-body">
-                {summary.isSuccess && summary.data.activity.length === 0 && (
-                  <div className="mc-hint">Nothing has been recorded yet.</div>
-                )}
-                {summary.isSuccess && summary.data.activity.length > 0 && (
-                  <ol className="mc-trail">
-                    {summary.data.activity.map((entry, index) => (
-                      <li
-                        key={`${entry.at}-${index}`}
-                        className="mc-trail-item"
-                      >
-                        <span className="mc-trail-dot" aria-hidden />
-                        <div>
-                          <div className="mc-trail-what">
-                            {describeActivity(entry)}
-                          </div>
-                          <div className="mc-trail-when">
-                            <Clock size={11} strokeWidth={2.2} aria-hidden />{" "}
-                            {timeAgo(entry.at)}
-                            {entry.actor ? ` · ${entry.actor}` : ""}
-                          </div>
+            </div>
+            <div className="mc-card-body">
+              {summary.isSuccess && summary.data.activity.length === 0 && (
+                <div className="mc-hint">Nothing has been recorded yet.</div>
+              )}
+              {summary.isSuccess && summary.data.activity.length > 0 && (
+                <ol className="mc-trail">
+                  {summary.data.activity.map((entry, index) => (
+                    <li key={`${entry.at}-${index}`} className="mc-trail-item">
+                      <span className="mc-trail-dot" aria-hidden />
+                      <div>
+                        <div className="mc-trail-what">
+                          {describeActivity(entry)}
                         </div>
-                      </li>
-                    ))}
-                  </ol>
-                )}
-              </div>
-            </section>
-          )}
-        </div>
+                        <div className="mc-trail-when">
+                          <Clock size={11} strokeWidth={2.2} aria-hidden />{" "}
+                          {timeAgo(entry.at)}
+                          {entry.actor ? ` · ${entry.actor}` : ""}
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </div>
+          </section>
+        )}
       </div>
 
       {!hasStaff && isHospitalAdmin && (
@@ -358,10 +451,15 @@ export default function OverviewPage() {
 
       <section className="mc-card">
         <div className="mc-card-head">
-          <div>
-            <div className="mc-card-title">Hospital profile</div>
-            <div className="mc-card-sub">
-              Registration and contact details on file
+          <div className="mc-section-head">
+            <span className="mc-section-icon mc-kpi-icon-teal">
+              <Building2 size={17} strokeWidth={1.9} aria-hidden />
+            </span>
+            <div>
+              <div className="mc-card-title">Hospital profile</div>
+              <div className="mc-card-sub">
+                Registration and contact details on file
+              </div>
             </div>
           </div>
           <span className="mc-badge mc-badge-neutral">
