@@ -4,8 +4,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { SessionExpiredError } from "@/core/api/authFetch";
 import {
+  addClinicalNote,
   enrolPatient,
   getPatient,
+  listClinicalNotes,
   listClinicians,
   listPatients,
   listPregnancies,
@@ -27,6 +29,8 @@ export const patientKeys = {
     [...patientKeys.all, "list", { search, page }] as const,
   detail: (id: string) => [...patientKeys.all, "detail", id] as const,
   pregnancies: (id: string) => [...patientKeys.all, "pregnancies", id] as const,
+  clinicalNotes: (patientId: string, pregnancyId: string) =>
+    [...patientKeys.all, "notes", patientId, pregnancyId] as const,
   clinicians: ["clinicians"] as const,
 };
 
@@ -60,6 +64,27 @@ export function usePregnancies(id: string) {
     queryKey: patientKeys.pregnancies(id),
     queryFn: () => listPregnancies(id),
     retry: retryUnlessSessionExpired,
+  });
+}
+
+export function useClinicalNotes(patientId: string, pregnancyId: string) {
+  return useQuery({
+    queryKey: patientKeys.clinicalNotes(patientId, pregnancyId),
+    queryFn: () => listClinicalNotes(patientId, pregnancyId),
+    retry: retryUnlessSessionExpired,
+  });
+}
+
+export function useAddClinicalNote(patientId: string, pregnancyId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (body: string) => addClinicalNote(patientId, pregnancyId, body),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: patientKeys.clinicalNotes(patientId, pregnancyId),
+      });
+    },
   });
 }
 

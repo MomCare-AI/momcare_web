@@ -1,6 +1,7 @@
 import { authFetch, authJson } from "@/core/api/authFetch";
 
 import type {
+  ClinicalNote,
   Paginated,
   PatientDetail,
   PatientListItem,
@@ -51,6 +52,37 @@ export function getPatient(id: string) {
 
 export function listPregnancies(patientId: string) {
   return authJson<Pregnancy[]>(`/api/patients/${patientId}/pregnancies/`);
+}
+
+export function listClinicalNotes(patientId: string, pregnancyId: string) {
+  return authJson<ClinicalNote[]>(
+    `/api/patients/${patientId}/pregnancies/${pregnancyId}/notes/`
+  );
+}
+
+/**
+ * Write a clinical note. The API rejects this for a hospital admin (403) —
+ * writing a clinical judgement is a clinician's call, not an admin task, the
+ * same split drawn for acknowledging an alert.
+ */
+export async function addClinicalNote(
+  patientId: string,
+  pregnancyId: string,
+  body: string
+): Promise<ClinicalNote> {
+  const res = await authFetch(
+    `/api/patients/${patientId}/pregnancies/${pregnancyId}/notes/`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ body }),
+    }
+  );
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new Error(firstError(data) ?? "Could not save this note.");
+  }
+  return data as ClinicalNote;
 }
 
 export interface StaffOption {

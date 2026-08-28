@@ -63,6 +63,14 @@ export interface Pregnancy {
   created_at: string;
 }
 
+export interface ClinicalNote {
+  id: string;
+  body: string;
+  author_name: string;
+  author_role: string;
+  created_at: string;
+}
+
 export interface Consent {
   id: string;
   status: "granted" | "withdrawn";

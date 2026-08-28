@@ -19,8 +19,10 @@ import {
   usePregnancies,
 } from "@/features/patients/hooks/usePatients";
 import { RISK_FACTORS, pregnancyTone } from "@/features/patients/types";
+import { ClinicalNotesPanel } from "@/features/patients/components/ClinicalNotesPanel";
 import { RiskPanel } from "@/features/monitoring/components/RiskPanel";
 import { VitalsPanel } from "@/features/monitoring/components/VitalsPanel";
+import { usePortal } from "../../layout";
 
 type Tab = "overview" | "pregnancy" | "history" | "consent";
 
@@ -39,6 +41,7 @@ export default function PatientProfilePage({
   const { id } = use(params);
   const router = useRouter();
   const justEnrolled = useSearchParams().get("enrolled") === "1";
+  const { isClinician } = usePortal();
 
   const [tab, setTab] = useState<Tab>("overview");
 
@@ -264,7 +267,7 @@ export default function PatientProfilePage({
 
               {current.notes && (
                 <div style={{ marginTop: 20 }}>
-                  <div className="mc-pair-label">Clinical notes</div>
+                  <div className="mc-pair-label">Enrolment note</div>
                   <p className="mc-pair-value">{current.notes}</p>
                 </div>
               )}
@@ -281,6 +284,14 @@ export default function PatientProfilePage({
             </div>
           )}
         </section>
+      )}
+
+      {tab === "pregnancy" && current && (
+        <ClinicalNotesPanel
+          patientId={patient.id}
+          pregnancyId={current.id}
+          canWrite={isClinician}
+        />
       )}
 
       {tab === "history" && (
