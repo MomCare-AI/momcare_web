@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 
@@ -40,7 +40,30 @@ const faqs = [
 
 export function FaqCarousel() {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 640);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  const activeSize = isMobile ? 300 : 450;
+  const inactiveWidth = isMobile ? 190 : 280;
+  const inactiveHeight = isMobile ? 340 : 400;
+  const cardGap = isMobile ? 14 : 24;
+
+  const scrollToActive = (index: number) => {
+    if (containerRef.current) {
+      const scrollPosition = index * (inactiveWidth + cardGap);
+      containerRef.current.scrollTo({
+        left: Math.max(0, scrollPosition - (isMobile ? 40 : 100)),
+        behavior: "smooth",
+      });
+    }
+  };
 
   const handleNext = () => {
     setActiveIndex((prev) => Math.min(prev + 1, faqs.length - 1));
@@ -52,24 +75,12 @@ export function FaqCarousel() {
     scrollToActive(activeIndex - 1);
   };
 
-  const scrollToActive = (index: number) => {
-    if (containerRef.current) {
-      const cardWidth = 300;
-      const gap = 24;
-      const scrollPosition = index * (cardWidth + gap);
-      containerRef.current.scrollTo({
-        left: Math.max(0, scrollPosition - 100),
-        behavior: "smooth",
-      });
-    }
-  };
-
   return (
     <section
       id="faq"
       className="faq-section"
       style={{
-        padding: "120px 24px",
+        padding: "clamp(64px, 14vw, 120px) clamp(16px, 5vw, 24px)",
         background: "var(--bg)",
         overflow: "hidden",
         scrollMarginTop: 110,
@@ -84,12 +95,12 @@ export function FaqCarousel() {
             alignItems: "flex-start",
             flexWrap: "wrap",
             gap: "40px",
-            marginBottom: "60px",
+            marginBottom: "clamp(32px, 8vw, 60px)",
           }}
         >
           <h2
             style={{
-              fontSize: "48px",
+              fontSize: "clamp(28px, 7vw, 48px)",
               fontWeight: 700,
               fontFamily: "var(--font-display)",
               lineHeight: 1.1,
@@ -168,7 +179,7 @@ export function FaqCarousel() {
           ref={containerRef}
           style={{
             display: "flex",
-            gap: "24px",
+            gap: `${cardGap}px`,
             overflowX: "auto",
             paddingBottom: "40px",
             scrollbarWidth: "none",
@@ -181,7 +192,7 @@ export function FaqCarousel() {
 
             return (
               <motion.div
-                key={faq.id}
+                key={`${faq.id}-${isMobile}`}
                 layout
                 onClick={() => {
                   setActiveIndex(index);
@@ -189,8 +200,8 @@ export function FaqCarousel() {
                 }}
                 initial={false}
                 animate={{
-                  width: isActive ? 450 : 280,
-                  height: isActive ? 450 : 400,
+                  width: isActive ? activeSize : inactiveWidth,
+                  height: isActive ? activeSize : inactiveHeight,
                   backgroundColor: isActive ? "var(--primary)" : "#e2e8f0",
                   color: isActive ? "#ffffff" : "var(--text)",
                 }}
@@ -201,7 +212,7 @@ export function FaqCarousel() {
                 }}
                 style={{
                   borderRadius: "24px",
-                  padding: "40px",
+                  padding: isMobile ? "22px" : "40px",
                   display: "flex",
                   flexDirection: "column",
                   flexShrink: 0,
@@ -213,7 +224,13 @@ export function FaqCarousel() {
                 <motion.h3
                   layout
                   style={{
-                    fontSize: isActive ? "28px" : "24px",
+                    fontSize: isActive
+                      ? isMobile
+                        ? "19px"
+                        : "28px"
+                      : isMobile
+                        ? "15px"
+                        : "24px",
                     fontWeight: 500,
                     fontFamily: "var(--font-display)",
                     lineHeight: 1.3,
@@ -235,7 +252,7 @@ export function FaqCarousel() {
                     >
                       <p
                         style={{
-                          fontSize: "15px",
+                          fontSize: isMobile ? "13px" : "15px",
                           lineHeight: 1.6,
                           opacity: 0.9,
                         }}
