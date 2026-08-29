@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import Link from "next/link";
+import Image from "next/image";
 import HwStep1Personal from "./HwStep1Personal";
 import HwOrgStep1Identity from "./HwOrgStep1Identity";
 import HwOrgStep2Contact from "./HwOrgStep2Contact";
@@ -75,14 +76,14 @@ export default function HospitalWizard() {
       {/* ── Header ── */}
       <header className="hw-header">
         <Link href="/" className="hw-brand">
-          <motion.span
-            className="hw-brand-heart"
-            animate={{ scale: [1, 1.2, 1] }}
-            transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-          >
-            ♥
-          </motion.span>
-          <span className="hw-brand-name">MomCare</span>
+          <Image
+            src="/avatars/logo.png"
+            alt="MomCare"
+            width={140}
+            height={34}
+            style={{ objectFit: "contain", height: "34px", width: "auto" }}
+            priority
+          />
         </Link>
 
         {!isDone && (

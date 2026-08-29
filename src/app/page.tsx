@@ -1,45 +1,94 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { motion, useMotionValue, useTransform } from "motion/react";
+import Image from "next/image";
+import { motion, AnimatePresence } from "motion/react";
 import { animate, stagger } from "animejs";
+import {
+  ClipboardList,
+  Lock,
+  HeartPulse,
+  ShieldCheck,
+  Building2,
+  HeartHandshake,
+  CheckCircle2,
+  Phone,
+  Mail,
+  Menu,
+  X,
+} from "lucide-react";
+import { FaqCarousel } from "./components/FaqCarousel";
+import { ValuePillars } from "./components/ValuePillars";
+import { IntegrationHub } from "./components/IntegrationHub";
+import { OurTeam } from "./components/OurTeam";
+import { AboutFlip } from "./components/AboutFlip";
+import { HowItsBuilt } from "./components/HowItsBuilt";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import {
+  AvatarGroup,
+  AvatarGroupTooltip,
+} from "@/components/animate-ui/components/animate/avatar-group";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+  TooltipProvider,
+} from "@/components/animate-ui/components/animate/tooltip";
 
-// ── 3D Tilt Card (mouse-tracked) ────────────────────────────
-function TiltCard({
-  children,
+// A drawn mark, not the system emoji glyph — the Unicode ♥ renders
+function HeartMark({
+  size = 20,
   className = "",
-  style,
 }: {
-  children: React.ReactNode;
+  size?: number;
   className?: string;
-  style?: React.CSSProperties;
 }) {
-  const mx = useMotionValue(0.5);
-  const my = useMotionValue(0.5);
-  const rotateX = useTransform(my, [0, 1], [8, -8]);
-  const rotateY = useTransform(mx, [0, 1], [-8, 8]);
-
-  return (
-    <motion.div
-      className={className}
-      style={{ ...style, rotateX, rotateY, transformStyle: "preserve-3d" }}
-      onMouseMove={(e) => {
-        const r = e.currentTarget.getBoundingClientRect();
-        mx.set((e.clientX - r.left) / r.width);
-        my.set((e.clientY - r.top) / r.height);
-      }}
-      onMouseLeave={() => {
-        mx.set(0.5);
-        my.set(0.5);
-      }}
-      whileHover={{ scale: 1.025, y: -8 }}
-      transition={{ type: "spring", stiffness: 350, damping: 28 }}
-    >
-      {children}
-    </motion.div>
-  );
+  return <HeartPulse size={size} className={className} strokeWidth={2.5} />;
 }
+
+// What's actually true today, not fabricated certifications or client
+// names — MomCare has no real hospitals onboarded yet, and claiming HIPAA
+// or ISO 27001 compliance without an audit would be a false claim, not a
+// design choice.
+const TRUST_BADGES = [
+  {
+    icon: ShieldCheck,
+    label: "Row-Level Security (Postgres)",
+    detail:
+      "The database-level second layer — built and tested, not yet live in production.",
+  },
+  {
+    icon: ClipboardList,
+    label: "Documented clinical thresholds",
+    detail:
+      "Every risk tier is defined by a rule anyone can read, not a black-box score.",
+  },
+  {
+    icon: Building2,
+    label: "Built for hospitals across Pakistan",
+    detail:
+      "MomCare is a B2B platform — hospitals onboard, not individual patients.",
+  },
+  {
+    icon: HeartHandshake,
+    label: "Escalation ladder, three tiers",
+    detail:
+      "Clinician, then hospital admin — each tier has its own response deadline.",
+  },
+  {
+    icon: CheckCircle2,
+    label: "Append-only audit trail",
+    detail:
+      "Every escalation step is written down and never edited, only added to.",
+  },
+  {
+    icon: Lock,
+    label: "Every hospital, walled off",
+    detail:
+      "Every request is scoped to your hospital before it ever reaches a query.",
+  },
+];
 
 // ── Fade-up on scroll ────────────────────────────────────────
 function FadeUp({
@@ -65,6 +114,8 @@ function FadeUp({
 }
 
 export default function LandingPage() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   // ── Anime.js: hero headline word stagger ─────────────────
   useEffect(() => {
     // Hide words initially so anime.js controls the reveal
@@ -81,14 +132,14 @@ export default function LandingPage() {
       ease: "outExpo",
     });
 
-    animate(".hero-eyebrow", {
+    animate(".hero-video-pill", {
       opacity: [0, 1],
       translateX: [-28, 0],
       duration: 700,
       ease: "outExpo",
     });
 
-    animate(".hero-sub", {
+    animate(".hero-video-sub", {
       opacity: [0, 1],
       translateY: [22, 0],
       duration: 700,
@@ -96,7 +147,7 @@ export default function LandingPage() {
       delay: 420,
     });
 
-    animate(".hero-actions", {
+    animate(".hero-video-actions", {
       opacity: [0, 1],
       translateY: [18, 0],
       duration: 600,
@@ -107,457 +158,861 @@ export default function LandingPage() {
 
   return (
     <main className="landing">
-      {/* ── Nav ─────────────────────────────────────────────── */}
+      {/* ── Nav: a floating pill ────────────────────────────────── */}
       <motion.nav
         className="nav"
-        initial={{ y: -80, opacity: 0 }}
+        initial={{ y: -60, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.75, ease: [0.23, 1, 0.32, 1] }}
       >
         <div className="nav-inner">
-          <div className="nav-brand">
-            <span className="nav-logo">♥</span>
-            <span className="nav-name">MomCare</span>
-          </div>
+          <Link
+            href="/"
+            className="nav-brand"
+            onClick={(e) => {
+              if (window.location.pathname === "/") {
+                e.preventDefault();
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }
+              setMobileMenuOpen(false);
+            }}
+          >
+            <Image
+              src="/avatars/logo.png"
+              alt="MomCare Logo"
+              width={180}
+              height={44}
+              style={{ objectFit: "contain", height: "44px", width: "auto" }}
+              priority
+            />
+          </Link>
           <div className="nav-links">
-            <a href="#how" className="nav-link">
+            <a href="#about" className="nav-link">
+              About
+            </a>
+            <a href="#engine" className="nav-link">
               How it works
             </a>
-            <a href="#features" className="nav-link">
-              For Doctors
+            <a href="#built" className="nav-link">
+              Team
             </a>
-            <a href="#contact" className="nav-link">
+            <a href="#faq" className="nav-link">
+              FAQ
+            </a>
+            <a href="#cta" className="nav-link">
               Contact
             </a>
-            <Link href="/login" className="nav-link">
+          </div>
+          {/* Desktop-only auth actions */}
+          <div className="nav-right">
+            <Link href="/login" className="nav-signin">
               Log in
             </Link>
-            <motion.div whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.96 }}>
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.96 }}>
               <Link href="/register" className="nav-cta">
                 Register Hospital
               </Link>
             </motion.div>
           </div>
+          {/* Mobile-only hamburger toggle */}
+          <button
+            type="button"
+            className="nav-hamburger"
+            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={mobileMenuOpen}
+            onClick={() => setMobileMenuOpen((o) => !o)}
+          >
+            {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+          </button>
         </div>
+
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -12, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -12, scale: 0.97 }}
+              transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+              className="nav-mobile-menu"
+            >
+              <a
+                href="#about"
+                className="nav-mobile-link"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                About
+              </a>
+              <a
+                href="#engine"
+                className="nav-mobile-link"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                How it works
+              </a>
+              <a
+                href="#built"
+                className="nav-mobile-link"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Team
+              </a>
+              <a
+                href="#faq"
+                className="nav-mobile-link"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                FAQ
+              </a>
+              <a
+                href="#cta"
+                className="nav-mobile-link"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Contact
+              </a>
+              <div className="nav-mobile-divider" />
+              <Link
+                href="/login"
+                className="nav-mobile-link"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Log in
+              </Link>
+              <Link
+                href="/register"
+                className="nav-cta nav-mobile-cta"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Register Hospital
+              </Link>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.nav>
 
-      {/* ── Hero ─────────────────────────────────────────────── */}
-      <section className="hero">
-        <div className="hero-inner">
-          {/* Text side */}
-          <div className="hero-text">
-            <p className="hero-eyebrow" style={{ opacity: 0 }}>
-              AI-Powered Maternal Health
-            </p>
-            <h1 className="hero-headline">
-              {["Every", "Heartbeat,"].map((w, i) => (
-                <span key={i} className="hero-word">
-                  {w}{" "}
-                </span>
-              ))}
-              <br />
-              <span className="hero-accent">
-                {["Watched", "Over."].map((w, i) => (
-                  <span key={i} className="hero-word">
-                    {w}{" "}
-                  </span>
-                ))}
+      {/* ── Hero: full-viewport video, the nav pill floats over it ─ */}
+      <section className="hero-video">
+        <video
+          className="hero-video-bg"
+          autoPlay
+          loop
+          muted
+          playsInline
+          poster="/images/hero-prenatal-checkup.jpg"
+        >
+          <source src="/videos/hero-pregnancy.mp4" type="video/mp4" />
+        </video>
+        <div className="hero-video-scrim" />
+
+        <div className="hero-video-inner">
+          <motion.div
+            className="hero-video-left"
+            initial={{ opacity: 0, x: -32 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, ease: [0.23, 1, 0.32, 1] }}
+          >
+            <p className="hero-video-pill" style={{ opacity: 0 }}>
+              <span className="hero-video-pill-icon">
+                <HeartMark size={12} />
               </span>
-            </h1>
-            <p className="hero-sub" style={{ opacity: 0 }}>
-              MomCare connects IoT wristbands, AI risk analysis, and clinical
-              dashboards — so no warning sign goes unnoticed between visits.
+              Remote Maternal Health Monitoring
             </p>
-            <div className="hero-actions" style={{ opacity: 0 }}>
+            <h1
+              className="hero-video-headline text-white"
+              style={{ textShadow: "0 4px 20px rgba(0,0,0,0.3)" }}
+            >
+              Every Heartbeat,
+              <br />
+              Watched Over.
+            </h1>
+            <p
+              className="hero-video-sub text-gray-200 max-w-[500px] leading-relaxed"
+              style={{ opacity: 0 }}
+            >
+              MomCare connects wearable vitals, a documented clinical risk
+              engine, and a timed escalation ladder — so a warning sign never
+              waits for the next scheduled visit.
+            </p>
+            <div className="hero-video-actions" style={{ opacity: 0 }}>
               <motion.div
-                whileHover={{ scale: 1.05, y: -2 }}
+                whileHover={{ scale: 1.05, y: -4 }}
                 whileTap={{ scale: 0.97 }}
               >
-                <Link href="/register" className="btn-primary">
+                <Link
+                  href="/register"
+                  className="btn-primary"
+                  style={{ boxShadow: "0 10px 30px rgba(67, 97, 238, 0.4)" }}
+                >
                   Register your hospital
                 </Link>
               </motion.div>
-              <motion.a href="#how" className="btn-ghost" whileHover={{ x: 6 }}>
-                See how it works →
-              </motion.a>
-            </div>
-          </div>
-
-          {/* Wristband side */}
-          <motion.div
-            className="hero-visual"
-            initial={{ opacity: 0, x: 70 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{
-              duration: 0.9,
-              delay: 0.25,
-              ease: [0.23, 1, 0.32, 1],
-            }}
-          >
-            <div className="band-scene">
-              <div className="band-glow" />
-
-              <div className="band-wrap">
-                <div className="band-screen">
-                  <div className="band-metric">
-                    <span className="band-icon">♥</span>
-                    <span className="band-val">98</span>
-                    <span className="band-unit">bpm</span>
-                  </div>
-                  <div className="band-pulse">
-                    <svg viewBox="0 0 80 30" fill="none">
-                      <polyline
-                        points="0,15 12,15 18,5 24,25 30,15 36,15 44,2 50,28 56,15 80,15"
-                        stroke="#6ECFBB"
-                        strokeWidth="1.8"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="pulse-line"
-                      />
-                    </svg>
-                  </div>
-                  <div className="band-metrics-row">
-                    <div className="bm">
-                      <span className="bm-v">98%</span>
-                      <span className="bm-l">SpO₂</span>
-                    </div>
-                    <div className="bm">
-                      <span className="bm-v">36.8°</span>
-                      <span className="bm-l">Temp</span>
-                    </div>
-                    <div className="bm bm-risk">
-                      <span className="bm-v">Low</span>
-                      <span className="bm-l">Risk</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="band-strap band-strap-top" />
-                <div className="band-strap band-strap-bot" />
-              </div>
-
-              {/* Floating tags — CSS @keyframes */}
-              <div className="float-tag ft1">🤖 AI Risk: Low</div>
-              <div className="float-tag ft2">📡 Live · 2s ago</div>
-              <div className="float-tag ft3">🔔 All Normal</div>
             </div>
           </motion.div>
         </div>
+      </section>
 
-        {/* Stats row */}
-        <motion.div
-          className="hero-stats"
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.75, delay: 0.65, ease: [0.23, 1, 0.32, 1] }}
+      <AboutFlip />
+
+      {/* ── Trust & Accreditation Marquee ──────────────────────── */}
+      <TooltipProvider openDelay={150}>
+        <section className="trust-marquee">
+          <div className="trust-marquee-track">
+            {[...TRUST_BADGES, ...TRUST_BADGES, ...TRUST_BADGES].map(
+              (badge, i) => {
+                const Icon = badge.icon;
+                return (
+                  <Tooltip key={i}>
+                    <TooltipTrigger asChild>
+                      <div className="trust-badge">
+                        <div className="trust-badge-icon">
+                          <Icon size={20} strokeWidth={2.5} />
+                        </div>
+                        {badge.label}
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-[240px]">
+                      {badge.detail}
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              }
+            )}
+          </div>
+          <div className="trust-marquee-track reverse">
+            {[...TRUST_BADGES]
+              .reverse()
+              .concat([...TRUST_BADGES].reverse(), [...TRUST_BADGES].reverse())
+              .map((badge, i) => {
+                const Icon = badge.icon;
+                return (
+                  <Tooltip key={i}>
+                    <TooltipTrigger asChild>
+                      <div className="trust-badge">
+                        <div className="trust-badge-icon">
+                          <Icon size={20} strokeWidth={2.5} />
+                        </div>
+                        {badge.label}
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-[240px]">
+                      {badge.detail}
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              })}
+          </div>
+        </section>
+      </TooltipProvider>
+
+      <ValuePillars />
+      <IntegrationHub />
+
+      {/* ── CTA ─────────────────────────────────────── */}
+      <section
+        className="section"
+        id="cta"
+        style={{
+          background: "var(--primary-dark)",
+          borderRadius: "var(--radius-lg)",
+          width: "calc(100% - 48px)",
+          maxWidth: "1180px",
+          margin: "0 auto",
+          padding: "80px 40px",
+          textAlign: "center",
+          color: "#fff",
+        }}
+      >
+        <FadeUp>
+          <h2
+            style={{
+              fontSize: "clamp(32px, 4vw, 48px)",
+              fontWeight: 700,
+              marginBottom: "20px",
+              fontFamily: "var(--font-display)",
+              letterSpacing: "-0.02em",
+            }}
+          >
+            Ready to upgrade your ward?
+          </h2>
+          <p
+            style={{
+              fontSize: "18px",
+              opacity: 0.9,
+              maxWidth: "600px",
+              margin: "0 auto 40px",
+              lineHeight: 1.6,
+            }}
+          >
+            Join MomCare today to bring continuous vitals monitoring, automated
+            risk scoring, and guaranteed escalation to your hospital.
+          </p>
+          <div
+            style={{
+              display: "flex",
+              gap: "16px",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <Link
+              href="/register"
+              className="btn-primary"
+              style={{ background: "#fff", color: "var(--primary-dark)" }}
+            >
+              Register your hospital
+            </Link>
+            <a
+              href="mailto:support@momcare.solutions"
+              className="btn-ghost"
+              style={{ color: "#fff" }}
+            >
+              Contact Sales →
+            </a>
+          </div>
+
+          <div className="flex flex-col items-center gap-3 mt-10">
+            <span
+              className="text-xs font-medium"
+              style={{ color: "rgba(255,255,255,0.65)" }}
+            >
+              Talk directly to the people building it
+            </span>
+            <AvatarGroup>
+              <Avatar className="size-11 ring-2 ring-white/25">
+                <AvatarImage
+                  src="/team/Zaka.png"
+                  alt="Zaka Ullah Waheed"
+                  className="object-cover"
+                  style={{ objectPosition: "center 12%" }}
+                />
+                <AvatarFallback>Z</AvatarFallback>
+                <AvatarGroupTooltip className="bg-white text-[var(--text)]">
+                  Zaka — Full-Stack Developer
+                </AvatarGroupTooltip>
+              </Avatar>
+              <Avatar className="size-11 ring-2 ring-white/25">
+                <AvatarFallback
+                  style={{ background: "var(--coral)", color: "#fff" }}
+                >
+                  A
+                </AvatarFallback>
+                <AvatarGroupTooltip className="bg-white text-[var(--text)]">
+                  Ahmed — AI/ML Expert
+                </AvatarGroupTooltip>
+              </Avatar>
+              <Avatar className="size-11 ring-2 ring-white/25">
+                <AvatarFallback
+                  style={{ background: "#fff", color: "var(--primary-dark)" }}
+                >
+                  S
+                </AvatarFallback>
+                <AvatarGroupTooltip className="bg-white text-[var(--text)]">
+                  Saleha — Mobile App Developer
+                </AvatarGroupTooltip>
+              </Avatar>
+            </AvatarGroup>
+          </div>
+        </FadeUp>
+      </section>
+
+      <OurTeam />
+
+      <HowItsBuilt />
+
+      {/* ── FAQ Section ─────────────────────────────────────────────── */}
+      <FaqCarousel />
+
+      {/* ── Floating CTA & Footer ───────────────────────────────────── */}
+      <div
+        style={{ background: "#fff", position: "relative", marginTop: "160px" }}
+      >
+        {/* Floating CTA */}
+        <div
+          style={{
+            maxWidth: "1200px",
+            margin: "0 auto",
+            position: "relative",
+            zIndex: 10,
+            marginTop: "-140px",
+            padding: "0 24px",
+          }}
         >
-          {[
-            { v: "24/7", l: "Continuous monitoring" },
-            { v: "5", l: "Vitals tracked live" },
-            { v: "<2s", l: "Alert response time" },
-            { v: "3", l: "Portals: Doctor · NGO · Admin" },
-          ].map((s) => (
-            <motion.div
-              key={s.l}
-              className="stat-card"
-              whileHover={{ y: -5, scale: 1.04 }}
-              transition={{ type: "spring", stiffness: 380, damping: 24 }}
+          <div
+            style={{
+              background: "#4361ee",
+              borderRadius: "16px",
+              padding: "clamp(24px, 6vw, 40px) clamp(20px, 7vw, 60px)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              color: "#fff",
+              boxShadow: "0 20px 40px rgba(67, 97, 238, 0.2)",
+              flexWrap: "wrap",
+              gap: "32px",
+            }}
+          >
+            {/* Left: Logo */}
+            <div
+              style={{
+                flex: "1",
+                display: "flex",
+                justifyContent: "center",
+                minWidth: "180px",
+              }}
             >
-              <span className="stat-val">{s.v}</span>
-              <span className="stat-label">{s.l}</span>
-            </motion.div>
-          ))}
-        </motion.div>
-      </section>
-
-      {/* ── How it works ─────────────────────────────────────── */}
-      <section className="section" id="how">
-        <FadeUp className="section-head">
-          <p className="section-eye">The system</p>
-          <h2 className="section-title">From wrist to doctor in seconds</h2>
-        </FadeUp>
-
-        <div className="steps">
-          {[
-            {
-              n: "01",
-              color: "#8B78C4",
-              icon: "https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Watch/3D/watch_3d.png",
-              title: "Wristband measures",
-              body: "The IoT wristband reads heart rate, SpO₂, body temperature, activity, and stress score — continuously, every second.",
-            },
-            {
-              n: "02",
-              color: "#6ECFBB",
-              icon: "https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Robot/3D/robot_3d.png",
-              title: "AI calculates risk",
-              body: "Scikit-learn model combines real-time vitals with verified lab values to score each patient Low, Medium, or High risk instantly.",
-            },
-            {
-              n: "03",
-              color: "#F4856A",
-              icon: "https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Police%20car%20light/3D/police_car_light_3d.png",
-              title: "Doctor gets alerted",
-              body: "High risk triggers an emergency cascade — push notification to the doctor, SMS to family, alert on the NGO dashboard.",
-            },
-          ].map((step, i) => (
-            <FadeUp key={step.n} delay={i * 0.13}>
-              <TiltCard
-                className="step-card"
-                style={{ "--step-color": step.color } as React.CSSProperties}
+              <Image
+                src="/avatars/logo.png"
+                alt="MomCare Logo"
+                width={240}
+                height={240}
+                style={{
+                  objectFit: "contain",
+                  width: "240px",
+                  height: "auto",
+                  maxWidth: "100%",
+                  filter: "brightness(0) invert(1)",
+                }}
+              />
+            </div>
+            {/* Right: Content & Form */}
+            <div style={{ flex: "1.5", minWidth: "220px" }}>
+              <h2
+                style={{
+                  fontSize: "28px",
+                  fontWeight: 700,
+                  marginBottom: "12px",
+                  fontFamily: "var(--font-display)",
+                }}
               >
-                <div className="step-number">{step.n}</div>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={step.icon}
-                  alt={step.title}
-                  className="step-icon-img"
-                  loading="lazy"
+                Ready to upgrade your ward?
+              </h2>
+              <p
+                style={{
+                  fontSize: "15px",
+                  opacity: 0.9,
+                  marginBottom: "24px",
+                  lineHeight: 1.5,
+                }}
+              >
+                Join MomCare today to bring continuous vitals monitoring,
+                automated risk scoring, and guaranteed escalation to your
+                hospital.
+              </p>
+              <div
+                style={{
+                  display: "flex",
+                  gap: "8px",
+                  background: "rgba(255,255,255,0.15)",
+                  padding: "6px",
+                  borderRadius: "8px",
+                  alignItems: "center",
+                }}
+              >
+                <input
+                  type="email"
+                  placeholder="Enter your email"
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                    background: "transparent",
+                    border: "none",
+                    color: "#fff",
+                    padding: "10px 12px",
+                    outline: "none",
+                    fontSize: "14px",
+                  }}
                 />
-                <h3 className="step-title">{step.title}</h3>
-                <p className="step-body">{step.body}</p>
-                <div className="step-line" />
-              </TiltCard>
-            </FadeUp>
-          ))}
-        </div>
-
-        {/* Phone mockup */}
-        <FadeUp>
-          <div className="phone-scene">
-            <div className="phone-wrap">
-              <div className="phone-notch" />
-              <div className="phone-screen">
-                <div className="phone-header">
-                  <span className="phone-app">MomCare Patient</span>
-                  <span className="phone-time">10:42</span>
-                </div>
-                <div className="phone-risk-badge">
-                  <span className="prb-dot" />
-                  <span>
-                    Risk Level: <strong>Low</strong>
-                  </span>
-                </div>
-                <div className="phone-vitals">
-                  {[
-                    { l: "Heart Rate", v: "82 bpm", c: "#F4856A" },
-                    { l: "SpO₂", v: "98%", c: "#8B78C4" },
-                    { l: "Temp", v: "36.8°C", c: "#6ECFBB" },
-                    { l: "Activity", v: "Moderate", c: "#F4856A" },
-                  ].map((v) => (
-                    <div key={v.l} className="pv-row">
-                      <span className="pv-label">{v.l}</span>
-                      <span className="pv-val" style={{ color: v.c }}>
-                        {v.v}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-                <div className="phone-next">
-                  <span>Next appointment</span>
-                  <strong>Aug 14 · 10:00 AM</strong>
-                </div>
+                <button
+                  style={{
+                    flexShrink: 0,
+                    background: "#fff",
+                    color: "#4361ee",
+                    padding: "10px 18px",
+                    borderRadius: "6px",
+                    fontWeight: 600,
+                    border: "none",
+                    cursor: "pointer",
+                    fontSize: "14px",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  Request Demo
+                </button>
               </div>
-              <div className="phone-home-btn" />
+              <p style={{ fontSize: "12px", opacity: 0.7, marginTop: "12px" }}>
+                You will be able to unsubscribe at any time. Read our privacy
+                policy{" "}
+                <Link
+                  href="#"
+                  style={{ color: "#fff", textDecoration: "underline" }}
+                >
+                  here
+                </Link>
+                .
+              </p>
             </div>
           </div>
-        </FadeUp>
-      </section>
-
-      {/* ── Doctor features ───────────────────────────────────── */}
-      <section className="section section-alt" id="features">
-        <FadeUp className="section-head">
-          <p className="section-eye">For Doctors</p>
-          <h2 className="section-title">
-            Everything you need, nothing you don&apos;t
-          </h2>
-        </FadeUp>
-
-        <div className="features-grid">
-          {[
-            {
-              icon: "https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Bar%20chart/3D/bar_chart_3d.png",
-              title: "Real-time vitals dashboard",
-              body: "All your patients on one screen. Sorted by risk level. High-risk cases surface automatically — no hunting.",
-            },
-            {
-              icon: "https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Robot/3D/robot_3d.png",
-              title: "AI risk score",
-              body: "Each patient gets a 0–100 risk score updated every 30 seconds. See exactly which vitals are driving the score.",
-            },
-            {
-              icon: "https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Microscope/3D/microscope_3d.png",
-              title: "Lab report OCR",
-              body: "Patients upload lab reports. EasyOCR extracts the values. You verify or correct — one click per field.",
-            },
-            {
-              icon: "https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Calendar/3D/calendar_3d.png",
-              title: "Appointment management",
-              body: "Schedule, track, and mark appointments. No-show tracking built in. Calendar synced with patient bookings.",
-            },
-            {
-              icon: "https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Police%20car%20light/3D/police_car_light_3d.png",
-              title: "Emergency alerts",
-              body: "High risk? One tap triggers the full cascade — family SMS, NGO alert, and notification to all assigned doctors.",
-            },
-            {
-              icon: "https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@main/assets/Outbox%20tray/3D/outbox_tray_3d.png",
-              title: "Export & reports",
-              body: "Export patient history, vitals trends, and risk timelines. PDFs ready for handoffs, referrals, and records.",
-            },
-          ].map((f, i) => (
-            <FadeUp key={f.title} delay={(i % 3) * 0.1}>
-              <TiltCard className="feature-card">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={f.icon}
-                  alt={f.title}
-                  className="fc-icon-img"
-                  loading="lazy"
-                />
-                <h3 className="fc-title">{f.title}</h3>
-                <p className="fc-body">{f.body}</p>
-              </TiltCard>
-            </FadeUp>
-          ))}
         </div>
 
-        {/* Dashboard mockup */}
-        <FadeUp>
-          <div className="dashboard-scene">
-            <motion.div
-              className="dash-wrap"
-              whileHover={{ rotateX: 0, scale: 1.01 }}
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        {/* Footer */}
+        <footer style={{ padding: "80px 24px 24px" }}>
+          <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                gap: "40px",
+                flexWrap: "wrap",
+                paddingBottom: "40px",
+                borderBottom: "1px solid #eaeaea",
+              }}
             >
-              <div className="dash-sidebar">
-                <div className="ds-logo">♥ MC</div>
-                {[
-                  "Dashboard",
-                  "Patients",
-                  "Appointments",
-                  "OCR Queue",
-                  "Alerts",
-                ].map((item) => (
-                  <div
-                    key={item}
-                    className={`ds-item ${item === "Patients" ? "ds-active" : ""}`}
+              {/* Brand & Disclaimer */}
+              <div style={{ flex: "2", minWidth: "280px", maxWidth: "400px" }}>
+                <Image
+                  src="/avatars/logo.png"
+                  alt="MomCare Logo"
+                  width={140}
+                  height={34}
+                  style={{
+                    objectFit: "contain",
+                    height: "34px",
+                    width: "auto",
+                    marginBottom: "20px",
+                  }}
+                />
+                <p
+                  style={{
+                    fontSize: "13px",
+                    color: "var(--text-muted)",
+                    lineHeight: 1.6,
+                    marginBottom: "24px",
+                  }}
+                >
+                  <strong>Medical Disclaimer:</strong> MomCare is a monitoring
+                  platform, not a replacement for emergency medical care. If you
+                  are experiencing a medical emergency, call 911 or your local
+                  emergency helpline immediately.
+                </p>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "16px",
+                    color: "var(--text-muted)",
+                    fontSize: "14px",
+                    fontWeight: 500,
+                  }}
+                >
+                  <a
+                    href="#"
+                    style={{ color: "inherit", transition: "color 0.2s" }}
+                    aria-label="Facebook"
                   >
-                    {item}
-                  </div>
-                ))}
-              </div>
-              <div className="dash-main">
-                <div className="dash-topbar">
-                  <span className="dash-title">Patient List</span>
-                  <div className="dash-user">Dr. Zara Ahmed</div>
-                </div>
-                <div className="dash-stats">
-                  {[
-                    { v: "24", l: "Total", c: "#8B78C4" },
-                    { v: "3", l: "High Risk", c: "#F4856A" },
-                    { v: "7", l: "Today", c: "#6ECFBB" },
-                    { v: "5", l: "OCR Pending", c: "#D4A843" },
-                  ].map((s) => (
-                    <div
-                      key={s.l}
-                      className="dash-stat"
-                      style={{ "--sc": s.c } as React.CSSProperties}
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
                     >
-                      <span className="ds-val">{s.v}</span>
-                      <span className="ds-lbl">{s.l}</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="dash-patients">
-                  {[
-                    { n: "Ayesha Bibi", r: "HIGH", w: "Wk 32" },
-                    { n: "Fatima Malik", r: "MED", w: "Wk 28" },
-                    { n: "Sana Khan", r: "LOW", w: "Wk 20" },
-                  ].map((p) => (
-                    <div key={p.n} className="dp-row">
-                      <div className="dp-avatar">{p.n[0]}</div>
-                      <div className="dp-info">
-                        <span className="dp-name">{p.n}</span>
-                        <span className="dp-week">{p.w}</span>
-                      </div>
-                      <div className={`dp-risk dp-${p.r.toLowerCase()}`}>
-                        {p.r}
-                      </div>
-                    </div>
-                  ))}
+                      <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
+                    </svg>
+                  </a>
+                  <a
+                    href="#"
+                    style={{ color: "inherit", transition: "color 0.2s" }}
+                    aria-label="Twitter"
+                  >
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"></path>
+                    </svg>
+                  </a>
+                  <a
+                    href="#"
+                    style={{ color: "inherit", transition: "color 0.2s" }}
+                    aria-label="Instagram"
+                  >
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <rect
+                        x="2"
+                        y="2"
+                        width="20"
+                        height="20"
+                        rx="5"
+                        ry="5"
+                      ></rect>
+                      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                      <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                    </svg>
+                  </a>
+                  <a
+                    href="#"
+                    style={{ color: "inherit", transition: "color 0.2s" }}
+                    aria-label="LinkedIn"
+                  >
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path>
+                      <rect x="2" y="9" width="4" height="12"></rect>
+                      <circle cx="4" cy="4" r="2"></circle>
+                    </svg>
+                  </a>
                 </div>
               </div>
-            </motion.div>
-          </div>
-        </FadeUp>
-      </section>
 
-      {/* ── CTA ──────────────────────────────────────────────── */}
-      <section className="cta-section" id="contact">
-        <div className="heart-scene">
-          <div className="heart-ring hr1" />
-          <div className="heart-ring hr2" />
-          <div className="heart-ring hr3" />
-          <div className="heart-core">♥</div>
-        </div>
+              {/* Links Columns */}
+              <div style={{ flex: "1", minWidth: "120px" }}>
+                <h4
+                  style={{
+                    fontSize: "15px",
+                    fontWeight: 700,
+                    marginBottom: "20px",
+                    color: "var(--text)",
+                  }}
+                >
+                  Security
+                </h4>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "12px",
+                    fontSize: "14px",
+                    color: "var(--text-muted)",
+                    fontWeight: 500,
+                  }}
+                >
+                  <Link
+                    href="#"
+                    style={{
+                      textDecoration: "none",
+                      color: "inherit",
+                      transition: "color 0.2s",
+                    }}
+                  >
+                    Privacy Practices
+                  </Link>
+                  <Link
+                    href="#"
+                    style={{
+                      textDecoration: "none",
+                      color: "inherit",
+                      transition: "color 0.2s",
+                    }}
+                  >
+                    Row-Level Security
+                  </Link>
+                  <Link
+                    href="#"
+                    style={{
+                      textDecoration: "none",
+                      color: "inherit",
+                      transition: "color 0.2s",
+                    }}
+                  >
+                    Data Security
+                  </Link>
+                </div>
+              </div>
 
-        <FadeUp className="cta-content">
-          <p className="section-eye" style={{ color: "#F4856A" }}>
-            Ready?
-          </p>
-          <h2 className="cta-title">
-            Transform maternal care
-            <br />
-            in your hospital today.
-          </h2>
-          <p className="cta-sub">
-            MomCare is built for Pakistani hospitals and NGOs. Reach out to the
-            team to get started.
-          </p>
-          <div className="cta-actions">
-            <motion.div
-              whileHover={{ scale: 1.05, y: -2 }}
-              whileTap={{ scale: 0.97 }}
-            >
-              <Link href="/register" className="btn-primary btn-lg">
-                Get started
-              </Link>
-            </motion.div>
-            <motion.a
-              href="mailto:team@momcare.ai"
-              className="btn-ghost btn-lg"
-              whileHover={{ x: 5 }}
-            >
-              Contact the Team →
-            </motion.a>
-          </div>
-          <div className="cta-team">
-            <div className="team-avatar">Z</div>
-            <div className="team-info">
-              <strong>Zaka Ullah Waheed</strong> — Frontend
+              <div style={{ flex: "1", minWidth: "120px" }}>
+                <h4
+                  style={{
+                    fontSize: "15px",
+                    fontWeight: 700,
+                    marginBottom: "20px",
+                    color: "var(--text)",
+                  }}
+                >
+                  Sitemap
+                </h4>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "12px",
+                    fontSize: "14px",
+                    color: "var(--text-muted)",
+                    fontWeight: 500,
+                  }}
+                >
+                  <Link
+                    href="#about"
+                    style={{
+                      textDecoration: "none",
+                      color: "inherit",
+                      transition: "color 0.2s",
+                    }}
+                  >
+                    About Us
+                  </Link>
+                  <Link
+                    href="#built"
+                    style={{
+                      textDecoration: "none",
+                      color: "inherit",
+                      transition: "color 0.2s",
+                    }}
+                  >
+                    Our Team
+                  </Link>
+                  <Link
+                    href="#"
+                    style={{
+                      textDecoration: "none",
+                      color: "inherit",
+                      transition: "color 0.2s",
+                    }}
+                  >
+                    Clinic Locations
+                  </Link>
+                </div>
+              </div>
+
+              {/* Contact Us */}
+              <div style={{ flex: "1.5", minWidth: "200px" }}>
+                <h4
+                  style={{
+                    fontSize: "15px",
+                    fontWeight: 700,
+                    marginBottom: "20px",
+                    color: "var(--text)",
+                  }}
+                >
+                  Contact Us
+                </h4>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "16px",
+                    fontSize: "14px",
+                    color: "var(--text-muted)",
+                    fontWeight: 500,
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "12px",
+                    }}
+                  >
+                    <Phone size={18} color="#4361ee" />
+                    <span>(92) 300 1234 567</span>
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "12px",
+                    }}
+                  >
+                    <Mail size={18} color="#4361ee" />
+                    <span>support@momcare.solutions</span>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="team-divider" />
-            <div className="team-avatar">A</div>
-            <div className="team-info">
-              <strong>Ahmed Nawaz</strong> — Backend
+
+            {/* Bottom Bar */}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                paddingTop: "24px",
+                flexWrap: "wrap",
+                gap: "16px",
+              }}
+            >
+              <p style={{ fontSize: "13px", color: "var(--text-muted)" }}>
+                © Copyright {new Date().getFullYear()} MomCare. All rights
+                reserved.
+              </p>
+              <div
+                style={{
+                  display: "flex",
+                  gap: "24px",
+                  fontSize: "13px",
+                  color: "var(--text-muted)",
+                  fontWeight: 500,
+                }}
+              >
+                <Link
+                  href="#"
+                  style={{
+                    textDecoration: "none",
+                    color: "inherit",
+                    transition: "color 0.2s",
+                  }}
+                >
+                  Privacy Policy
+                </Link>
+                <Link
+                  href="#"
+                  style={{
+                    textDecoration: "none",
+                    color: "inherit",
+                    transition: "color 0.2s",
+                  }}
+                >
+                  Terms of Use
+                </Link>
+                <Link
+                  href="#"
+                  style={{
+                    textDecoration: "none",
+                    color: "inherit",
+                    transition: "color 0.2s",
+                  }}
+                >
+                  Legal
+                </Link>
+                <Link
+                  href="#"
+                  style={{
+                    textDecoration: "none",
+                    color: "inherit",
+                    transition: "color 0.2s",
+                  }}
+                >
+                  Site Map
+                </Link>
+              </div>
             </div>
           </div>
-        </FadeUp>
-      </section>
-
-      {/* ── Footer ───────────────────────────────────────────── */}
-      <footer className="footer">
-        <div className="footer-inner">
-          <div className="footer-brand">
-            <span className="nav-logo">♥</span>
-            <span className="nav-name">MomCare</span>
-          </div>
-          <p className="footer-copy">
-            FYP 2026 · Next.js 16 · Django · Scikit-learn · IoT · Made in
-            Pakistan
-          </p>
-        </div>
-      </footer>
+        </footer>
+      </div>
     </main>
   );
 }

@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Activity,
@@ -202,15 +203,14 @@ export default function DashboardLayout({
           </button>
 
           <Link href="/dashboard" className="mc-brand">
-            <span className="mc-brand-mark">
-              <Heart
-                size={19}
-                strokeWidth={2.2}
-                fill="currentColor"
-                aria-hidden
-              />
-            </span>
-            <span className="mc-brand-name">MomCare</span>
+            <Image
+              src="/avatars/logo.png"
+              alt="MomCare Logo"
+              width={180}
+              height={44}
+              style={{ objectFit: "contain", height: "44px", width: "auto" }}
+              priority
+            />
           </Link>
 
           <nav className="mc-navlinks" aria-label="Main">
