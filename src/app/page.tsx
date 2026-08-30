@@ -24,6 +24,7 @@ import { IntegrationHub } from "./components/IntegrationHub";
 import { OurTeam } from "./components/OurTeam";
 import { AboutFlip } from "./components/AboutFlip";
 import { HowItsBuilt } from "./components/HowItsBuilt";
+import { EngineShowcase } from "./components/EngineShowcase";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
   AvatarGroup,
@@ -458,6 +459,7 @@ export default function LandingPage() {
       </TooltipProvider>
 
       <ValuePillars />
+      <EngineShowcase />
       <IntegrationHub />
 
       {/* ── CTA ─────────────────────────────────────── */}

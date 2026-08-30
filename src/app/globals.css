@@ -282,7 +282,8 @@ body {
   border-radius: 999px;
   transition:
     color 0.2s,
-    opacity 0.2s;
+    opacity 0.2s,
+    background 0.25s ease;
 }
 .nav-link:hover {
   color: var(--text);
@@ -3156,7 +3157,9 @@ body {
     text-decoration: none;
     padding: 10px 12px;
     border-radius: 12px;
-    transition: background 0.15s;
+    transition:
+      background 0.25s ease,
+      color 0.2s;
   }
   .nav-mobile-link:hover {
     background: rgba(23, 41, 58, 0.05);
