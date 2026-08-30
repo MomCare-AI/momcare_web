@@ -1,217 +1,261 @@
 /*
- * Sign-in.
+ * Sign-in — cosmetic pass only.
  *
- * Deliberately a single committed look rather than a themed one: this page is
- * the threshold to a monitoring system, and instruments do not have a light
- * mode. Ink on the left, paper on the right, one arterial red between them.
- *
- * No card, no radius, no soft shadow. The structure is the design — hairlines
- * and alignment doing the work that a floating box would otherwise be asked to
- * do.
+ * Restyled to a friendly, layered healthcare-app look (gradient panel +
+ * overlapping white card) at the user's request, matching the brand blue
+ * already established on the landing page. The form's behaviour, class
+ * names, and every functional attribute are untouched — this file only
+ * changes how things look.
  */
 
 .page {
-  --ink: #0a0c0f;
-  --bone: #e8e4dc;
-  --pulse: #e2483b;
-  --slate: #6b7076;
-  --rule: #1c2026;
-  --rule-light: #cfc9bd;
+  --ink: #0f172a;
+  --slate: #64748b;
+  --pulse: #4361ee;
+  --pulse-dark: #324bc3;
+  --rule-light: #e2e8f0;
+  --bone: #f8fafc;
 
   position: fixed;
   inset: 0;
-  display: grid;
-  grid-template-columns: 1.15fr 1fr;
-  background: var(--bone);
+  display: flex;
+  background: #f8fafc;
   overflow: hidden;
 }
 
-/* ── Left: the monitoring field ─────────────────────────────────────────── */
+/* ── Left: the gradient panel — full height, no floating card ────────────── */
 
 .field {
   position: relative;
-  background: var(--ink);
+  flex: 1.15;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(155deg, #6d85fb 0%, #4361ee 55%, #2d3fa8 100%);
   overflow: hidden;
 }
 
-.field canvas {
+/* Decorative shapes, echoing the reference without borrowing its palette. */
+.field::before {
+  content: "";
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  display: block;
+  top: -60px;
+  right: -60px;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.16) 0%,
+    transparent 70%
+  );
 }
 
-/* Reads as a machine's own faint illumination rather than a decorative glow. */
 .field::after {
   content: "";
   position: absolute;
-  inset: 0;
+  bottom: -80px;
+  left: -40px;
+  width: 260px;
+  height: 260px;
+  border-radius: 50%;
   background: radial-gradient(
-    62% 52% at 46% 46%,
-    rgba(226, 72, 59, 0.11),
+    circle,
+    rgba(255, 255, 255, 0.12) 0%,
     transparent 70%
   );
-  pointer-events: none;
+}
+
+.shapeDiamond {
+  position: absolute;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.shapeDiamond:nth-of-type(1) {
+  top: 64px;
+  left: 48px;
+  width: 30px;
+  height: 30px;
+  transform: rotate(45deg);
+}
+
+.shapeDiamond:nth-of-type(2) {
+  top: 120px;
+  right: 64px;
+  width: 18px;
+  height: 18px;
+  transform: rotate(45deg);
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.shapeStar {
+  position: absolute;
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .mark {
-  position: absolute;
-  top: 40px;
-  left: 44px;
+  position: relative;
   z-index: 2;
   display: flex;
-  align-items: baseline;
+  flex-direction: column;
+  align-items: center;
   gap: 10px;
 }
 
-.markName {
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--bone);
-}
-
-.markRule {
-  width: 34px;
-  height: 1px;
-  background: var(--pulse);
+.markLogo {
+  width: 220px;
+  height: auto;
 }
 
 .markKind {
-  font-family: var(--font-geist-mono), ui-monospace, monospace;
-  font-size: 10px;
-  letter-spacing: 0.2em;
+  font-size: 13px;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--slate);
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .claim {
-  position: absolute;
-  left: 44px;
-  bottom: 132px;
+  position: relative;
   z-index: 2;
-  max-width: 15ch;
-  margin: 0;
-  font-size: clamp(34px, 3.6vw, 56px);
-  font-weight: 800;
-  line-height: 0.98;
-  letter-spacing: -0.035em;
+  max-width: 22ch;
+  margin: 40px auto 0;
+  padding: 0 44px;
+  font-size: clamp(26px, 2.8vw, 34px);
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: center;
   text-wrap: balance;
-  color: var(--bone);
+  color: #fff;
 }
 
 .claim em {
   font-style: normal;
-  color: var(--pulse);
+  color: #bfe9e2;
 }
 
 .readout {
   position: absolute;
-  left: 44px;
-  right: 44px;
-  bottom: 40px;
+  left: 32px;
+  right: 32px;
+  bottom: 36px;
   z-index: 2;
   display: flex;
-  gap: 40px;
+  justify-content: space-between;
+  gap: 12px;
   padding-top: 18px;
-  border-top: 1px solid var(--rule);
-  font-family: var(--font-geist-mono), ui-monospace, monospace;
-  font-size: 10px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--slate);
+  border-top: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+.readout span {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.72);
+  text-align: center;
+  flex: 1;
 }
 
 .readout b {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: 500;
-  color: rgba(232, 228, 220, 0.72);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #fff;
 }
 
-/* ── Right: the form ────────────────────────────────────────────────────── */
+/* ── Right: the overlapping white card ──────────────────────────────────── */
 
 .panel {
   position: relative;
+  z-index: 3;
+  flex: 1;
+  height: 100%;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 56px clamp(40px, 6vw, 88px);
+  padding: 56px clamp(40px, 6vw, 96px);
+  background: #fff;
+  border-radius: 48px 0 0 48px;
+  margin-left: -48px;
+  box-shadow: -24px 0 60px rgba(15, 23, 42, 0.1);
   overflow-y: auto;
 }
 
 .form {
   width: 100%;
-  max-width: 380px;
+  max-width: 400px;
+  margin: 0 auto;
 }
 
 .eyebrow {
   display: block;
-  margin-bottom: 14px;
-  font-family: var(--font-geist-mono), ui-monospace, monospace;
-  font-size: 10px;
-  letter-spacing: 0.24em;
+  margin-bottom: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--slate);
+  color: var(--pulse);
 }
 
 .heading {
   margin: 0 0 8px;
-  font-size: clamp(30px, 3vw, 40px);
+  font-size: clamp(26px, 2.6vw, 32px);
   font-weight: 800;
-  letter-spacing: -0.035em;
-  line-height: 1.02;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
   color: var(--ink);
 }
 
 .sub {
-  margin: 0 0 40px;
-  font-size: 14px;
-  line-height: 1.5;
+  margin: 0 0 32px;
+  font-size: 13.5px;
+  line-height: 1.55;
   color: var(--slate);
 }
 
 .field2 {
-  margin-bottom: 26px;
+  margin-bottom: 20px;
 }
 
 .label {
   display: block;
-  margin-bottom: 9px;
-  font-family: var(--font-geist-mono), ui-monospace, monospace;
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.2em;
+  margin-bottom: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--slate);
+  color: #94a3b8;
 }
 
-/* A rule, not a box. The field is defined by the line it sits on. */
 .input {
   width: 100%;
-  padding: 8px 0 11px;
-  border: 0;
-  border-bottom: 1px solid var(--rule-light);
-  border-radius: 0;
-  background: transparent;
+  padding: 13px 16px;
+  border: 1.5px solid var(--rule-light);
+  border-radius: 14px;
+  background: var(--bone);
   font: inherit;
-  font-size: 16px;
+  font-size: 15px;
   color: var(--ink);
   outline: none;
   transition:
     border-color 140ms ease,
-    box-shadow 140ms ease;
+    box-shadow 140ms ease,
+    background 140ms ease;
 }
 
 .input::placeholder {
-  color: #a9a294;
+  color: #b0bac6;
 }
 
 .input:focus {
-  border-bottom-color: var(--pulse);
-  box-shadow: 0 1px 0 0 var(--pulse);
+  border-color: var(--pulse);
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(67, 97, 238, 0.12);
 }
 
 /* Chrome paints autofilled fields a pale yellow that fights the palette. */
@@ -224,27 +268,35 @@
 
 .button {
   width: 100%;
-  margin-top: 14px;
-  padding: 16px;
+  margin-top: 8px;
+  padding: 15px;
   border: 0;
-  border-radius: 0;
-  background: var(--ink);
-  color: var(--bone);
-  font-family: var(--font-geist-mono), ui-monospace, monospace;
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--pulse), var(--pulse-dark));
+  color: #fff;
+  font-size: 14.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
   cursor: pointer;
-  transition: background-color 140ms ease;
+  box-shadow: 0 10px 24px rgba(67, 97, 238, 0.32);
+  transition:
+    transform 140ms ease,
+    box-shadow 140ms ease,
+    background 140ms ease;
 }
 
 .button:hover:not(:disabled) {
-  background: var(--pulse);
+  transform: translateY(-1px);
+  box-shadow: 0 14px 30px rgba(67, 97, 238, 0.4);
+}
+
+.button:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 .button:disabled {
-  background: var(--slate);
+  background: #cbd5e1;
+  box-shadow: none;
   cursor: progress;
 }
 
@@ -254,28 +306,28 @@
   outline-offset: 3px;
 }
 
-/* Messages carry a rule on the leading edge - the same structural device as
-   everything else on the page, rather than a tinted rounded panel. */
+/* Soft rounded banners instead of a hairline rule. */
 .error,
 .notice {
-  margin: 0 0 22px;
-  padding: 2px 0 2px 14px;
-  font-size: 13.5px;
-  line-height: 1.55;
+  margin: 0 0 20px;
+  padding: 11px 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 .error {
-  border-left: 2px solid var(--pulse);
-  color: #8f2418;
+  background: #fef2f2;
+  color: #b42318;
 }
 
 .notice {
-  border-left: 2px solid #9a7b21;
-  color: #6d5714;
+  background: #fffbeb;
+  color: #92660b;
 }
 
 .footer {
-  margin-top: 36px;
+  margin-top: 28px;
   padding-top: 20px;
   border-top: 1px solid var(--rule-light);
   font-size: 13px;
@@ -283,50 +335,51 @@
 }
 
 .link {
-  color: var(--ink);
-  font-weight: 600;
+  color: var(--pulse);
+  font-weight: 700;
   text-decoration: none;
-  border-bottom: 1px solid var(--pulse);
-  padding-bottom: 1px;
 }
 
 .link:hover {
-  color: var(--pulse);
+  text-decoration: underline;
 }
 
 /* ── Narrow ─────────────────────────────────────────────────────────────── */
 
 @media (max-width: 900px) {
   .page {
-    position: relative;
+    display: block;
+    height: auto;
     min-height: 100dvh;
-    grid-template-columns: 1fr;
-    grid-template-rows: 40vh auto;
-    overflow: visible;
+    overflow-y: auto;
   }
 
-  .mark,
-  .claim,
-  .readout {
-    left: 28px;
+  .field {
+    height: auto;
+    min-height: 320px;
+    padding: 44px 0 40px;
   }
 
-  .mark {
-    top: 26px;
+  .markLogo {
+    width: 140px;
   }
 
   .claim {
-    bottom: 34px;
-    font-size: clamp(28px, 8vw, 40px);
+    margin-top: 20px;
+    font-size: 22px;
   }
 
-  /* The readout is supporting detail; on a phone it costs more than it says. */
   .readout {
     display: none;
   }
 
   .panel {
-    padding: 44px 28px 56px;
+    height: auto;
+    margin-left: 0;
+    margin-top: -32px;
+    border-radius: 32px 32px 0 0;
+    padding: 40px 28px 48px;
+    box-shadow: 0 -10px 30px rgba(15, 23, 42, 0.08);
   }
 }
 
@@ -348,22 +401,15 @@
 }
 
 .labelLink {
-  font-family: var(--font-geist-mono), ui-monospace, monospace;
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--pulse);
   text-decoration: none;
-  border-bottom: 1px solid transparent;
-  transition:
-    color 140ms ease,
-    border-color 140ms ease;
 }
 
 .labelLink:hover {
-  color: var(--pulse);
-  border-bottom-color: var(--pulse);
+  text-decoration: underline;
 }
 
 .labelLink:focus-visible {

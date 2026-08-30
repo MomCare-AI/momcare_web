@@ -152,12 +152,12 @@ function FlipCard({
           style={{
             background:
               "linear-gradient(155deg, rgba(191, 219, 254, 0.75) 0%, rgba(255, 255, 255, 0.35) 55%, rgba(255, 255, 255, 0.55) 100%)",
-            backdropFilter: "blur(24px) saturate(180%)",
-            WebkitBackdropFilter: "blur(24px) saturate(180%)",
+            backdropFilter: "blur(16px) saturate(160%)",
+            WebkitBackdropFilter: "blur(16px) saturate(160%)",
             borderColor: "rgba(255, 255, 255, 0.8)",
             boxShadow:
               "0 20px 44px rgba(67, 97, 238, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.9), inset 0 0 40px rgba(255, 255, 255, 0.15)",
-            willChange: "transform",
+            willChange: "transform, backdrop-filter",
             transform: "translateZ(0)",
           }}
         >
@@ -359,7 +359,7 @@ export function IntegrationHub() {
           className="pointer-events-none absolute -top-16 left-[6%] w-72 h-72 rounded-full opacity-70"
           style={{
             background: "radial-gradient(circle, #60a5fa 0%, transparent 70%)",
-            filter: "blur(50px)",
+            filter: "blur(34px)",
           }}
           aria-hidden
         />
@@ -367,7 +367,7 @@ export function IntegrationHub() {
           className="pointer-events-none absolute top-24 right-[8%] w-80 h-80 rounded-full opacity-60"
           style={{
             background: "radial-gradient(circle, #a78bfa 0%, transparent 70%)",
-            filter: "blur(60px)",
+            filter: "blur(40px)",
           }}
           aria-hidden
         />
@@ -376,7 +376,7 @@ export function IntegrationHub() {
           style={{
             background:
               "radial-gradient(circle, var(--primary) 0%, transparent 70%)",
-            filter: "blur(55px)",
+            filter: "blur(36px)",
           }}
           aria-hidden
         />

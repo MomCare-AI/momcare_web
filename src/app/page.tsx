@@ -113,8 +113,46 @@ function FadeUp({
   );
 }
 
+const NAV_SECTION_IDS = ["about", "engine", "built", "faq", "cta"];
+
 export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState<string | null>(null);
+
+  // ── Scroll-spy: highlight whichever nav link's section is on screen,
+  // not just the one that was clicked — so it stays correct on scroll too.
+  useEffect(() => {
+    const sections = NAV_SECTION_IDS.map((id) =>
+      document.getElementById(id)
+    ).filter((el): el is HTMLElement => el !== null);
+
+    if (sections.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        // Among sections currently intersecting the band near the top of
+        // the viewport, the one closest to it is "current" — not just
+        // whichever fired last, since several can be visible at once.
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+
+        if (visible.length > 0) {
+          setActiveSection(visible[0].target.id);
+        }
+      },
+      {
+        // Counts a section as "current" once it's crossed a band just
+        // below the fixed nav, and stops counting it just before the
+        // next section would.
+        rootMargin: "-110px 0px -70% 0px",
+        threshold: 0,
+      }
+    );
+
+    sections.forEach((section) => observer.observe(section));
+    return () => observer.disconnect();
+  }, []);
 
   // ── Anime.js: hero headline word stagger ─────────────────
   useEffect(() => {
@@ -187,19 +225,34 @@ export default function LandingPage() {
             />
           </Link>
           <div className="nav-links">
-            <a href="#about" className="nav-link">
+            <a
+              href="#about"
+              className={`nav-link${activeSection === "about" ? " active" : ""}`}
+            >
               About
             </a>
-            <a href="#engine" className="nav-link">
+            <a
+              href="#engine"
+              className={`nav-link${activeSection === "engine" ? " active" : ""}`}
+            >
               How it works
             </a>
-            <a href="#built" className="nav-link">
+            <a
+              href="#built"
+              className={`nav-link${activeSection === "built" ? " active" : ""}`}
+            >
               Team
             </a>
-            <a href="#faq" className="nav-link">
+            <a
+              href="#faq"
+              className={`nav-link${activeSection === "faq" ? " active" : ""}`}
+            >
               FAQ
             </a>
-            <a href="#cta" className="nav-link">
+            <a
+              href="#cta"
+              className={`nav-link${activeSection === "cta" ? " active" : ""}`}
+            >
               Contact
             </a>
           </div>
@@ -237,35 +290,35 @@ export default function LandingPage() {
             >
               <a
                 href="#about"
-                className="nav-mobile-link"
+                className={`nav-mobile-link${activeSection === "about" ? " active" : ""}`}
                 onClick={() => setMobileMenuOpen(false)}
               >
                 About
               </a>
               <a
                 href="#engine"
-                className="nav-mobile-link"
+                className={`nav-mobile-link${activeSection === "engine" ? " active" : ""}`}
                 onClick={() => setMobileMenuOpen(false)}
               >
                 How it works
               </a>
               <a
                 href="#built"
-                className="nav-mobile-link"
+                className={`nav-mobile-link${activeSection === "built" ? " active" : ""}`}
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Team
               </a>
               <a
                 href="#faq"
-                className="nav-mobile-link"
+                className={`nav-mobile-link${activeSection === "faq" ? " active" : ""}`}
                 onClick={() => setMobileMenuOpen(false)}
               >
                 FAQ
               </a>
               <a
                 href="#cta"
-                className="nav-mobile-link"
+                className={`nav-mobile-link${activeSection === "cta" ? " active" : ""}`}
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Contact

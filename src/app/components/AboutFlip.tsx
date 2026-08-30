@@ -113,6 +113,7 @@ export function AboutFlip() {
                 src="/images/wearable-vitals.jpg"
                 alt="A wearable device displaying a live heart-rate reading"
                 fill
+                sizes="(max-width: 1024px) 100vw, 45vw"
                 className="object-cover"
               />
               <div className="absolute bottom-6 left-6 bg-white rounded-2xl p-4 flex items-center gap-3 shadow-xl">

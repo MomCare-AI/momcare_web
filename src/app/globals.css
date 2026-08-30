@@ -209,6 +209,10 @@ body {
   --text: #0f172a;
   --text-muted: #475569;
   --text-light: #94a3b8;
+  /* Trying Familjen Grotesk for headlines here only — a free stand-in for
+     Axalp Grotesk (a paid font), scoped to .landing until it's judged
+     worth keeping against the portal's more neutral Outfit. */
+  --font-display: var(--font-familjen), system-ui, sans-serif;
 }
 
 /* ── Nav: a floating rounded pill, not a full-width bar ──────── */
@@ -231,9 +235,13 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  background: rgba(255, 255, 255, 0.42);
-  backdrop-filter: blur(22px) saturate(180%);
-  -webkit-backdrop-filter: blur(22px) saturate(180%);
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  /* This blur runs on every scroll frame since the nav is fixed and
+     always on screen — promoting it to its own GPU layer keeps that
+     from forcing a repaint of everything scrolling behind it. */
+  will-change: backdrop-filter;
   border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.55);
   box-shadow:
@@ -279,6 +287,16 @@ body {
 .nav-link:hover {
   color: var(--text);
   opacity: 0.8;
+}
+.nav-link.active {
+  color: var(--primary);
+  font-weight: 700;
+  background: rgba(67, 97, 238, 0.1);
+}
+.nav-mobile-link.active {
+  color: var(--primary);
+  font-weight: 700;
+  background: rgba(67, 97, 238, 0.08);
 }
 .nav-right {
   display: flex;
