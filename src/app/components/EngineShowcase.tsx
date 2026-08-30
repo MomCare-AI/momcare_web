@@ -1,9 +1,21 @@
 "use client";
 
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
+import { Volume2, VolumeX } from "lucide-react";
 
 export function EngineShowcase() {
+  const [isMuted, setIsMuted] = useState(true);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  const toggleMute = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.muted = !video.muted;
+    setIsMuted(video.muted);
+  };
+
   return (
     <section className="py-24" style={{ background: "var(--bg)" }}>
       <div className="max-w-7xl mx-auto px-6">
@@ -54,15 +66,31 @@ export function EngineShowcase() {
           style={{ boxShadow: "var(--neu-md)", background: "#0f1115" }}
         >
           <video
-            className="w-full object-cover"
-            style={{ height: "clamp(360px, 78vh, 760px)" }}
+            ref={videoRef}
+            className="w-full aspect-video object-cover"
             autoPlay
             loop
             muted
             playsInline
           >
-            <source src="/videos/explode-view-wristband.mp4" type="video/mp4" />
+            <source src="/videos/iot-device.mp4" type="video/mp4" />
           </video>
+
+          <motion.button
+            type="button"
+            onClick={toggleMute}
+            whileHover={{ scale: 1.08 }}
+            whileTap={{ scale: 0.95 }}
+            aria-label={isMuted ? "Unmute video" : "Mute video"}
+            className="absolute bottom-5 right-5 flex items-center justify-center w-11 h-11 rounded-full bg-white/90 backdrop-blur shadow-lg"
+            style={{ color: "var(--primary)" }}
+          >
+            {isMuted ? (
+              <VolumeX size={19} strokeWidth={2.25} />
+            ) : (
+              <Volume2 size={19} strokeWidth={2.25} />
+            )}
+          </motion.button>
         </motion.div>
       </div>
     </section>

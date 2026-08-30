@@ -3181,6 +3181,11 @@ body {
     text-align: center;
     justify-content: center;
   }
+  /* The video's subject sits toward the right of frame — centered
+     cropping on a narrow viewport pushes her out entirely. */
+  .hero-video-bg {
+    object-position: right 20%;
+  }
   .hero-video-left {
     display: flex;
     flex-direction: column;
