@@ -291,3 +291,46 @@ unauthenticated user is redirected. The alternative — mirroring identity
 into a cookie so the edge can gate routes — introduces a second source of
 truth about who someone is, for a cosmetic gain. Revisit only if
 server-side redirects become genuinely worth that cost.
+
+## 2026-08-31 — `/admin`, `/doctor`, `/ngo` deleted; `/dashboard` is the one real portal
+
+These three routes were `<div>Admin Portal</div>`-style stubs behind
+passthrough layouts — no auth guard, no real content, and confirmed
+unreferenced by any link or redirect anywhere in the app. They're a
+holdover from the pre-2026-08-22 "three portals" framing (see the mock-auth
+entries above), which stopped being accurate once the real, role-adaptive
+`(portal)/dashboard/` was built for hospital staff (`hospital_admin`,
+`provider`, `nurse`, `care_manager`). `README.md` and `docs/conventions.md`
+still described the old three-portal shape; both corrected to match.
+
+## 2026-08-31 — Metadata for the root page can't use the layout's `title.template`
+
+Confirmed by testing a bare minimal `src/app/page.tsx` in isolation, in
+both dev and a production build: `layout.tsx`'s `title.template` does not
+apply to `page.tsx` at the same route segment — Next.js only templates
+_nested_ segments. `/register`, `/login`, etc. (nested under the root
+layout via their own route groups) template correctly; `/` does not.
+`src/app/page.tsx`'s title is written out in full (`"... · MomCare"`)
+with a comment explaining why, rather than relying on the template — every
+other page keeps using the template as normal.
+
+## 2026-08-31 — Static `og-image.png`, not a dynamic `opengraph-image.tsx`
+
+`next/og`'s `ImageResponse` (Next 16.3, this environment) has a
+reproducible bug: the first request after a fresh build succeeds, every
+request after that throws `Input buffer contains unsupported image format`
+and 500s — confirmed with a minimal repro (plain text, no images) that
+failed the same way, and by fully clearing `.next` and restarting between
+attempts to rule out stale state. Rather than ship a share-image route that
+works once and then breaks, the OG image is a static PNG generated once
+with Pillow and served from `public/`. Revisit if a future Next.js/Node
+version on this stack fixes the underlying bug.
+
+## 2026-08-31 — `axios` removed; `authFetch` was always the real client
+
+Closes the "minor remaining debt" noted in the 2026-08-22 entry above.
+`axios` had zero imports anywhere in `src/` — confirmed by grep before
+removal — and `README.md` was still (wrongly) documenting it as the app's
+HTTP client. Removed from `package.json`; `package-lock.json` regenerated
+via `npm install` (11 packages dropped, its transitive deps). `README.md`
+corrected to describe the real client, `authFetch.ts`.
