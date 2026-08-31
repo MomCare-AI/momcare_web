@@ -13,6 +13,7 @@ import {
 } from "@/features/alerts/hooks/useAlerts";
 import type { Alert, AlertEvent } from "@/features/alerts/types";
 import { usePortal } from "../layout";
+import { usePageTitle } from "@/hooks/usePageTitle";
 
 /**
  * Every alert this hospital has raised, and what happened to each.
@@ -48,6 +49,7 @@ function since(iso: string): string {
 }
 
 export default function AlertsPage() {
+  usePageTitle("Alerts");
   const [tab, setTab] = useState<"live" | "resolved">("live");
   const [openId, setOpenId] = useState<string | null>(null);
 

@@ -10,6 +10,7 @@ import {
   useRegisterDevice,
 } from "@/features/monitoring/hooks/useMonitoring";
 import type { Device } from "@/features/monitoring/types";
+import { usePageTitle } from "@/hooks/usePageTitle";
 
 /**
  * The hospital's stock of wearable bands — who has one, and who does not.
@@ -33,6 +34,7 @@ function groupOf(device: Device): (typeof GROUPS)[number]["key"] {
 }
 
 export default function DevicesPage() {
+  usePageTitle("Devices");
   const [tab, setTab] = useState<(typeof GROUPS)[number]["key"]>("assigned");
   const [showForm, setShowForm] = useState(false);
 

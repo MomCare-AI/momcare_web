@@ -2,8 +2,12 @@ import HospitalWizard from "@/features/hospital-onboarding/components/HospitalWi
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Register — MomCare",
-  description: "Register your hospital or organization on MomCare",
+  title: "Register Your Hospital",
+  description:
+    "Apply to bring MomCare's continuous vitals monitoring, risk scoring, and escalation ladder to your hospital.",
+  alternates: {
+    canonical: "/register",
+  },
 };
 
 export default function RegisterPage() {

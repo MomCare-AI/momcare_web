@@ -17,8 +17,10 @@ import { usePatientList } from "@/features/patients/hooks/usePatients";
 import { RiskBadge } from "@/features/monitoring/components/RiskBadge";
 import { pregnancyTone } from "@/features/patients/types";
 import { usePortal } from "../layout";
+import { usePageTitle } from "@/hooks/usePageTitle";
 
 export default function PatientsPage() {
+  usePageTitle("Patients");
   const { isHospitalAdmin } = usePortal();
   const router = useRouter();
 

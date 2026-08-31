@@ -9,7 +9,6 @@ import {
   AlertTriangle,
   ArrowLeft,
   CheckCircle2,
-  HeartPulse,
   ShieldCheck,
 } from "lucide-react";
 
@@ -23,6 +22,8 @@ import { ClinicalNotesPanel } from "@/features/patients/components/ClinicalNotes
 import { RiskPanel } from "@/features/monitoring/components/RiskPanel";
 import { VitalsPanel } from "@/features/monitoring/components/VitalsPanel";
 import { usePortal } from "../../layout";
+import { usePageTitle } from "@/hooks/usePageTitle";
+import { Breadcrumbs } from "@/features/portal/components/Breadcrumbs";
 
 type Tab = "overview" | "pregnancy" | "history" | "consent";
 
@@ -51,6 +52,8 @@ export default function PatientProfilePage({
   const patient = patientQuery.data;
   const pregnancies = pregnancyQuery.data ?? [];
   const error = patientQuery.error ?? pregnancyQuery.error;
+
+  usePageTitle(patient?.full_name ?? "Patient");
 
   useEffect(() => {
     if (error instanceof SessionExpiredError) router.replace("/login");
@@ -99,9 +102,13 @@ export default function PatientProfilePage({
 
       <div className="mc-head">
         <div>
-          <Link href="/dashboard/patients" className="mc-link">
-            <ArrowLeft size={14} strokeWidth={2} aria-hidden /> Patients
-          </Link>
+          <Breadcrumbs
+            items={[
+              { label: "Overview", href: "/dashboard" },
+              { label: "Patients", href: "/dashboard/patients" },
+              { label: patient.full_name },
+            ]}
+          />
           <h1 className="mc-h1" style={{ marginTop: 8 }}>
             {patient.full_name}
           </h1>

@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Next.js already defaults this to false, but explicit here so a shipped
+  // production bundle never leaks source through a stray override.
+  productionBrowserSourceMaps: false,
 };
 
 export default nextConfig;

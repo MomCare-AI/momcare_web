@@ -239,6 +239,44 @@
   gap: 14px;
 }
 
+/* ── Breadcrumbs ─────────────────────────────────────────────────────── */
+.mc-breadcrumbs {
+  margin-bottom: 10px;
+}
+.mc-breadcrumbs ol {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.mc-breadcrumbs li {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.mc-breadcrumbs a {
+  color: var(--c-faint);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.mc-breadcrumbs a:hover {
+  color: var(--c-teal);
+  text-decoration: underline;
+}
+.mc-breadcrumbs span[aria-current="page"] {
+  color: var(--c-ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+.mc-breadcrumbs-sep {
+  color: var(--c-faint);
+  flex: none;
+}
+
 /* ── Headings ────────────────────────────────────────────────────────── */
 .mc-head {
   display: flex;

@@ -19,6 +19,7 @@ import {
   useRevokeInvite,
   useStaffList,
 } from "@/features/staff/hooks/useStaff";
+import { usePageTitle } from "@/hooks/usePageTitle";
 
 const ROLES = [
   { code: "provider", label: "Doctor / Provider" },
@@ -35,6 +36,7 @@ const EMPTY_FORM = {
 };
 
 export default function StaffPage() {
+  usePageTitle("Doctors & Staff");
   const { isHospitalAdmin, refresh } = usePortal();
   const router = useRouter();
 

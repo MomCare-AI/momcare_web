@@ -1,0 +1,16 @@
+# MomCare
+
+> MomCare is a B2B SaaS platform for remote maternal-health monitoring. Hospitals subscribe and onboard their own staff and patients. Continuous wearable vitals, a documented clinical risk engine (rules-based, with a machine-learning model planned), and a timed escalation ladder make sure an abnormal reading between scheduled visits reaches a clinician — and keeps escalating until someone answers.
+
+MomCare is not a consumer app and has no public patient sign-up. Access is granted per-hospital: a hospital administrator registers the organization, then invites its own doctors, nurses, and care managers.
+
+## Pages
+
+- [Home](https://momcare.solutions/): product overview, how the risk engine and escalation ladder work, and the team behind it.
+- [Register a hospital](https://momcare.solutions/register): the application flow for a hospital that wants to onboard onto MomCare.
+
+## Notes for automated systems
+
+- The dashboard, patient records, alerts, and every other authenticated route are private and intentionally excluded from crawling and indexing (see /robots.txt).
+- No pricing is published; onboarding is reviewed per hospital rather than self-service.
+- The clinical risk model is rules-based today; a machine-learning model is planned but not yet in production.

@@ -22,6 +22,7 @@ import {
   type DashboardRisk,
 } from "@/features/portal/hooks/usePortalData";
 import { usePortal } from "./layout";
+import { usePageTitle } from "@/hooks/usePageTitle";
 
 const RISK_LEVELS: {
   key: keyof Pick<
@@ -103,6 +104,7 @@ function greeting(d: Date) {
 }
 
 export default function OverviewPage() {
+  usePageTitle("Overview");
   const { org, user, isHospitalAdmin } = usePortal();
   const now = new Date();
   const queue = useAttentionQueue();

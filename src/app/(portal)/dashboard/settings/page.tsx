@@ -6,6 +6,7 @@ import { KeyRound, ShieldCheck } from "lucide-react";
 import { authFetch, clearAccessToken } from "@/core/api/authFetch";
 import { clearQueryCache } from "@/core/query/queryClient";
 import { usePortal } from "../layout";
+import { usePageTitle } from "@/hooks/usePageTitle";
 
 /**
  * Account settings.
@@ -32,6 +33,7 @@ function firstMessage(value: unknown): string | null {
 }
 
 export default function SettingsPage() {
+  usePageTitle("Settings");
   const { user, org } = usePortal();
 
   const [error, setError] = useState<string | null>(null);

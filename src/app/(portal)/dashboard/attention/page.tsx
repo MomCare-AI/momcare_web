@@ -6,6 +6,7 @@ import { RefreshCw } from "lucide-react";
 
 import { AttentionQueue } from "@/features/monitoring/components/AttentionQueue";
 import { useAttentionQueue } from "@/features/monitoring/hooks/useMonitoring";
+import { usePageTitle } from "@/hooks/usePageTitle";
 
 /**
  * The list a clinician's shift starts from.
@@ -29,6 +30,7 @@ const LEVELS = [
 ] as const;
 
 export default function AttentionPage() {
+  usePageTitle("Needs Attention");
   const [level, setLevel] = useState<string>("");
   const queue = useAttentionQueue();
 

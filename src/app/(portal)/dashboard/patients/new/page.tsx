@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import {
   AlertCircle,
   AlertTriangle,
-  ArrowLeft,
   ShieldCheck,
   UserPlus,
 } from "lucide-react";
@@ -24,6 +23,8 @@ import {
   type RiskFactorField,
 } from "@/features/patients/types";
 import { usePortal } from "../../layout";
+import { usePageTitle } from "@/hooks/usePageTitle";
+import { Breadcrumbs } from "@/features/portal/components/Breadcrumbs";
 
 const CONSENT_VERSION = "v1.0";
 
@@ -48,6 +49,7 @@ function gestationalAge(edd: string): string | null {
 }
 
 export default function EnrolPatientPage() {
+  usePageTitle("Enrol Patient");
   const router = useRouter();
   const { org } = usePortal();
 
@@ -163,9 +165,13 @@ export default function EnrolPatientPage() {
     <>
       <div className="mc-head">
         <div>
-          <Link href="/dashboard/patients" className="mc-link">
-            <ArrowLeft size={14} strokeWidth={2} aria-hidden /> Patients
-          </Link>
+          <Breadcrumbs
+            items={[
+              { label: "Overview", href: "/dashboard" },
+              { label: "Patients", href: "/dashboard/patients" },
+              { label: "Enrol Patient" },
+            ]}
+          />
           <h1 className="mc-h1" style={{ marginTop: 8 }}>
             Enrol a patient
           </h1>

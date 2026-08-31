@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Outfit, Fraunces, Familjen_Grotesk } from "next/font/google";
 import { QueryProvider } from "@/core/query/QueryProvider";
+import { SITE_URL } from "@/core/config/siteUrl";
 import "./globals.css";
 
 const inter = Inter({
@@ -29,14 +30,42 @@ const familjenGrotesk = Familjen_Grotesk({
 });
 
 export const metadata: Metadata = {
-  // Was still the scaffold's "Create Next App", which is what every browser tab
-  // and every bookmark of this deployment has been showing.
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: "MomCare",
+    default: "MomCare — Remote Maternal Health Monitoring",
     template: "%s · MomCare",
   },
   description:
     "Remote patient monitoring for maternal health. Continuous vitals, graded risk, and alerts that escalate until someone answers.",
+  applicationName: "MomCare",
+  icons: {
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/icon.png", type: "image/png", sizes: "512x512" },
+    ],
+    apple: "/apple-icon.png",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+  openGraph: {
+    siteName: "MomCare",
+    locale: "en_US",
+    type: "website",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "MomCare — Remote Maternal Health Monitoring for Hospitals",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    images: ["/og-image.png"],
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

@@ -3,6 +3,7 @@
 import { Building2, MapPin, ShieldCheck } from "lucide-react";
 
 import { usePortal } from "../layout";
+import { usePageTitle } from "@/hooks/usePageTitle";
 
 /**
  * The hospital's own record — what was submitted at onboarding and what the
@@ -24,6 +25,7 @@ function Pair({ label, value }: { label: string; value: string }) {
 }
 
 export default function HospitalPage() {
+  usePageTitle("Hospital");
   const { org } = usePortal();
 
   const address = [org.address_line1, org.address_line2, org.city, org.state]
