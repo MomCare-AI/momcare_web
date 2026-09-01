@@ -63,6 +63,21 @@ export interface Pregnancy {
   created_at: string;
 }
 
+export type CareTeamRole = "nurse" | "provider" | "care_manager";
+
+/** Mirrors CareTeamMembershipSerializer. Additive to Pregnancy.assigned_staff
+ *  (the lead clinician) - never a replacement for it. */
+export interface CareTeamMembership {
+  id: string;
+  staff: string;
+  staff_name: string;
+  role: CareTeamRole;
+  role_display: string;
+  is_active: boolean;
+  started_at: string;
+  ended_at: string | null;
+}
+
 export interface ClinicalNote {
   id: string;
   body: string;

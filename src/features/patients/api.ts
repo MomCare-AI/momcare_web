@@ -1,6 +1,8 @@
 import { authFetch, authJson } from "@/core/api/authFetch";
 
 import type {
+  CareTeamMembership,
+  CareTeamRole,
   ClinicalNote,
   Paginated,
   PatientDetail,
@@ -89,6 +91,54 @@ export async function addClinicalNote(
     throw new Error(firstError(data) ?? "Could not save this note.");
   }
   return data as ClinicalNote;
+}
+
+/** Read is open to any hospital staff; who *may* write is decided by the
+ *  server on every call (hospital_admin, or a care_manager with an active
+ *  membership on this pregnancy) - see core/patients/api/views.py's
+ *  `_can_manage_care_team`. The frontend's own write-control visibility is
+ *  a convenience, never the authorization boundary. */
+export function listCareTeam(patientId: string, pregnancyId: string) {
+  return authJson<CareTeamMembership[]>(
+    `/api/patients/${patientId}/pregnancies/${pregnancyId}/care-team/`
+  );
+}
+
+export async function addCareTeamMember(
+  patientId: string,
+  pregnancyId: string,
+  input: { staff: string; role: CareTeamRole }
+): Promise<CareTeamMembership> {
+  const res = await authFetch(
+    `/api/patients/${patientId}/pregnancies/${pregnancyId}/care-team/`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    }
+  );
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new Error(firstError(data) ?? "Could not add this care team member.");
+  }
+  return data as CareTeamMembership;
+}
+
+/** Never a delete - the membership row stays, `is_active` turns false. */
+export async function endCareTeamMembership(
+  patientId: string,
+  pregnancyId: string,
+  membershipId: string
+): Promise<CareTeamMembership> {
+  const res = await authFetch(
+    `/api/patients/${patientId}/pregnancies/${pregnancyId}/care-team/${membershipId}/end/`,
+    { method: "POST" }
+  );
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new Error(firstError(data) ?? "Could not end this membership.");
+  }
+  return data as CareTeamMembership;
 }
 
 export interface StaffOption {

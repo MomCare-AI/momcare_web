@@ -14,11 +14,13 @@ import {
 
 import { SessionExpiredError } from "@/core/api/authFetch";
 import {
+  useCareTeam,
   usePatient,
   usePregnancies,
 } from "@/features/patients/hooks/usePatients";
 import { RISK_FACTORS, pregnancyTone } from "@/features/patients/types";
 import { ClinicalNotesPanel } from "@/features/patients/components/ClinicalNotesPanel";
+import { CareTeamPanel } from "@/features/patients/components/CareTeamPanel";
 import { RiskPanel } from "@/features/monitoring/components/RiskPanel";
 import { VitalsPanel } from "@/features/monitoring/components/VitalsPanel";
 import { usePortal } from "../../layout";
@@ -42,12 +44,17 @@ export default function PatientProfilePage({
   const { id } = use(params);
   const router = useRouter();
   const justEnrolled = useSearchParams().get("enrolled") === "1";
-  const { isClinician } = usePortal();
+  const { isClinician, isHospitalAdmin, user } = usePortal();
 
   const [tab, setTab] = useState<Tab>("overview");
 
   const patientQuery = usePatient(id);
   const pregnancyQuery = usePregnancies(id);
+  const currentPregnancyId = patientQuery.data?.current_pregnancy?.id ?? "";
+  // Called here (not just inside CareTeamPanel) because canWrite needs this
+  // same data - TanStack Query dedupes the identical query key, so this
+  // isn't a second network request, just a second reader of one cache entry.
+  const careTeamQuery = useCareTeam(id, currentPregnancyId);
 
   const patient = patientQuery.data;
   const pregnancies = pregnancyQuery.data ?? [];
@@ -77,6 +84,19 @@ export default function PatientProfilePage({
   }
 
   const current = patient.current_pregnancy;
+
+  // Mirrors the server's _can_manage_care_team exactly (core/patients/api/
+  // views.py) so the button only appears where the API would actually
+  // accept the write - but the server re-checks this on every request
+  // regardless; this is a convenience, never the authorization boundary.
+  const canManageCareTeam =
+    isHospitalAdmin ||
+    (user.role_code === "care_manager" &&
+      Boolean(user.staff_id) &&
+      (careTeamQuery.data ?? []).some(
+        (m) =>
+          m.staff === user.staff_id && m.role === "care_manager" && m.is_active
+      ));
 
   return (
     <>
@@ -294,11 +314,20 @@ export default function PatientProfilePage({
       )}
 
       {tab === "pregnancy" && current && (
-        <ClinicalNotesPanel
-          patientId={patient.id}
-          pregnancyId={current.id}
-          canWrite={isClinician}
-        />
+        <>
+          <CareTeamPanel
+            patientId={patient.id}
+            pregnancyId={current.id}
+            leadProviderName={current.assigned_staff_name}
+            leadProviderActive={current.assigned_staff_is_active}
+            canWrite={canManageCareTeam}
+          />
+          <ClinicalNotesPanel
+            patientId={patient.id}
+            pregnancyId={current.id}
+            canWrite={isClinician}
+          />
+        </>
       )}
 
       {tab === "history" && (

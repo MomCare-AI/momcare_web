@@ -4,15 +4,19 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { SessionExpiredError } from "@/core/api/authFetch";
 import {
+  addCareTeamMember,
   addClinicalNote,
+  endCareTeamMembership,
   enrolPatient,
   getPatient,
+  listCareTeam,
   listClinicalNotes,
   listClinicians,
   listPatients,
   listPregnancies,
   type EnrolmentInput,
 } from "../api";
+import type { CareTeamRole } from "../types";
 
 /**
  * Server data for the patients domain.
@@ -31,6 +35,8 @@ export const patientKeys = {
   pregnancies: (id: string) => [...patientKeys.all, "pregnancies", id] as const,
   clinicalNotes: (patientId: string, pregnancyId: string) =>
     [...patientKeys.all, "notes", patientId, pregnancyId] as const,
+  careTeam: (patientId: string, pregnancyId: string) =>
+    [...patientKeys.all, "care-team", patientId, pregnancyId] as const,
   clinicians: ["clinicians"] as const,
 };
 
@@ -87,6 +93,53 @@ export function useAddClinicalNote(patientId: string, pregnancyId: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: patientKeys.clinicalNotes(patientId, pregnancyId),
+      });
+    },
+  });
+}
+
+export function useCareTeam(patientId: string, pregnancyId: string) {
+  return useQuery({
+    queryKey: patientKeys.careTeam(patientId, pregnancyId),
+    queryFn: () => listCareTeam(patientId, pregnancyId),
+    // Callers may not know the pregnancy id yet (e.g. before the patient
+    // itself has loaded) - calling the hook unconditionally is still
+    // required by the rules of hooks, so it just doesn't fire until ready.
+    enabled: Boolean(patientId && pregnancyId),
+    retry: retryUnlessSessionExpired,
+  });
+}
+
+export function useAddCareTeamMember(patientId: string, pregnancyId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: { staff: string; role: CareTeamRole }) =>
+      addCareTeamMember(patientId, pregnancyId, input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: patientKeys.careTeam(patientId, pregnancyId),
+      });
+    },
+  });
+}
+
+export function useEndCareTeamMembership(
+  patientId: string,
+  pregnancyId: string
+) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (membershipId: string) =>
+      endCareTeamMembership(patientId, pregnancyId, membershipId),
+    onSuccess: () => {
+      // Covers the self-removal case too: if the acting care_manager just
+      // ended their own membership, this refetch is what makes the write
+      // controls disappear on the next render - canWrite is derived from
+      // this same query's data, not cached separately.
+      queryClient.invalidateQueries({
+        queryKey: patientKeys.careTeam(patientId, pregnancyId),
       });
     },
   });

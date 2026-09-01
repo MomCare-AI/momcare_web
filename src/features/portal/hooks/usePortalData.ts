@@ -42,6 +42,9 @@ export interface CurrentUser {
   first_name: string;
   last_name: string;
   role_code: string;
+  /** Null for platform_admin or a patient - neither has a Staff row. Used to
+   *  match "me" against a care-team row's own `staff` id. */
+  staff_id: string | null;
 }
 
 export interface DashboardRisk {
