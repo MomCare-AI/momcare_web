@@ -29,6 +29,14 @@ const TABS = [
   { key: "resolved" as const, label: "Resolved" },
 ];
 
+/** Per role_code — matches the same map on the Patients page. hospital_admin
+ *  sees every alert at the hospital and isn't in this map. */
+const WORKSPACE_TITLE: Record<string, string> = {
+  provider: "My Alerts",
+  nurse: "My Alerts",
+  care_manager: "My Alerts",
+};
+
 /** "in 4 min" / "overdue". Deadlines read forward; everything else reads back. */
 function until(iso: string | null): { text: string; overdue: boolean } | null {
   if (!iso) return null;
@@ -49,11 +57,18 @@ function since(iso: string): string {
 }
 
 export default function AlertsPage() {
-  usePageTitle("Alerts");
+  const { isHospitalAdmin, isClinician, user } = usePortal();
+  // Same rule as the Patients page: admin sees the whole hospital, the other
+  // three clinical roles see only alerts on patients they're on the care
+  // team for. Backend: core/alerts/api/views.py:_scope_to_assigned.
+  const assignedToMe = isClinician && !isHospitalAdmin;
+  const title = WORKSPACE_TITLE[user.role_code] ?? "Alerts";
+  usePageTitle(title);
+
   const [tab, setTab] = useState<"live" | "resolved">("live");
   const [openId, setOpenId] = useState<string | null>(null);
 
-  const alerts = useAlerts(tab);
+  const alerts = useAlerts(tab, assignedToMe);
   const rows = alerts.data?.results ?? [];
   const unanswered = alerts.data?.unacknowledged ?? 0;
 
@@ -61,10 +76,11 @@ export default function AlertsPage() {
     <>
       <div className="mc-head">
         <div>
-          <h1 className="mc-h1">Alerts</h1>
+          <h1 className="mc-h1">{title}</h1>
           <p className="mc-sub">
-            Raised when a reading crosses a threshold, and escalated on a
-            schedule until somebody answers.
+            {assignedToMe
+              ? "Raised on patients you're on the care team for, escalated on a schedule until somebody answers."
+              : "Raised when a reading crosses a threshold, and escalated on a schedule until somebody answers."}
           </p>
         </div>
         <div className="mc-head-aside">
@@ -123,7 +139,9 @@ export default function AlertsPage() {
           </span>
           <span className="mc-empty-text">
             {tab === "live"
-              ? "Nobody is currently waiting on a response. Alerts appear here the moment a reading crosses a clinical threshold."
+              ? assignedToMe
+                ? "None of your assigned patients currently have an open alert."
+                : "Nobody is currently waiting on a response. Alerts appear here the moment a reading crosses a clinical threshold."
               : "Alerts move here once somebody records what happened."}
           </span>
         </div>

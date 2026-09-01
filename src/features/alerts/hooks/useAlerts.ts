@@ -9,7 +9,8 @@ const ALERTS_ROOT = ["alerts"] as const;
 
 export const alertKeys = {
   all: ALERTS_ROOT,
-  list: (status: string) => [...ALERTS_ROOT, "list", status] as const,
+  list: (status: string, assignedToMe: boolean) =>
+    [...ALERTS_ROOT, "list", status, assignedToMe] as const,
   detail: (id: string) => [...ALERTS_ROOT, "detail", id] as const,
 };
 
@@ -26,10 +27,13 @@ function retryUnlessSessionExpired(failureCount: number, error: unknown) {
  * escalation policy: the tightest deadline is five minutes, so a clinician
  * always sees an alert well inside the window they have to answer it.
  */
-export function useAlerts(status: "live" | "resolved" = "live") {
+export function useAlerts(
+  status: "live" | "resolved" = "live",
+  assignedToMe = false
+) {
   return useQuery({
-    queryKey: alertKeys.list(status),
-    queryFn: () => listAlerts(status),
+    queryKey: alertKeys.list(status, assignedToMe),
+    queryFn: () => listAlerts(status, assignedToMe),
     retry: retryUnlessSessionExpired,
     staleTime: 15 * 1000,
     refetchInterval: status === "live" ? 30 * 1000 : false,

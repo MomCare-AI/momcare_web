@@ -2,9 +2,17 @@ import { authFetch, authJson } from "@/core/api/authFetch";
 
 import type { AlertDetail, AlertPage } from "./types";
 
-/** Defaults to live alerts; pass "resolved" for the record of what happened. */
-export function listAlerts(status: "live" | "resolved" = "live") {
-  return authJson<AlertPage>(`/api/alerts/?status=${status}`);
+/** Defaults to live alerts; pass "resolved" for the record of what happened.
+ *  `assignedToMe` mirrors the patient list's own param — see
+ *  core/alerts/api/views.py:_scope_to_assigned — and is silently ignored
+ *  (empty result) for hospital_admin, for whom "my alerts" isn't a concept. */
+export function listAlerts(
+  status: "live" | "resolved" = "live",
+  assignedToMe = false
+) {
+  const query = new URLSearchParams({ status });
+  if (assignedToMe) query.set("assigned_to", "me");
+  return authJson<AlertPage>(`/api/alerts/?${query}`);
 }
 
 export function getAlert(alertId: string) {
