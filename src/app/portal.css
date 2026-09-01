@@ -1806,6 +1806,66 @@ select.mc-input {
 /* A soft wash behind the greeting instead of a bare heading, so the page
    the day actually starts on reads as the primary surface, not one card
    among equals. */
+/* Entrance motion for the overview page — the KPI row, the card grid below
+   it, and the donut each ease in on load instead of appearing all at once.
+   CSS-only (no motion library needed for a one-time mount animation), and
+   guarded behind prefers-reduced-motion since none of this carries meaning,
+   only polish. */
+@keyframes mcFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes mcDonutIn {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .mc-kpis > *,
+  .mc-fullstack > * {
+    animation: mcFadeUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  .mc-kpis > *:nth-child(1) {
+    animation-delay: 0.02s;
+  }
+  .mc-kpis > *:nth-child(2) {
+    animation-delay: 0.07s;
+  }
+  .mc-kpis > *:nth-child(3) {
+    animation-delay: 0.12s;
+  }
+  .mc-kpis > *:nth-child(4) {
+    animation-delay: 0.17s;
+  }
+  .mc-fullstack > *:nth-child(1) {
+    animation-delay: 0.1s;
+  }
+  .mc-fullstack > *:nth-child(2) {
+    animation-delay: 0.16s;
+  }
+  .mc-fullstack > *:nth-child(3) {
+    animation-delay: 0.22s;
+  }
+  .mc-fullstack > *:nth-child(4) {
+    animation-delay: 0.28s;
+  }
+  .mc-donut {
+    animation: mcDonutIn 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: 0.2s;
+  }
+}
+
 .mc-hero {
   position: relative;
   overflow: hidden;

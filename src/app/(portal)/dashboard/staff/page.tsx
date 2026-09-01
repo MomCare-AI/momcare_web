@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { usePortal } from "../layout";
 import { SessionExpiredError } from "@/core/api/authFetch";
+import { InitialsAvatar } from "@/shared/ui/InitialsAvatar";
 import {
   useCreateInvite,
   useInvites,
@@ -245,6 +246,12 @@ export default function StaffPage() {
           <div className="mc-rows">
             {pending.map((inv) => (
               <div key={inv.id} className="mc-row">
+                <InitialsAvatar
+                  name={
+                    [inv.first_name, inv.last_name].filter(Boolean).join(" ") ||
+                    inv.email
+                  }
+                />
                 <div className="mc-row-main">
                   <div className="mc-row-title">
                     {[inv.first_name, inv.last_name]
@@ -333,6 +340,7 @@ export default function StaffPage() {
           <div className="mc-rows">
             {staff.map((m) => (
               <div key={m.id} className="mc-row">
+                <InitialsAvatar name={m.full_name || m.email} />
                 <div className="mc-row-main">
                   <div className="mc-row-title">{m.full_name || m.email}</div>
                   <div className="mc-row-meta">
