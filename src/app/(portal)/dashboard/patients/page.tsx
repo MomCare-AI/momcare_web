@@ -16,13 +16,45 @@ import { SessionExpiredError } from "@/core/api/authFetch";
 import { usePatientList } from "@/features/patients/hooks/usePatients";
 import { RiskBadge } from "@/features/monitoring/components/RiskBadge";
 import { pregnancyTone } from "@/features/patients/types";
+import { InitialsAvatar } from "@/shared/ui/InitialsAvatar";
 import { usePortal } from "../layout";
 import { usePageTitle } from "@/hooks/usePageTitle";
 
+/** Per role_code — what this page is called and what an empty list means.
+ *  hospital_admin sees the whole hospital and isn't in this map. */
+const WORKSPACE_COPY: Record<
+  string,
+  { title: string; subtitle: (count: number) => string; empty: string }
+> = {
+  provider: {
+    title: "My Patients",
+    subtitle: (n) => `${n} under your care`,
+    empty: "No patients are assigned to you yet.",
+  },
+  nurse: {
+    title: "Assigned Patients",
+    subtitle: (n) => `${n} assigned to you`,
+    empty: "No patients are assigned to you yet.",
+  },
+  care_manager: {
+    title: "Patients I Coordinate",
+    subtitle: (n) => `${n} you're coordinating`,
+    empty: "You're not coordinating any patients yet.",
+  },
+};
+
 export default function PatientsPage() {
-  usePageTitle("Patients");
-  const { isHospitalAdmin } = usePortal();
+  const { isHospitalAdmin, isClinician, user } = usePortal();
   const router = useRouter();
+
+  // Admin sees the whole hospital, unfiltered — matches the master plan's
+  // nav table (§20): "All Patients" for hospital_admin, "My/Assigned/
+  // Coordinated Patients" (same route, query-filtered) for the other three
+  // clinical roles. Backend already implements the corrected lead-OR-
+  // co-provider query — see core/patients/api/views.py:_scope_to_assigned.
+  const assignedToMe = isClinician && !isHospitalAdmin;
+  const workspace = WORKSPACE_COPY[user.role_code];
+  usePageTitle(workspace?.title ?? "Patients");
 
   const [search, setSearch] = useState("");
   const [query, setQuery] = useState("");
@@ -30,7 +62,7 @@ export default function PatientsPage() {
 
   // Searching and paging happen on the server — the browser never receives
   // rows it would then filter away.
-  const { data, isPending, error } = usePatientList(query, page);
+  const { data, isPending, error } = usePatientList(query, page, assignedToMe);
 
   // An expired session is a routing concern, not something to render.
   useEffect(() => {
@@ -54,11 +86,13 @@ export default function PatientsPage() {
     <>
       <div className="mc-head">
         <div>
-          <h1 className="mc-h1">Patients</h1>
+          <h1 className="mc-h1">{workspace?.title ?? "Patients"}</h1>
           <p className="mc-sub">
             {isSearching
               ? `${count} matching "${query}"`
-              : `${count} enrolled at this hospital`}
+              : workspace
+                ? workspace.subtitle(count)
+                : `${count} enrolled at this hospital`}
           </p>
         </div>
         <Link href="/dashboard/patients/new" className="mc-btn">
@@ -115,12 +149,16 @@ export default function PatientsPage() {
             <span className="mc-empty-title">
               {isSearching
                 ? "No matching patients"
-                : "No patients enrolled yet"}
+                : workspace
+                  ? `No patients yet`
+                  : "No patients enrolled yet"}
             </span>
             <span className="mc-empty-text">
               {isSearching
                 ? "Try a phone number, CNIC or medical record number."
-                : "Enrol your first patient to start tracking her pregnancy."}
+                : workspace
+                  ? workspace.empty
+                  : "Enrol your first patient to start tracking her pregnancy."}
             </span>
             {!isSearching && (
               <span className="mc-empty-actions">
@@ -139,6 +177,7 @@ export default function PatientsPage() {
                 href={`/dashboard/patients/${p.id}`}
                 className="mc-row mc-row-link"
               >
+                <InitialsAvatar name={p.full_name} />
                 <div className="mc-row-main">
                   <div className="mc-row-title">{p.full_name}</div>
                   <div className="mc-row-meta">

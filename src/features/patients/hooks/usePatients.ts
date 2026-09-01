@@ -25,8 +25,8 @@ import {
 
 export const patientKeys = {
   all: ["patients"] as const,
-  list: (search: string, page: number) =>
-    [...patientKeys.all, "list", { search, page }] as const,
+  list: (search: string, page: number, assignedToMe: boolean) =>
+    [...patientKeys.all, "list", { search, page, assignedToMe }] as const,
   detail: (id: string) => [...patientKeys.all, "detail", id] as const,
   pregnancies: (id: string) => [...patientKeys.all, "pregnancies", id] as const,
   clinicalNotes: (patientId: string, pregnancyId: string) =>
@@ -40,10 +40,14 @@ function retryUnlessSessionExpired(failureCount: number, error: unknown) {
   return failureCount < 1;
 }
 
-export function usePatientList(search: string, page: number) {
+export function usePatientList(
+  search: string,
+  page: number,
+  assignedToMe = false
+) {
   return useQuery({
-    queryKey: patientKeys.list(search, page),
-    queryFn: () => listPatients({ search, page }),
+    queryKey: patientKeys.list(search, page, assignedToMe),
+    queryFn: () => listPatients({ search, page, assignedToMe }),
     retry: retryUnlessSessionExpired,
     // Keeps the previous page on screen while the next one loads, so paging
     // and searching don't blank the table on every keystroke.

@@ -38,10 +38,16 @@ export interface EnrolmentInput {
   };
 }
 
-export function listPatients(params: { search?: string; page?: number } = {}) {
+export function listPatients(
+  params: { search?: string; page?: number; assignedToMe?: boolean } = {}
+) {
   const query = new URLSearchParams();
   if (params.search) query.set("search", params.search);
   if (params.page && params.page > 1) query.set("page", String(params.page));
+  // Backed by CareTeamMembership + Pregnancy.assigned_staff on the server —
+  // see core/patients/api/views.py:_scope_to_assigned. hospital_admin gets an
+  // honest empty list for this param, so it's never sent for that role.
+  if (params.assignedToMe) query.set("assigned_to", "me");
   const suffix = query.toString() ? `?${query}` : "";
   return authJson<Paginated<PatientListItem>>(`/api/patients/${suffix}`);
 }
