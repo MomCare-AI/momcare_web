@@ -151,7 +151,7 @@ export default function OverviewPage() {
           exist yet and its tile says so rather than showing a zero — a dashboard
           that invents clinical numbers is worse than one that admits it has none. */}
       <section className="mc-kpis">
-        <Link href="/dashboard/staff" className="mc-kpi">
+        <Link href="/dashboard/staff" className="mc-kpi mc-kpi-fill-teal">
           <div className="mc-kpi-top">
             <span className="mc-kpi-label">Doctors &amp; staff</span>
             <span className="mc-kpi-icon mc-kpi-icon-teal">
@@ -164,7 +164,7 @@ export default function OverviewPage() {
           </span>
         </Link>
 
-        <Link href="/dashboard/patients" className="mc-kpi">
+        <Link href="/dashboard/patients" className="mc-kpi mc-kpi-fill-coral">
           <div className="mc-kpi-top">
             <span className="mc-kpi-label">Patients</span>
             <span className="mc-kpi-icon mc-kpi-icon-coral">
@@ -190,7 +190,9 @@ export default function OverviewPage() {
           <span className="mc-kpi-foot">Scheduling not yet available</span>
         </div>
 
-        <div className="mc-kpi">
+        <div
+          className={`mc-kpi ${attentionCount ? "mc-kpi-fill-alert" : "mc-kpi-fill-attn"}`}
+        >
           <div className="mc-kpi-top">
             <span className="mc-kpi-label">Needing attention</span>
             <span

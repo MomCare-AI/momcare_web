@@ -10,6 +10,7 @@ import {
   Heart,
   LayoutDashboard,
   LogOut,
+  Search,
   Settings,
   MapPin,
   Menu,
@@ -88,6 +89,17 @@ export default function DashboardLayout({
   const pathname = usePathname();
 
   const [menuOpen, setMenuOpen] = useState(false);
+  const [navSearch, setNavSearch] = useState("");
+
+  const submitNavSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const term = navSearch.trim();
+    router.push(
+      term
+        ? `/dashboard/patients?search=${encodeURIComponent(term)}`
+        : "/dashboard/patients"
+    );
+  };
 
   // authFetch refreshes once on a 401 underneath these, so an hour-old session
   // recovers silently instead of bouncing the user out mid-task.
@@ -216,6 +228,21 @@ export default function DashboardLayout({
           <nav className="mc-navlinks" aria-label="Main">
             {visibleNav.map(renderLink)}
           </nav>
+
+          <form
+            className="mc-navsearch"
+            onSubmit={submitNavSearch}
+            role="search"
+          >
+            <Search size={15} strokeWidth={2} aria-hidden />
+            <input
+              type="text"
+              placeholder="Search patients…"
+              value={navSearch}
+              onChange={(e) => setNavSearch(e.target.value)}
+              aria-label="Search patients"
+            />
+          </form>
 
           <div className="mc-nav-right">
             <AlertBell />

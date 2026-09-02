@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   AlertCircle,
   ChevronLeft,
@@ -56,8 +56,11 @@ export default function PatientsPage() {
   const workspace = WORKSPACE_COPY[user.role_code];
   usePageTitle(workspace?.title ?? "Patients");
 
-  const [search, setSearch] = useState("");
-  const [query, setQuery] = useState("");
+  // Seeds from ?search=, so the navbar search box can land here with a
+  // result already showing rather than an empty box to retype into.
+  const initialSearch = useSearchParams().get("search") ?? "";
+  const [search, setSearch] = useState(initialSearch);
+  const [query, setQuery] = useState(initialSearch);
   const [page, setPage] = useState(1);
 
   // Searching and paging happen on the server — the browser never receives

@@ -25,7 +25,6 @@ import { RiskPanel } from "@/features/monitoring/components/RiskPanel";
 import { VitalsPanel } from "@/features/monitoring/components/VitalsPanel";
 import { usePortal } from "../../layout";
 import { usePageTitle } from "@/hooks/usePageTitle";
-import { Breadcrumbs } from "@/features/portal/components/Breadcrumbs";
 
 type Tab = "overview" | "pregnancy" | "history" | "consent";
 
@@ -120,30 +119,30 @@ export default function PatientProfilePage({
         </p>
       )}
 
-      <div className="mc-head">
-        <div>
-          <Breadcrumbs
-            items={[
-              { label: "Overview", href: "/dashboard" },
-              { label: "Patients", href: "/dashboard/patients" },
-              { label: patient.full_name },
-            ]}
-          />
-          <h1 className="mc-h1" style={{ marginTop: 8 }}>
-            {patient.full_name}
-          </h1>
-          <p className="mc-sub">
-            {[patient.mrn, patient.phone, patient.cnic]
-              .filter(Boolean)
-              .join(" · ")}
-          </p>
+      <div className="mc-subnav">
+        <div className="mc-subnav-trail">
+          <Link href="/dashboard/patients">Patients</Link>
+          <span aria-hidden>/</span>
+          <strong>{patient.full_name}</strong>
         </div>
-        <div className="mc-head-badges">
+
+        <nav className="mc-subnav-tabs" aria-label="Patient sections">
+          {TABS.map((t) => (
+            <button
+              key={t.id}
+              className="mc-subnav-tab"
+              aria-current={tab === t.id ? "page" : undefined}
+              onClick={() => setTab(t.id)}
+            >
+              {t.label}
+            </button>
+          ))}
+        </nav>
+
+        <div className="mc-subnav-aside">
           {current ? (
             <>
-              <span className="mc-ga mc-ga-lg">
-                {current.gestational_age_display}
-              </span>
+              <span className="mc-ga">{current.gestational_age_display}</span>
               <span
                 className={`mc-badge mc-badge-${pregnancyTone(current.status)}`}
               >
@@ -158,18 +157,16 @@ export default function PatientProfilePage({
         </div>
       </div>
 
-      <nav className="mc-tabs" aria-label="Patient sections">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            className="mc-tab"
-            aria-current={tab === t.id ? "page" : undefined}
-            onClick={() => setTab(t.id)}
-          >
-            {t.label}
-          </button>
-        ))}
-      </nav>
+      <div className="mc-head">
+        <div>
+          <h1 className="mc-h1">{patient.full_name}</h1>
+          <p className="mc-sub">
+            {[patient.mrn, patient.phone, patient.cnic]
+              .filter(Boolean)
+              .join(" · ")}
+          </p>
+        </div>
+      </div>
 
       {tab === "overview" && (
         <>

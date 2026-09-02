@@ -132,6 +132,49 @@
   cursor: default;
 }
 
+.mc-navsearch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+  width: 220px;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: var(--c-ground);
+  color: var(--c-faint);
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease;
+}
+.mc-navsearch:focus-within {
+  background: var(--c-card);
+  border-color: var(--c-teal-soft);
+  color: var(--c-body);
+}
+.mc-navsearch input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: none;
+  outline: none;
+  font: inherit;
+  font-size: 13.5px;
+  color: var(--c-ink);
+}
+/* The global :focus-visible ring (portal.css's own accessibility rule,
+   further up this file) otherwise wins here on specificity. Not removing
+   focus visibility - the pill's own border-color and background shift on
+   :focus-within already say "this is focused" without a second, competing
+   ring drawn on top of it. */
+.mc-navsearch input:focus-visible {
+  outline: none;
+}
+.mc-navsearch input::placeholder {
+  color: var(--c-faint);
+}
+
 .mc-nav-right {
   display: flex;
   align-items: center;
@@ -802,6 +845,124 @@ select.mc-input {
   font-size: 12.5px;
   color: var(--c-faint);
   font-variant-numeric: tabular-nums;
+}
+
+/* ── Sub-navigation ──────────────────────────────────────────────────── */
+/* Where you are (breadcrumb) and what you can look at (tabs), on one row
+   directly under the main bar rather than stacked as three separate ones —
+   for a record a clinician stays on for a while, the tabs deserve to stay
+   visible while the page underneath scrolls. */
+.mc-subnav {
+  position: sticky;
+  top: 70px;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  height: 52px;
+  background: var(--c-ground);
+  border-bottom: 1px solid var(--c-border);
+  margin-bottom: 26px;
+}
+.mc-subnav-trail {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  font-size: 13px;
+  color: var(--c-faint);
+  white-space: nowrap;
+}
+.mc-subnav-trail a {
+  color: var(--c-faint);
+  text-decoration: none;
+}
+.mc-subnav-trail a:hover {
+  color: var(--c-teal);
+}
+.mc-subnav-trail strong {
+  color: var(--c-ink);
+  font-weight: 600;
+}
+.mc-subnav-tabs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 100%;
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.mc-subnav-tabs::-webkit-scrollbar {
+  display: none;
+}
+.mc-subnav-tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 13px;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--c-body);
+  cursor: pointer;
+  white-space: nowrap;
+  flex: none;
+}
+.mc-subnav-tab:hover {
+  color: var(--c-ink);
+}
+.mc-subnav-tab[aria-current="page"] {
+  color: var(--c-teal);
+  font-weight: 600;
+}
+.mc-subnav-tab[aria-current="page"]::after {
+  content: "";
+  position: absolute;
+  left: 13px;
+  right: 13px;
+  bottom: 0;
+  height: 2px;
+  background: var(--c-teal);
+  border-radius: 2px 2px 0 0;
+}
+.mc-subnav-aside {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+}
+
+/* Below 720px there isn't room for breadcrumb + tabs + badges on one 52px
+   row without clipping mid-word — two rows instead: identity+status on
+   top, the full tab strip (still horizontally scrollable if it needs to
+   be) getting the whole width underneath. */
+@media (max-width: 720px) {
+  .mc-subnav {
+    flex-wrap: wrap;
+    height: auto;
+    padding-top: 8px;
+    gap: 8px 12px;
+  }
+  .mc-subnav-trail {
+    order: 1;
+  }
+  .mc-subnav-aside {
+    order: 2;
+    margin-left: auto;
+  }
+  /* Forces a wrap onto its own line: the remaining space on row one, after
+     the trail and aside, is never enough for this to fit alongside them. */
+  .mc-subnav-tabs {
+    order: 3;
+    flex-basis: 100%;
+    height: 40px;
+    border-top: 1px solid var(--c-border);
+  }
 }
 
 /* ── Tabs ────────────────────────────────────────────────────────────── */
@@ -1562,6 +1723,9 @@ select.mc-input {
   .mc-navlinks {
     display: none;
   }
+  .mc-navsearch {
+    display: none;
+  }
   .mc-burger {
     display: grid;
     place-items: center;
@@ -1928,29 +2092,94 @@ a.mc-kpi:hover,
   background: var(--c-border-soft);
   color: var(--c-body);
 }
+/* Solid, saturated chips pulling the landing page's own brand palette
+   (--primary/--mint/--coral there, mirrored here as --c-teal/--c-teal-soft/
+   --c-coral) - deliberately more vivid than the rest of the clinical
+   portal, by explicit request, for cards that are operational counts, not
+   a clinical severity reading. "Needing attention" stays semantic (amber →
+   red) since that one number is a real urgency signal, not decoration. */
 .mc-kpi-icon-teal {
-  background: var(--c-teal-wash);
-  color: var(--c-teal);
+  background: var(--c-teal);
+  color: #fff;
 }
 .mc-kpi-icon-coral {
-  background: #fdf0ee;
-  color: var(--c-coral);
+  background: var(--c-coral);
+  color: #fff;
+}
+.mc-kpi-icon-mint {
+  background: var(--c-teal-soft);
+  color: #fff;
 }
 .mc-kpi-icon-attn {
-  background: #fdf5e8;
-  color: #b3791f;
+  background: #f0a63a;
+  color: #fff;
 }
 .mc-kpi-icon-attn.mc-kpi-icon-alert {
-  background: #fdf0ef;
-  color: var(--c-high);
+  background: var(--c-high);
+  color: #fff;
 }
 .mc-kpi-icon-info {
-  background: #eef4fa;
-  color: var(--c-info);
+  background: var(--c-info);
+  color: #fff;
 }
 .mc-kpi-icon-neutral {
   background: var(--c-border-soft);
   color: var(--c-faint);
+}
+
+/* Whole-card colour, not just the icon chip — the landing page's own
+   vivid brand palette, by explicit request. Kept off "Today's
+   appointments" (still plain white): that card is an unbuilt feature, and
+   dressing it up the same as the working three would visually claim it's
+   live when "Scheduling not yet available" says otherwise. */
+.mc-kpi-fill-teal,
+.mc-kpi-fill-coral,
+.mc-kpi-fill-mint,
+.mc-kpi-fill-attn,
+.mc-kpi-fill-alert {
+  border-color: transparent;
+}
+.mc-kpi-fill-teal {
+  background: linear-gradient(135deg, var(--c-teal), #5b72f5);
+}
+.mc-kpi-fill-coral {
+  background: linear-gradient(135deg, var(--c-coral), #f5a58f);
+}
+.mc-kpi-fill-mint {
+  background: linear-gradient(135deg, var(--c-teal-soft), #7fdcf7);
+}
+.mc-kpi-fill-attn {
+  background: linear-gradient(135deg, #f0a63a, #f5c26b);
+}
+.mc-kpi-fill-alert {
+  background: linear-gradient(135deg, #dc2626, var(--c-critical));
+}
+.mc-kpi-fill-teal .mc-kpi-label,
+.mc-kpi-fill-teal .mc-kpi-value,
+.mc-kpi-fill-coral .mc-kpi-label,
+.mc-kpi-fill-coral .mc-kpi-value,
+.mc-kpi-fill-mint .mc-kpi-label,
+.mc-kpi-fill-mint .mc-kpi-value,
+.mc-kpi-fill-attn .mc-kpi-label,
+.mc-kpi-fill-attn .mc-kpi-value,
+.mc-kpi-fill-alert .mc-kpi-label,
+.mc-kpi-fill-alert .mc-kpi-value {
+  color: #fff;
+}
+.mc-kpi-fill-teal .mc-kpi-foot,
+.mc-kpi-fill-coral .mc-kpi-foot,
+.mc-kpi-fill-mint .mc-kpi-foot,
+.mc-kpi-fill-attn .mc-kpi-foot,
+.mc-kpi-fill-alert .mc-kpi-foot {
+  color: rgba(255, 255, 255, 0.85);
+}
+.mc-kpi-fill-teal .mc-kpi-icon,
+.mc-kpi-fill-coral .mc-kpi-icon,
+.mc-kpi-fill-mint .mc-kpi-icon,
+.mc-kpi-fill-attn .mc-kpi-icon,
+.mc-kpi-fill-alert .mc-kpi-icon {
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
 }
 
 /* A section card reads as bare without something to anchor the title —
