@@ -20,6 +20,7 @@ import {
   X,
 } from "lucide-react";
 import { AboutFlip } from "./AboutFlip";
+import { ThreePillars } from "./ThreePillars";
 
 // Below-the-fold sections - still fully server-rendered (so search
 // engines and no-JS visitors see the same HTML), but their client JS
@@ -406,6 +407,8 @@ export function LandingPageClient() {
           </motion.div>
         </div>
       </section>
+
+      <ThreePillars />
 
       <AboutFlip />
 
