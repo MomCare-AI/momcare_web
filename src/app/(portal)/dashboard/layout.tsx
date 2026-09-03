@@ -7,6 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   Activity,
   BellRing,
+  Building2,
   Heart,
   LayoutDashboard,
   LogOut,
@@ -70,6 +71,12 @@ const NAV = [
   { href: "/dashboard/devices", label: "Devices", Icon: Watch },
   { href: "/dashboard/patients", label: "Patients", Icon: Users },
   { href: "/dashboard/staff", label: "Doctors & Staff", Icon: Stethoscope },
+  {
+    href: "/dashboard/hospital",
+    label: "Hospital",
+    Icon: Building2,
+    adminOnly: true,
+  },
 ];
 
 /** Approval state maps to a clinical badge; never colour alone — each carries a label. */

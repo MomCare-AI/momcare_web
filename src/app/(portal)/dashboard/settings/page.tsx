@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { KeyRound, ShieldCheck } from "lucide-react";
+import { GraduationCap, KeyRound, ShieldCheck } from "lucide-react";
 
 import { authFetch, clearAccessToken } from "@/core/api/authFetch";
 import { clearQueryCache } from "@/core/query/queryClient";
 import { usePortal } from "../layout";
+import { useStaffList } from "@/features/staff/hooks/useStaff";
+import { StaffCredentialsPanel } from "@/features/staff/components/StaffCredentialsPanel";
 import { usePageTitle } from "@/hooks/usePageTitle";
 
 /**
@@ -35,6 +37,10 @@ function firstMessage(value: unknown): string | null {
 export default function SettingsPage() {
   usePageTitle("Settings");
   const { user, org } = usePortal();
+  // Reuses the same cached query the Staff page uses - free for anyone
+  // who's already visited it this session, and cheap enough regardless.
+  const staffQuery = useStaffList();
+  const myProfile = staffQuery.data?.find((m) => m.id === user.staff_id);
 
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
@@ -153,6 +159,27 @@ export default function SettingsPage() {
           </p>
         </div>
       </section>
+
+      {user.staff_id && (
+        <section className="mc-card">
+          <div className="mc-card-head">
+            <div>
+              <h2 className="mc-card-title">
+                <GraduationCap size={17} strokeWidth={1.9} aria-hidden />{" "}
+                Professional details
+              </h2>
+              <p className="mc-card-sub">
+                Shown on your profile in Doctors &amp; Staff — self-reported,
+                not independently verified.
+              </p>
+            </div>
+          </div>
+          <div className="mc-card-body">
+            {staffQuery.isPending && <div className="mc-hint">Loading…</div>}
+            {myProfile && <StaffCredentialsPanel member={myProfile} canEdit />}
+          </div>
+        </section>
+      )}
 
       <section className="mc-card">
         <div className="mc-card-head">

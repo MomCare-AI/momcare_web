@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   AlertCircle,
   Check,
+  ChevronDown,
   Copy,
   Mail,
   Stethoscope,
@@ -20,6 +21,7 @@ import {
   useRevokeInvite,
   useStaffList,
 } from "@/features/staff/hooks/useStaff";
+import { StaffCredentialsPanel } from "@/features/staff/components/StaffCredentialsPanel";
 import { usePageTitle } from "@/hooks/usePageTitle";
 
 const ROLES = [
@@ -38,13 +40,14 @@ const EMPTY_FORM = {
 
 export default function StaffPage() {
   usePageTitle("Doctors & Staff");
-  const { isHospitalAdmin, refresh } = usePortal();
+  const { isHospitalAdmin, user, refresh } = usePortal();
   const router = useRouter();
 
   const [copied, setCopied] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
   const [formError, setFormError] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const staffQuery = useStaffList();
   const invitesQuery = useInvites(isHospitalAdmin);
@@ -338,24 +341,74 @@ export default function StaffPage() {
           </div>
         ) : (
           <div className="mc-rows">
-            {staff.map((m) => (
-              <div key={m.id} className="mc-row">
-                <InitialsAvatar name={m.full_name || m.email} />
-                <div className="mc-row-main">
-                  <div className="mc-row-title">{m.full_name || m.email}</div>
-                  <div className="mc-row-meta">
-                    {m.email} · {m.employee_id}
-                  </div>
+            {staff.map((m) => {
+              const isSelf = m.id === user.staff_id;
+              const expanded = expandedId === m.id;
+              return (
+                <div key={m.id}>
+                  <button
+                    type="button"
+                    className="mc-row"
+                    style={{
+                      width: "100%",
+                      border: "none",
+                      background: "none",
+                      cursor: "pointer",
+                      textAlign: "left",
+                      font: "inherit",
+                    }}
+                    onClick={() => setExpandedId(expanded ? null : m.id)}
+                    aria-expanded={expanded}
+                  >
+                    <InitialsAvatar name={m.full_name || m.email} />
+                    <div className="mc-row-main">
+                      <div className="mc-row-title">
+                        {m.full_name || m.email}
+                        {isSelf && (
+                          <span
+                            className="mc-badge mc-badge-info"
+                            style={{ marginLeft: 8 }}
+                          >
+                            You
+                          </span>
+                        )}
+                      </div>
+                      <div className="mc-row-meta">
+                        {m.email} · {m.employee_id}
+                        {m.specialty && ` · ${m.specialty}`}
+                      </div>
+                    </div>
+                    <span className="mc-badge mc-badge-neutral">
+                      {m.role_name}
+                    </span>
+                    {!m.is_user_active && (
+                      <span className="mc-badge mc-badge-high">
+                        <AlertCircle size={12} strokeWidth={2.2} aria-hidden />
+                        Inactive
+                      </span>
+                    )}
+                    <ChevronDown
+                      size={16}
+                      strokeWidth={2}
+                      aria-hidden
+                      style={{
+                        transform: expanded ? "rotate(180deg)" : undefined,
+                        transition: "transform 0.15s ease",
+                      }}
+                    />
+                  </button>
+
+                  {expanded && (
+                    <div style={{ padding: "0 4px 14px" }}>
+                      <StaffCredentialsPanel
+                        member={m}
+                        canEdit={isHospitalAdmin || isSelf}
+                      />
+                    </div>
+                  )}
                 </div>
-                <span className="mc-badge mc-badge-neutral">{m.role_name}</span>
-                {!m.is_user_active && (
-                  <span className="mc-badge mc-badge-high">
-                    <AlertCircle size={12} strokeWidth={2.2} aria-hidden />
-                    Inactive
-                  </span>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>

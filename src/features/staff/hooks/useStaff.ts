@@ -13,6 +13,28 @@ export interface StaffMember {
   role_name: string;
   role_code: string;
   is_user_active: boolean;
+  is_active: boolean;
+  photo: string | null;
+  qualifications: string;
+  specialty: string;
+  registration_number: string;
+  registration_authority: string;
+  practicing_since: string | null;
+  /** Derived from practicing_since on every read, never stored - null when
+   *  practicing_since hasn't been set. */
+  years_of_experience: number | null;
+}
+
+/** What a person may change about their own (or, for an admin, anyone's)
+ *  credentialing profile. Never employee_id, role, or tenant membership -
+ *  those are granted by the hospital, not self-edited. */
+export interface StaffProfileInput {
+  photo?: File | null;
+  qualifications?: string;
+  specialty?: string;
+  registration_number?: string;
+  registration_authority?: string;
+  practicing_since?: string;
 }
 
 export interface Invite {
@@ -105,6 +127,50 @@ export function useRevokeInvite() {
       authFetch(`/api/staff/invites/${id}/revoke/`, { method: "POST" }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: staffKeys.invites });
+    },
+  });
+}
+
+/**
+ * Update a staff member's credentialing profile. The server re-checks who
+ * may do this on every request (self, or that person's hospital_admin) -
+ * this hook doesn't decide who sees the edit form, only sends what's typed.
+ */
+export function useUpdateStaffProfile() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      staffId,
+      input,
+    }: {
+      staffId: string;
+      input: StaffProfileInput;
+    }) => {
+      const form = new FormData();
+      if (input.photo) form.set("photo", input.photo);
+      if (input.qualifications !== undefined)
+        form.set("qualifications", input.qualifications);
+      if (input.specialty !== undefined) form.set("specialty", input.specialty);
+      if (input.registration_number !== undefined)
+        form.set("registration_number", input.registration_number);
+      if (input.registration_authority !== undefined)
+        form.set("registration_authority", input.registration_authority);
+      if (input.practicing_since !== undefined)
+        form.set("practicing_since", input.practicing_since);
+
+      const res = await authFetch(`/api/staff/${staffId}/`, {
+        method: "PATCH",
+        body: form,
+      });
+      const body = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(body?.detail ?? "Could not save this profile.");
+      }
+      return body as StaffMember;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: staffKeys.list });
     },
   });
 }

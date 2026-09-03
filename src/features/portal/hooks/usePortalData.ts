@@ -1,8 +1,8 @@
 "use client";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { authJson, SessionExpiredError } from "@/core/api/authFetch";
+import { authFetch, authJson, SessionExpiredError } from "@/core/api/authFetch";
 
 /**
  * The signed-in user and their hospital, fetched once by the portal shell.
@@ -34,6 +34,7 @@ export interface OrgSummary {
   staff_count: number;
   patient_count: number;
   location_count: number;
+  building_photo: string | null;
 }
 
 export interface CurrentUser {
@@ -89,6 +90,46 @@ export function useOrganization() {
     queryKey: portalKeys.organization,
     queryFn: () => authJson<OrgSummary>("/api/organization/me/"),
     retry: retryUnlessSessionExpired,
+  });
+}
+
+/**
+ * The one field on the hospital's own record that's actually writable from
+ * here — see MyOrganizationView's docstring on the backend for why every
+ * other field stays locked (approval evidence, or drives the risk model's
+ * region).
+ */
+export function useUpdateOrganizationPhoto() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    // null clears the photo — sent as JSON, since a FormData value can't
+    // carry a real null (an empty string would just be "field not provided").
+    mutationFn: async (photo: File | null) => {
+      const res =
+        photo === null
+          ? await authFetch("/api/organization/me/", {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ building_photo: null }),
+            })
+          : await authFetch("/api/organization/me/", {
+              method: "PATCH",
+              body: (() => {
+                const form = new FormData();
+                form.set("building_photo", photo);
+                return form;
+              })(),
+            });
+      const body = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(body?.detail ?? "Could not save this photo.");
+      }
+      return body as OrgSummary;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: portalKeys.organization });
+    },
   });
 }
 
