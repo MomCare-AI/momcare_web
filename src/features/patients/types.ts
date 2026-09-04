@@ -147,6 +147,36 @@ export interface Paginated<T> {
   results: T[];
 }
 
+/**
+ * One reason a pregnancy is on the worklist — an administrative or
+ * care-continuity gap, not a clinical severity signal (that's the
+ * Attention Queue's job; the two are deliberately kept apart, see
+ * docs/worklist-feature-scope.md). ``days`` is null when the condition is
+ * "never happened at all" rather than "happened too long ago".
+ */
+export interface WorklistReason {
+  code:
+    | "no_recent_reading"
+    | "no_recent_note"
+    | "no_risk_history"
+    | "no_lead_clinician";
+  detail: string;
+  days: number | null;
+}
+
+export interface WorklistPatient {
+  patient_id: string;
+  pregnancy_id: string;
+  full_name: string;
+  gestational_age: string;
+  reasons: WorklistReason[];
+}
+
+export interface WorklistResponse {
+  count: number;
+  results: WorklistPatient[];
+}
+
 export const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
 /** Clinical state, so it earns colour. Never colour alone — each carries a label. */

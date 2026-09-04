@@ -9,6 +9,7 @@ import type {
   PatientListItem,
   Pregnancy,
   RiskAnswer,
+  WorklistResponse,
 } from "./types";
 
 export interface EnrolmentInput {
@@ -52,6 +53,15 @@ export function listPatients(
   if (params.assignedToMe) query.set("assigned_to", "me");
   const suffix = query.toString() ? `?${query}` : "";
   return authJson<Paginated<PatientListItem>>(`/api/patients/${suffix}`);
+}
+
+/**
+ * Administrative/care-continuity gaps — deliberately a different question
+ * from the risk-driven attention queue. See docs/worklist-feature-scope.md.
+ */
+export function listWorklist(assignedToMe = false) {
+  const query = assignedToMe ? "?assigned_to=me" : "";
+  return authJson<WorklistResponse>(`/api/patients/worklist/${query}`);
 }
 
 export function getPatient(id: string) {

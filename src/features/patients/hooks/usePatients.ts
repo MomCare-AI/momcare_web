@@ -14,6 +14,7 @@ import {
   listClinicians,
   listPatients,
   listPregnancies,
+  listWorklist,
   type EnrolmentInput,
 } from "../api";
 import type { CareTeamRole } from "../types";
@@ -38,6 +39,8 @@ export const patientKeys = {
   careTeam: (patientId: string, pregnancyId: string) =>
     [...patientKeys.all, "care-team", patientId, pregnancyId] as const,
   clinicians: ["clinicians"] as const,
+  worklist: (assignedToMe: boolean) =>
+    [...patientKeys.all, "worklist", assignedToMe] as const,
 };
 
 /** An expired session is not a data error — the caller must redirect, not retry. */
@@ -58,6 +61,20 @@ export function usePatientList(
     // Keeps the previous page on screen while the next one loads, so paging
     // and searching don't blank the table on every keystroke.
     placeholderData: (previous) => previous,
+  });
+}
+
+/**
+ * The worklist — administrative/care-continuity gaps, not clinical
+ * severity. Deliberately its own query key and its own endpoint, never
+ * merged with the attention queue's data - see
+ * docs/worklist-feature-scope.md.
+ */
+export function useWorklist(assignedToMe = false) {
+  return useQuery({
+    queryKey: patientKeys.worklist(assignedToMe),
+    queryFn: () => listWorklist(assignedToMe),
+    retry: retryUnlessSessionExpired,
   });
 }
 
