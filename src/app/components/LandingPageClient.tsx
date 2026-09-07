@@ -21,26 +21,43 @@ import {
 } from "lucide-react";
 import { AboutFlip } from "./AboutFlip";
 import { ThreePillars } from "./ThreePillars";
+import {
+  FaqCarouselSkeleton,
+  ValuePillarsSkeleton,
+  IntegrationHubSkeleton,
+  OurTeamSkeleton,
+  HowItsBuiltSkeleton,
+  EngineShowcaseSkeleton,
+} from "./LandingSkeletons";
 
 // Below-the-fold sections - still fully server-rendered (so search
 // engines and no-JS visitors see the same HTML), but their client JS
 // is split into its own chunk and fetched only once the visitor
 // actually scrolls near them, rather than blocking the initial load.
-const FaqCarousel = dynamic(() =>
-  import("./FaqCarousel").then((m) => m.FaqCarousel)
+// Each gets a `loading` fallback shaped like the real section, so that
+// window shows a skeleton instead of blank space while the chunk arrives.
+const FaqCarousel = dynamic(
+  () => import("./FaqCarousel").then((m) => m.FaqCarousel),
+  { loading: () => <FaqCarouselSkeleton /> }
 );
-const ValuePillars = dynamic(() =>
-  import("./ValuePillars").then((m) => m.ValuePillars)
+const ValuePillars = dynamic(
+  () => import("./ValuePillars").then((m) => m.ValuePillars),
+  { loading: () => <ValuePillarsSkeleton /> }
 );
-const IntegrationHub = dynamic(() =>
-  import("./IntegrationHub").then((m) => m.IntegrationHub)
+const IntegrationHub = dynamic(
+  () => import("./IntegrationHub").then((m) => m.IntegrationHub),
+  { loading: () => <IntegrationHubSkeleton /> }
 );
-const OurTeam = dynamic(() => import("./OurTeam").then((m) => m.OurTeam));
-const HowItsBuilt = dynamic(() =>
-  import("./HowItsBuilt").then((m) => m.HowItsBuilt)
+const OurTeam = dynamic(() => import("./OurTeam").then((m) => m.OurTeam), {
+  loading: () => <OurTeamSkeleton />,
+});
+const HowItsBuilt = dynamic(
+  () => import("./HowItsBuilt").then((m) => m.HowItsBuilt),
+  { loading: () => <HowItsBuiltSkeleton /> }
 );
-const EngineShowcase = dynamic(() =>
-  import("./EngineShowcase").then((m) => m.EngineShowcase)
+const EngineShowcase = dynamic(
+  () => import("./EngineShowcase").then((m) => m.EngineShowcase),
+  { loading: () => <EngineShowcaseSkeleton /> }
 );
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
