@@ -14,10 +14,9 @@ afterEach(cleanup);
 
 describe("RiskBadge", () => {
   it.each([
-    ["stable", "Stable"],
-    ["moderate", "Moderate"],
+    ["low", "Low"],
+    ["medium", "Medium"],
     ["high", "High"],
-    ["critical", "Critical"],
   ] as const)(
     "shows the word %s alongside the icon, not colour alone",
     (level, label) => {
@@ -26,19 +25,19 @@ describe("RiskBadge", () => {
     }
   );
 
-  it("never assessed reads as its own state, not as stable", () => {
+  it("never assessed reads as its own state, not as low", () => {
     render(<RiskBadge level={null} />);
     screen.getByText("Not assessed");
-    expect(screen.queryByText("Stable")).toBeNull();
+    expect(screen.queryByText("Low")).toBeNull();
   });
 
   it("flags an unacknowledged assessment with an accessible label, not colour alone", () => {
-    render(<RiskBadge level="critical" unacknowledged />);
+    render(<RiskBadge level="high" unacknowledged />);
     screen.getByLabelText("Not yet reviewed");
   });
 
   it("says nothing was missed when the assessment has been reviewed", () => {
-    render(<RiskBadge level="critical" unacknowledged={false} />);
+    render(<RiskBadge level="high" unacknowledged={false} />);
     expect(screen.queryByLabelText("Not yet reviewed")).toBeNull();
   });
 });

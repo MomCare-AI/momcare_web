@@ -105,11 +105,11 @@ describe("RiskPanel", () => {
   it("shows a level only alongside its badge, never text alone", () => {
     stubMutations();
     history({
-      current: assessment({ level: "critical", level_display: "Critical" }),
+      current: assessment({ level: "high", level_display: "High" }),
     });
 
     render(<RiskPanel pregnancyId="preg1" />);
-    screen.getByText("Critical");
+    screen.getByText("High");
   });
 
   it("lists the findings behind the level, not just the level itself", () => {
@@ -152,9 +152,9 @@ describe("RiskPanel", () => {
     stubMutations();
     history({
       current: assessment({
-        level: "critical",
-        level_display: "Critical",
-        previous_level: "high",
+        level: "high",
+        level_display: "High",
+        previous_level: "medium",
       }),
     });
 
@@ -244,8 +244,8 @@ describe("RiskPanel", () => {
         assessment({ id: "cur" }),
         assessment({
           id: "prev",
-          level: "moderate",
-          level_display: "Moderate",
+          level: "medium",
+          level_display: "Medium",
           reasons: ["Returned to range."],
         }),
       ],

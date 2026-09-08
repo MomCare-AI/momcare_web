@@ -9,7 +9,9 @@ import {
 import { riskBadgeClass, riskLabel, type RiskLevel } from "../types";
 
 const ICONS = {
+  low: CheckCircle2,
   stable: CheckCircle2,
+  medium: CircleAlert,
   moderate: CircleAlert,
   high: AlertTriangle,
   critical: Siren,

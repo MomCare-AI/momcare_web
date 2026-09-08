@@ -89,7 +89,7 @@ export function readingAge(recordedAt: string): {
 
 // ── Risk ────────────────────────────────────────────────────────────────────
 
-export type RiskLevel = "stable" | "moderate" | "high" | "critical";
+export type RiskLevel = "low" | "medium" | "high";
 
 /** One reason behind a level, tied to the reading that caused it. */
 export interface RiskFinding {
@@ -143,10 +143,9 @@ export interface AttentionPatient {
 }
 
 const RISK_RANK: Record<RiskLevel, number> = {
-  stable: 0,
-  moderate: 1,
+  low: 0,
+  medium: 1,
   high: 2,
-  critical: 3,
 };
 
 export function riskRank(level: RiskLevel | null): number {
@@ -168,10 +167,9 @@ export function isActionable(level: RiskLevel | null): boolean {
 export function riskLabel(level: RiskLevel | null): string {
   if (!level) return "Not assessed";
   return {
-    stable: "Stable",
-    moderate: "Moderate",
+    low: "Low",
+    medium: "Medium",
     high: "High",
-    critical: "Critical",
   }[level];
 }
 

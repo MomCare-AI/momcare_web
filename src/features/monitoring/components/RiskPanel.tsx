@@ -76,7 +76,7 @@ export function RiskPanel({ pregnancyId }: Props) {
       ) : (
         <>
           <div className="mc-card-body">
-            {current.reasons.length === 0 ? (
+            {(current.reasons?.length ?? 0) === 0 ? (
               <p className="mc-note-line">
                 No findings from the latest readings. This says the measurements
                 on file are within range — not that the patient has been
@@ -188,7 +188,7 @@ function RiskHistoryList({ history }: { history: RiskAssessment[] }) {
               {new Date(entry.assessed_at).toLocaleString()}
             </span>
             <span className="mc-timeline-why">
-              {entry.reasons[0] ?? "Returned to range."}
+              {entry.reasons?.[0] ?? "Returned to range."}
             </span>
           </li>
         ))}

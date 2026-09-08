@@ -93,12 +93,12 @@ describe("AttentionQueue", () => {
 
   it("distinguishes a level filter with no matches from a truly empty queue", () => {
     mockedUseAttentionQueue.mockReturnValue({
-      data: { results: [row({ level: "high" })] },
+      data: { results: [row({ level: "low" })] },
       isPending: false,
       isError: false,
     } as ReturnType<typeof useAttentionQueue>);
 
-    render(<AttentionQueue level="critical" />);
+    render(<AttentionQueue level="high" />);
     screen.getByText("None at this level");
   });
 
@@ -133,14 +133,14 @@ describe("AttentionQueue", () => {
       data: {
         results: [
           row({
-            pregnancy_id: "p-critical",
-            level: "critical",
-            full_name: "Critical Patient",
+            pregnancy_id: "p-high",
+            level: "high",
+            full_name: "High Patient",
           }),
           row({
-            pregnancy_id: "p-moderate",
-            level: "moderate",
-            full_name: "Moderate Patient",
+            pregnancy_id: "p-medium",
+            level: "medium",
+            full_name: "Medium Patient",
           }),
         ],
       },
@@ -148,9 +148,9 @@ describe("AttentionQueue", () => {
       isError: false,
     } as ReturnType<typeof useAttentionQueue>);
 
-    render(<AttentionQueue level="critical" />);
-    screen.getByText("Critical Patient");
-    expect(screen.queryByText("Moderate Patient")).toBeNull();
+    render(<AttentionQueue level="high" />);
+    screen.getByText("High Patient");
+    expect(screen.queryByText("Medium Patient")).toBeNull();
   });
 
   it("reports how many more rows are hidden beyond the limit", () => {

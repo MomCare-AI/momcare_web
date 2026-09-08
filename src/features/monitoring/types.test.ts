@@ -18,47 +18,44 @@ import {
 } from "./types";
 
 describe("riskLabel", () => {
-  it("never assessed is its own label, not stable", () => {
+  it("never assessed is its own label, not low", () => {
     expect(riskLabel(null)).toBe("Not assessed");
-    expect(riskLabel(null)).not.toBe(riskLabel("stable"));
+    expect(riskLabel(null)).not.toBe(riskLabel("low"));
   });
 
   it("labels every real level in words", () => {
-    expect(riskLabel("stable")).toBe("Stable");
-    expect(riskLabel("moderate")).toBe("Moderate");
+    expect(riskLabel("low")).toBe("Low");
+    expect(riskLabel("medium")).toBe("Medium");
     expect(riskLabel("high")).toBe("High");
-    expect(riskLabel("critical")).toBe("Critical");
   });
 });
 
 describe("riskBadgeClass", () => {
-  it("falls back to neutral, not stable's colour, when never assessed", () => {
+  it("falls back to neutral, not low's colour, when never assessed", () => {
     expect(riskBadgeClass(null)).toBe("mc-badge mc-badge-neutral");
-    expect(riskBadgeClass(null)).not.toContain("stable");
+    expect(riskBadgeClass(null)).not.toContain("low");
   });
 
   it("carries the level in the class for every real level", () => {
-    expect(riskBadgeClass("critical")).toBe("mc-badge mc-badge-critical");
     expect(riskBadgeClass("high")).toBe("mc-badge mc-badge-high");
+    expect(riskBadgeClass("medium")).toBe("mc-badge mc-badge-medium");
   });
 });
 
 describe("riskRank / isActionable", () => {
-  it("orders severity stable < moderate < high < critical", () => {
-    expect(riskRank("stable")).toBeLessThan(riskRank("moderate"));
-    expect(riskRank("moderate")).toBeLessThan(riskRank("high"));
-    expect(riskRank("high")).toBeLessThan(riskRank("critical"));
+  it("orders severity low < medium < high", () => {
+    expect(riskRank("low")).toBeLessThan(riskRank("medium"));
+    expect(riskRank("medium")).toBeLessThan(riskRank("high"));
   });
 
-  it("never-assessed ranks below stable, not level with it", () => {
-    expect(riskRank(null)).toBeLessThan(riskRank("stable"));
+  it("never-assessed ranks below low, not level with it", () => {
+    expect(riskRank(null)).toBeLessThan(riskRank("low"));
   });
 
-  it("only above-stable levels are actionable", () => {
-    expect(isActionable("stable")).toBe(false);
-    expect(isActionable("moderate")).toBe(true);
+  it("only above-low levels are actionable", () => {
+    expect(isActionable("low")).toBe(false);
+    expect(isActionable("medium")).toBe(true);
     expect(isActionable("high")).toBe(true);
-    expect(isActionable("critical")).toBe(true);
     expect(isActionable(null)).toBe(false);
   });
 });
@@ -110,7 +107,7 @@ describe("assessmentSource", () => {
     id: "a1",
     level: "high",
     level_display: "High",
-    previous_level: "moderate",
+    previous_level: "medium",
     findings: [],
     reasons: [],
     source: "rules",
