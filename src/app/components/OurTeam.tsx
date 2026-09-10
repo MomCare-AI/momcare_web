@@ -16,7 +16,7 @@ const TEAM = [
   {
     name: "Ahmed Nawaz",
     role: "AI/ML Expert",
-    initial: "A",
+    photo: "/team/Ahmed.png",
     color: "var(--coral)",
     offset: "md:mt-16",
   },

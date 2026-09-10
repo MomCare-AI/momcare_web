@@ -25,20 +25,11 @@ import { usePortal } from "./layout";
 import { usePageTitle } from "@/hooks/usePageTitle";
 
 const RISK_LEVELS: {
-  key: keyof Pick<
-    DashboardRisk,
-    "critical" | "high" | "moderate" | "stable" | "not_assessed"
-  >;
+  key: keyof Pick<DashboardRisk, "high" | "medium" | "low" | "not_assessed">;
   label: string;
   badge: string;
   color: string;
 }[] = [
-  {
-    key: "critical",
-    label: "Critical",
-    badge: "mc-badge-critical",
-    color: "var(--c-critical)",
-  },
   {
     key: "high",
     label: "High",
@@ -46,15 +37,15 @@ const RISK_LEVELS: {
     color: "var(--c-high)",
   },
   {
-    key: "moderate",
-    label: "Moderate",
-    badge: "mc-badge-moderate",
+    key: "medium",
+    label: "Medium",
+    badge: "mc-badge-medium",
     color: "var(--c-moderate)",
   },
   {
-    key: "stable",
-    label: "Stable",
-    badge: "mc-badge-stable",
+    key: "low",
+    label: "Low",
+    badge: "mc-badge-low",
     color: "var(--c-stable)",
   },
   {
@@ -348,10 +339,15 @@ export default function OverviewPage() {
                 <Brain size={12} strokeWidth={2.3} aria-hidden />
                 AI insight
               </span>
+              {/* The model is live and scores every reading as it arrives.
+                  This card does not yet have an endpoint of its own, so it
+                  says where the scoring actually is rather than implying a
+                  summary nobody is computing. */}
               <div style={{ fontSize: 13.5, color: "var(--c-body)" }}>
-                The maternal risk model is being trained and is not connected
-                yet. Insights will appear here once it is, each labelled with
-                its confidence and the readings behind it.
+                The maternal risk model is live and scores every reading as it
+                arrives. Each judgement, its confidence and the vitals behind it
+                are on the patient&rsquo;s own record; the ones needing a
+                clinician are listed under Needs attention.
               </div>
               <p className="mc-ai-note">
                 AI output is decision support only and is never a diagnosis. A

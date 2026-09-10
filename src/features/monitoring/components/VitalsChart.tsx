@@ -13,16 +13,23 @@ import {
   YAxis,
 } from "recharts";
 
-import type { ReadingType, VitalReading } from "../types";
+import {
+  VITAL_METRICS,
+  vitalValue,
+  type VitalMetric,
+  type VitalReading,
+} from "../types";
 
 /**
- * Readings over time.
+ * One vital over time.
  *
- * Blood pressure draws two lines because it is two measurements, and the
- * hypertension thresholds are marked on the axis — a number means little to a
- * reader who does not know where the line is. The reference lines are drawn
- * from the same values the risk rules will use, so the chart and the scoring
- * can never tell different stories.
+ * Blood pressure draws two lines because it is two measurements. The dashed
+ * lines are published clinical reference points, drawn so a number means
+ * something to a reader who does not carry the ranges in their head.
+ *
+ * They are NOT the model's decision boundary. Risk is scored by a trained
+ * model with no single cut-off, so a point crossing a line here does not mean
+ * the model called it high, and staying under one does not mean it did not.
  */
 
 const CHART_COLOURS = {
@@ -34,69 +41,128 @@ const CHART_COLOURS = {
   critical: "#b83c3c",
 };
 
-/** Obstetric thresholds — the same ones the scoring layer applies. */
-const THRESHOLDS: Partial<
-  Record<ReadingType, { value: number; label: string; tone: string }[]>
-> = {
+interface Threshold {
+  value: number;
+  label: string;
+  tone: string;
+  /** Which side is the abnormal one. Anemia is a floor, hypertension a ceiling. */
+  direction: "above" | "below";
+}
+
+const THRESHOLDS: Partial<Record<VitalMetric, Threshold[]>> = {
   blood_pressure: [
-    { value: 140, label: "140 systolic", tone: CHART_COLOURS.moderate },
-    { value: 160, label: "160 severe", tone: CHART_COLOURS.critical },
+    {
+      value: 140,
+      label: "140 systolic",
+      tone: CHART_COLOURS.moderate,
+      direction: "above",
+    },
+    {
+      value: 160,
+      label: "160 severe",
+      tone: CHART_COLOURS.critical,
+      direction: "above",
+    },
   ],
-  temperature: [
-    { value: 38, label: "38 °C fever", tone: CHART_COLOURS.moderate },
+  body_temp_f: [
+    {
+      value: 100.4,
+      label: "100.4 \u00B0F fever",
+      tone: CHART_COLOURS.moderate,
+      direction: "above",
+    },
   ],
-  heart_rate: [{ value: 120, label: "120 bpm", tone: CHART_COLOURS.moderate }],
+  heart_rate: [
+    {
+      value: 120,
+      label: "120 bpm",
+      tone: CHART_COLOURS.moderate,
+      direction: "above",
+    },
+  ],
+  blood_glucose: [
+    {
+      value: 140,
+      label: "140 mg/dL",
+      tone: CHART_COLOURS.moderate,
+      direction: "above",
+    },
+    {
+      value: 200,
+      label: "200 mg/dL",
+      tone: CHART_COLOURS.critical,
+      direction: "above",
+    },
+  ],
+  hemoglobin: [
+    {
+      value: 11,
+      label: "11 g/dL anaemia",
+      tone: CHART_COLOURS.moderate,
+      direction: "below",
+    },
+  ],
 };
 
 interface Props {
   readings: VitalReading[];
-  readingType: ReadingType;
+  metric: VitalMetric;
   height?: number;
 }
 
-export function VitalsChart({ readings, readingType, height = 260 }: Props) {
-  const data = useMemo(
-    () =>
-      // The API returns newest first; a time axis reads oldest to newest.
-      [...readings].reverse().map((r) => ({
-        time: new Date(r.recorded_at).getTime(),
-        value: Number(r.value),
-        secondary:
-          r.value_secondary === null ? null : Number(r.value_secondary),
-      })),
-    [readings]
-  );
+export function VitalsChart({ readings, metric, height = 260 }: Props) {
+  const spec = VITAL_METRICS.find((m) => m.metric === metric);
+  const allThresholds = useMemo(() => THRESHOLDS[metric] ?? [], [metric]);
 
-  const isBloodPressure = readingType === "blood_pressure";
-  const allThresholds = THRESHOLDS[readingType] ?? [];
+  const data = useMemo(() => {
+    if (!spec) return [];
+    return (
+      [...readings]
+        // The API returns newest first; a time axis reads oldest to newest.
+        .reverse()
+        .map((r) => ({
+          time: new Date(r.recorded_at).getTime(),
+          value: vitalValue(r, spec.field),
+          secondary: spec.secondaryField
+            ? vitalValue(r, spec.secondaryField)
+            : null,
+        }))
+        // An event that did not measure this vital is not a zero — dropping
+        // the point leaves a gap, which is the honest shape of the data.
+        .filter((d) => d.value !== null)
+    );
+  }, [readings, spec]);
 
   /**
-   * The axis is stretched to keep the first threshold in view even when every
-   * reading sits well below it: seeing the margin to 140 is clinically useful,
-   * and a threshold line silently clipped off the top would be worse than none.
-   * Higher thresholds only appear once the data approaches them, so a normal
-   * chart is not squashed by a line nobody is near.
+   * The axis is stretched to keep the nearest threshold in view even when
+   * every reading sits well clear of it: seeing the margin is clinically
+   * useful, and a line silently clipped off the edge would be worse than
+   * none. Further thresholds appear only as the data approaches them.
    */
   const { domain, thresholds } = useMemo(() => {
     if (data.length === 0)
       return { domain: [0, 1] as [number, number], thresholds: [] };
 
     const values = data.flatMap((d) =>
-      d.secondary === null ? [d.value] : [d.value, d.secondary]
+      d.secondary === null ? [d.value!] : [d.value!, d.secondary]
     );
     const dataMin = Math.min(...values);
     const dataMax = Math.max(...values);
 
-    const firstThreshold = allThresholds[0]?.value;
-    const ceiling =
-      firstThreshold === undefined
-        ? dataMax
-        : Math.max(dataMax, firstThreshold);
+    const ceilings = allThresholds.filter((t) => t.direction === "above");
+    const floors = allThresholds.filter((t) => t.direction === "below");
 
-    const visible = allThresholds.filter((t) => t.value <= ceiling + 12);
+    const ceiling =
+      ceilings.length > 0 ? Math.max(dataMax, ceilings[0].value) : dataMax;
+    const floor =
+      floors.length > 0 ? Math.min(dataMin, floors[0].value) : dataMin;
+
+    const visible = allThresholds.filter((t) =>
+      t.direction === "above" ? t.value <= ceiling + 12 : t.value >= floor - 12
+    );
 
     return {
-      domain: [Math.floor(dataMin) - 5, Math.ceil(ceiling) + 8] as [
+      domain: [Math.floor(floor) - 5, Math.ceil(ceiling) + 8] as [
         number,
         number,
       ],
@@ -104,7 +170,9 @@ export function VitalsChart({ readings, readingType, height = 260 }: Props) {
     };
   }, [data, allThresholds]);
 
-  if (data.length === 0) return null;
+  if (!spec || data.length === 0) return null;
+
+  const isBloodPressure = Boolean(spec.secondaryField);
 
   return (
     <ResponsiveContainer width="100%" height={height}>
@@ -119,14 +187,15 @@ export function VitalsChart({ readings, readingType, height = 260 }: Props) {
           domain={["dataMin", "dataMax"]}
           scale="time"
           tickFormatter={(t) =>
-            new Date(t).toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
+            new Date(t).toLocaleDateString([], {
+              day: "numeric",
+              month: "short",
             })
           }
           stroke={CHART_COLOURS.axis}
           tick={{ fontSize: 11 }}
           tickLine={false}
+          tickCount={5}
         />
         <YAxis
           stroke={CHART_COLOURS.axis}
@@ -134,12 +203,15 @@ export function VitalsChart({ readings, readingType, height = 260 }: Props) {
           tickLine={false}
           axisLine={false}
           domain={domain}
-          // Clinical values are read as whole numbers — 120, not 119.84.
+          tickCount={5}
           tickFormatter={(v) => String(Math.round(Number(v)))}
         />
         <Tooltip
           labelFormatter={(t) => new Date(Number(t)).toLocaleString()}
-          formatter={(value, name) => [Math.round(Number(value)), String(name)]}
+          formatter={(value, name) => [
+            `${Number(value).toFixed(1)} ${spec.unit}`,
+            String(name),
+          ]}
           contentStyle={{
             borderRadius: 9,
             border: "1px solid #e2ebe9",
@@ -165,10 +237,11 @@ export function VitalsChart({ readings, readingType, height = 260 }: Props) {
         <Line
           type="monotone"
           dataKey="value"
-          name={isBloodPressure ? "Systolic" : "Value"}
+          name={isBloodPressure ? "Systolic" : spec.label}
           stroke={CHART_COLOURS.primary}
           strokeWidth={2}
           dot={false}
+          connectNulls={false}
           isAnimationActive={false}
         />
         {isBloodPressure && (
@@ -179,6 +252,7 @@ export function VitalsChart({ readings, readingType, height = 260 }: Props) {
             stroke={CHART_COLOURS.secondary}
             strokeWidth={2}
             dot={false}
+            connectNulls={false}
             isAnimationActive={false}
           />
         )}

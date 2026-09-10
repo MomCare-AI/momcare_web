@@ -568,6 +568,11 @@ export function LandingPageClient() {
                 </AvatarGroupTooltip>
               </Avatar>
               <Avatar className="size-11 ring-2 ring-white/25">
+                <AvatarImage
+                  src="/team/Ahmed.png"
+                  alt="Ahmed Nawaz"
+                  className="object-cover"
+                />
                 <AvatarFallback
                   style={{ background: "var(--coral)", color: "#fff" }}
                 >

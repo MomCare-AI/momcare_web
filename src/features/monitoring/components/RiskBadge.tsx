@@ -3,18 +3,22 @@ import {
   CheckCircle2,
   CircleAlert,
   HelpCircle,
-  Siren,
 } from "lucide-react";
 
-import { riskBadgeClass, riskLabel, type RiskLevel } from "../types";
+import {
+  canonicalLevel,
+  riskBadgeClass,
+  riskLabel,
+  type RiskLevel,
+} from "../types";
 
+// low/medium/high is the scale the model produces. Retired four-level names
+// on older alert rows are folded onto it by canonicalLevel, so they get the
+// same icon as the level they actually mean.
 const ICONS = {
   low: CheckCircle2,
-  stable: CheckCircle2,
   medium: CircleAlert,
-  moderate: CircleAlert,
   high: AlertTriangle,
-  critical: Siren,
 } as const;
 
 interface Props {
@@ -32,7 +36,10 @@ interface Props {
  * screen imply safety it has no measurement to support.
  */
 export function RiskBadge({ level, unacknowledged = false }: Props) {
-  const Icon = level ? ICONS[level] : HelpCircle;
+  // An unrecognised level must still render — a badge that throws would take
+  // the whole alerts page down rather than showing one odd row.
+  const canonical = canonicalLevel(level);
+  const Icon = canonical ? ICONS[canonical] : HelpCircle;
 
   return (
     <span

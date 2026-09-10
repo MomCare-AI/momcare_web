@@ -9,7 +9,7 @@ import {
   useDevices,
   useRegisterDevice,
 } from "@/features/monitoring/hooks/useMonitoring";
-import type { Device } from "@/features/monitoring/types";
+import { ACQUISITION_OPTIONS, type Device } from "@/features/monitoring/types";
 import { usePageTitle } from "@/hooks/usePageTitle";
 
 /**
@@ -193,11 +193,14 @@ function RegisterForm({ onDone }: { onDone: () => void }) {
     // Read the field directly rather than through React state — consistent
     // with the rest of the portal's forms, and correct even if a serial is
     // ever pasted from a scanner that fires no keystroke events.
-    const serial = String(
-      new FormData(e.currentTarget).get("serial") ?? ""
-    ).trim();
+    const form = new FormData(e.currentTarget);
+    const serial = String(form.get("serial") ?? "").trim();
     if (!serial) return;
-    register.mutate(serial, { onSuccess: onDone });
+    const acquisition = String(form.get("acquisition") ?? "");
+    register.mutate(
+      { serialNumber: serial, acquisition },
+      { onSuccess: onDone }
+    );
   };
 
   return (
@@ -215,6 +218,23 @@ function RegisterForm({ onDone }: { onDone: () => void }) {
             autoFocus
             required
           />
+        </div>
+        <div>
+          <label className="mc-label" htmlFor="acquisition">
+            How it will be supplied
+          </label>
+          {/* Optional on purpose: stock is often bought before anyone decides
+              how it gets handed out, and it can still be set at assignment.
+              A default would put a billing arrangement nobody agreed to on
+              the record. */}
+          <select id="acquisition" name="acquisition" className="mc-input">
+            <option value="">Not decided yet</option>
+            {ACQUISITION_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
       {register.error && (

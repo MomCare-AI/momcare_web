@@ -20,7 +20,11 @@ import {
   Watch,
   X,
 } from "lucide-react";
-import { clearAccessToken, SessionExpiredError } from "@/core/api/authFetch";
+import {
+  clearAccessToken,
+  logout,
+  SessionExpiredError,
+} from "@/core/api/authFetch";
 import { clearQueryCache } from "@/core/query/queryClient";
 import { AlertBell } from "@/features/alerts/components/AlertBell";
 import {
@@ -133,6 +137,10 @@ export default function DashboardLayout({
   }, [pathname]);
 
   const signOut = () => {
+    // Fire the server-side blacklist, but never wait on it: the refresh
+    // cookie being revoked is the server's problem, and a slow network must
+    // not keep someone signed in on a shared machine while it resolves.
+    void logout();
     clearAccessToken();
     // The token alone is not the session. Everything fetched for this person is
     // still in the query cache, and it must not outlive them.

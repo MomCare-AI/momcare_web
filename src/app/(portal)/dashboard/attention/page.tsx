@@ -22,11 +22,12 @@ import { usePageTitle } from "@/hooks/usePageTitle";
  * disagree for as long as it took.
  */
 
+// The queue only ever carries actionable levels — the server filters low out
+// — so there is no "Low" tab to offer.
 const LEVELS = [
   { key: "", label: "Everyone" },
-  { key: "critical", label: "Critical" },
   { key: "high", label: "High" },
-  { key: "moderate", label: "Moderate" },
+  { key: "medium", label: "Medium" },
 ] as const;
 
 export default function AttentionPage() {
@@ -36,7 +37,7 @@ export default function AttentionPage() {
 
   const rows = queue.data?.results ?? [];
   const countFor = (key: string) =>
-    key ? rows.filter((row) => row.level === key).length : rows.length;
+    key ? rows.filter((row) => row.risk_level === key).length : rows.length;
 
   // Patients nobody is responsible for are the ones most likely to be missed,
   // so the number is stated rather than left to be noticed row by row.

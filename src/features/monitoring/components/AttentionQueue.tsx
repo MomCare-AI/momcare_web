@@ -28,7 +28,7 @@ export function AttentionQueue({ limit, level, hideMore }: Props) {
   const queue = useAttentionQueue();
 
   const all = queue.data?.results ?? [];
-  const rows = level ? all.filter((row) => row.level === level) : all;
+  const rows = level ? all.filter((row) => row.risk_level === level) : all;
   const shown = limit ? rows.slice(0, limit) : rows;
 
   if (queue.isPending) {
@@ -80,20 +80,24 @@ export function AttentionQueue({ limit, level, hideMore }: Props) {
           >
             <Link
               href={`/dashboard/patients/${row.patient_id}`}
-              className={`mc-queue-row is-${row.level}`}
+              className={`mc-queue-row is-${row.risk_level}`}
             >
               <div className="mc-queue-main">
                 <div className="mc-queue-top">
                   <span className="mc-queue-name">{row.full_name}</span>
                   <RiskBadge
-                    level={row.level}
-                    unacknowledged={row.needs_acknowledgement}
+                    level={row.risk_level}
+                    unacknowledged={row.needs_review}
                   />
                 </div>
+                {/* The queue carries no per-vital breakdown — it is scanned,
+                    not read. The row says who this is and whether anyone has
+                    judged it yet; the record itself carries the why. */}
                 <div className="mc-queue-reasons">
-                  {row.reasons.slice(0, 2).map((reason) => (
-                    <span key={reason}>{reason}</span>
-                  ))}
+                  {row.mrn && <span>{row.mrn}</span>}
+                  <span>
+                    {row.needs_review ? "Awaiting review" : "Reviewed"}
+                  </span>
                 </div>
               </div>
               <div className="mc-queue-meta">
