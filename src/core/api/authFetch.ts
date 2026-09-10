@@ -113,3 +113,28 @@ export async function authJson<T>(
   }
   return body as T;
 }
+
+/**
+ * End the session on the server as well as in this tab.
+ *
+ * Dropping the access token locally only hides the session — the refresh
+ * cookie stays valid until it expires, so anyone replaying it gets a fresh
+ * access token. This blacklists it.
+ *
+ * Never throws: a failed sign-out must still sign the user out locally. The
+ * worst case is a server-side session that expires on its own schedule, which
+ * is strictly better than leaving someone logged in on a shared machine
+ * because the network blipped.
+ */
+export async function logout(): Promise<void> {
+  const token = getAccessToken();
+  try {
+    await fetch(`${API_BASE}/api/auth/logout/`, {
+      method: "POST",
+      credentials: "include",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+  } catch {
+    // Deliberately swallowed — see the docstring.
+  }
+}

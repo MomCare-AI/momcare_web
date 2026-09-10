@@ -1,28 +1,27 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Activity,
-  AlertTriangle,
-  HeartPulse,
-  Plus,
-  Watch,
-  X,
-} from "lucide-react";
+import { AlertTriangle, HeartPulse, Plus, Watch, X } from "lucide-react";
 
 import {
   useLatestReadings,
   useReadings,
   useRecordReading,
-  useSimulateReadings,
 } from "../hooks/useMonitoring";
-import { READING_TYPES, readingAge, type ReadingType } from "../types";
+import {
+  VITAL_FIELDS,
+  VITAL_METRICS,
+  latestForMetric,
+  readingAge,
+  type NumericVital,
+  type VitalMetric,
+} from "../types";
 import { VitalsChart } from "./VitalsChart";
 
 /**
  * The monitoring surface for one pregnancy.
  *
- * The age of each reading is always shown, and goes amber once it is stale.
+ * The age of each vital is always shown, and goes amber once it is stale.
  * Silence is the failure mode that matters in monitoring: a panel that looks
  * calm because the band stopped reporting is worse than one showing a bad
  * number, because nobody goes looking for it.
@@ -30,22 +29,21 @@ import { VitalsChart } from "./VitalsChart";
 
 interface Props {
   pregnancyId: string;
-  /** The dev-only generator is hidden in production, and the API refuses it too. */
-  allowSimulation?: boolean;
 }
 
-export function VitalsPanel({ pregnancyId, allowSimulation = true }: Props) {
-  const [selected, setSelected] = useState<ReadingType>("blood_pressure");
+export function VitalsPanel({ pregnancyId }: Props) {
+  const [selected, setSelected] = useState<VitalMetric>("blood_pressure");
   const [showEntry, setShowEntry] = useState(false);
 
-  const latest = useLatestReadings(pregnancyId);
-  const series = useReadings(pregnancyId, selected);
-  const simulate = useSimulateReadings(pregnancyId);
+  const series = useReadings(pregnancyId);
+  const contact = useLatestReadings(pregnancyId);
+  const readings = series.data?.results ?? [];
+  const totalCount = series.data?.count ?? 0;
+  const lastContact = contact.data?.reading
+    ? readingAge(contact.data.reading.recorded_at)
+    : null;
 
-  const readings = latest.data?.readings ?? {};
-  const totalCount = latest.data?.total_count ?? 0;
-
-  if (latest.isPending) {
+  if (series.isPending) {
     return (
       <section className="mc-card">
         <div className="mc-card-head">
@@ -56,6 +54,27 @@ export function VitalsPanel({ pregnancyId, allowSimulation = true }: Props) {
     );
   }
 
+  if (series.isError) {
+    // An error must not render as "no readings": those are opposite messages
+    // to a clinician deciding whether this patient is being watched at all.
+    return (
+      <section className="mc-card">
+        <div className="mc-card-head">
+          <div className="mc-card-title">Vitals</div>
+        </div>
+        <div className="mc-empty">
+          <span className="mc-empty-title">Readings unavailable</span>
+          <span className="mc-empty-text">
+            These could not be loaded, so this is not a statement that no vitals
+            have been recorded. Refresh to try again.
+          </span>
+        </div>
+      </section>
+    );
+  }
+
+  const selectedSpec = VITAL_METRICS.find((m) => m.metric === selected);
+
   return (
     <section className="mc-card">
       <div className="mc-card-head">
@@ -63,8 +82,21 @@ export function VitalsPanel({ pregnancyId, allowSimulation = true }: Props) {
           <div className="mc-card-title">Vitals</div>
           <div className="mc-card-sub">
             {totalCount > 0
-              ? `${totalCount.toLocaleString()} readings recorded`
+              ? `${totalCount.toLocaleString()} reading${
+                  totalCount === 1 ? "" : "s"
+                } recorded`
               : "No readings yet"}
+            {/* Last contact, not last-value-per-vital: every metric below can
+                still show a good number from its own last measurement while
+                the band itself has been silent for a day. */}
+            {lastContact && (
+              <>
+                {" · last contact "}
+                <span className={lastContact.stale ? "is-stale" : undefined}>
+                  {lastContact.text}
+                </span>
+              </>
+            )}
           </div>
         </div>
         <div className="mc-row-actions">
@@ -79,17 +111,6 @@ export function VitalsPanel({ pregnancyId, allowSimulation = true }: Props) {
             )}
             {showEntry ? "Cancel" : "Record reading"}
           </button>
-          {allowSimulation && (
-            <button
-              className="mc-btn-ghost mc-btn-sm"
-              disabled={simulate.isPending}
-              onClick={() => simulate.mutate({ hours: 24, elevated: false })}
-              title="Development only — generates clearly-labelled simulated readings"
-            >
-              <Activity size={13} strokeWidth={2.2} />
-              {simulate.isPending ? "Generating…" : "Simulate 24h"}
-            </button>
-          )}
         </div>
       </div>
 
@@ -112,42 +133,39 @@ export function VitalsPanel({ pregnancyId, allowSimulation = true }: Props) {
           </span>
           <span className="mc-empty-title">No readings yet</span>
           <span className="mc-empty-text">
-            Assign a monitoring band, record a reading by hand, or generate
-            simulated data to see how this looks with a full day of monitoring.
+            Assign a monitoring band or record a reading by hand. Risk is scored
+            the moment the first vital arrives.
           </span>
         </div>
       ) : (
         <>
           <div className="mc-vitals-row">
-            {READING_TYPES.map(({ type, label, short }) => {
-              const reading = readings[type];
-              if (!reading) {
+            {VITAL_METRICS.map(({ metric, label, short, unit }) => {
+              const latest = latestForMetric(readings, metric);
+              if (!latest) {
                 // Absent stays absent — never shown as a normal-looking value.
                 return (
-                  <div key={type} className="mc-vital mc-vital-missing">
-                    <span className="mc-vital-label">{label}</span>
+                  <div key={metric} className="mc-vital mc-vital-missing">
+                    <span className="mc-vital-label">{short}</span>
                     <span className="mc-vital-value">—</span>
-                    <span className="mc-vital-age">No reading</span>
+                    <span className="mc-vital-age">Not measured</span>
                   </div>
                 );
               }
-              const age = readingAge(reading.recorded_at);
+              const age = readingAge(latest.reading.recorded_at);
               return (
                 <button
-                  key={type}
+                  key={metric}
                   className="mc-vital"
-                  aria-pressed={selected === type}
-                  onClick={() => setSelected(type)}
-                  title={`Show ${label} over time`}
+                  aria-pressed={selected === metric}
+                  onClick={() => setSelected(metric)}
+                  title={`Show ${label.toLowerCase()} over time`}
                 >
-                  <span className="mc-vital-label">
-                    {short}
-                    {reading.is_simulated && (
-                      <span className="mc-sim-tag">sim</span>
-                    )}
-                  </span>
+                  <span className="mc-vital-label">{short}</span>
                   <span className="mc-vital-value">
-                    {reading.display_value}
+                    {latest.secondary === null
+                      ? `${latest.value} ${unit}`
+                      : `${latest.value}/${latest.secondary}`}
                   </span>
                   <span
                     className={`mc-vital-age${age.stale ? " is-stale" : ""}`}
@@ -163,42 +181,30 @@ export function VitalsPanel({ pregnancyId, allowSimulation = true }: Props) {
           </div>
 
           <div className="mc-card-body">
-            {series.isPending ? (
-              <div className="mc-empty">Loading chart…</div>
-            ) : (series.data?.results.length ?? 0) === 0 ? (
+            {latestForMetric(readings, selected) === null ? (
               <div className="mc-empty">
                 <span className="mc-empty-text">
-                  No{" "}
-                  {READING_TYPES.find(
-                    (r) => r.type === selected
-                  )?.label.toLowerCase()}{" "}
-                  readings recorded.
+                  No {selectedSpec?.label.toLowerCase()} recorded.
                 </span>
               </div>
             ) : (
-              <VitalsChart
-                readings={series.data!.results}
-                readingType={selected}
-              />
+              <VitalsChart readings={readings} metric={selected} />
             )}
           </div>
         </>
-      )}
-
-      {simulate.isError && (
-        <div className="mc-card-foot">
-          <p className="mc-alert mc-alert-error" style={{ marginBottom: 0 }}>
-            <AlertTriangle size={14} strokeWidth={2} aria-hidden />
-            {simulate.error instanceof Error
-              ? simulate.error.message
-              : "Could not generate readings."}
-          </p>
-        </div>
       )}
     </section>
   );
 }
 
+/**
+ * Recording a reading by hand.
+ *
+ * Every vital is optional because a reading event does not have to carry all
+ * nine — hemoglobin in particular comes from a monthly lab report, not the
+ * band. The server enforces the two rules that matter: at least one vital,
+ * and blood pressure only as a pair.
+ */
 function ManualReadingForm({
   pregnancyId,
   onDone,
@@ -206,24 +212,28 @@ function ManualReadingForm({
   pregnancyId: string;
   onDone: () => void;
 }) {
-  const [type, setType] = useState<ReadingType>("blood_pressure");
-  const [value, setValue] = useState("");
-  const [secondary, setSecondary] = useState("");
+  const [values, setValues] = useState<Partial<Record<NumericVital, string>>>(
+    {}
+  );
   const record = useRecordReading(pregnancyId);
 
-  const isBloodPressure = type === "blood_pressure";
-  const unit = READING_TYPES.find((r) => r.type === type)?.unit ?? "";
+  const set = (field: NumericVital, value: string) =>
+    setValues((prev) => ({ ...prev, [field]: value }));
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const payload: Partial<Record<NumericVital, number>> = {};
+    for (const { field } of VITAL_FIELDS) {
+      const raw = values[field];
+      if (raw === undefined || raw.trim() === "") continue;
+      const parsed = Number(raw);
+      if (Number.isFinite(parsed)) payload[field] = parsed;
+    }
+
     try {
-      await record.mutateAsync({
-        reading_type: type,
-        value,
-        ...(isBloodPressure ? { value_secondary: secondary } : {}),
-      });
-      setValue("");
-      setSecondary("");
+      await record.mutateAsync(payload);
+      setValues({});
       onDone();
     } catch {
       // Surfaced below by the mutation's error state.
@@ -232,60 +242,28 @@ function ManualReadingForm({
 
   return (
     <form onSubmit={submit}>
+      <p className="mc-card-sub" style={{ marginBottom: 12 }}>
+        Fill in whatever was measured — blank fields are left unrecorded rather
+        than guessed. Blood pressure needs both halves.
+      </p>
+
       <div className="mc-formgrid">
-        <div>
-          <label className="mc-label" htmlFor="reading-type">
-            Measurement
-          </label>
-          <select
-            id="reading-type"
-            className="mc-input"
-            value={type}
-            onChange={(e) => {
-              setType(e.target.value as ReadingType);
-              setSecondary("");
-            }}
-          >
-            {READING_TYPES.map((r) => (
-              <option key={r.type} value={r.type}>
-                {r.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="mc-label" htmlFor="reading-value">
-            {isBloodPressure ? "Systolic" : "Value"}{" "}
-            <span className="mc-req">*</span>
-          </label>
-          <input
-            id="reading-value"
-            className="mc-input"
-            type="number"
-            step="0.1"
-            required
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            placeholder={unit}
-          />
-        </div>
-        {isBloodPressure && (
-          <div>
-            <label className="mc-label" htmlFor="reading-diastolic">
-              Diastolic <span className="mc-req">*</span>
+        {VITAL_FIELDS.map(({ field, label, unit, step, placeholder }) => (
+          <div key={field}>
+            <label className="mc-label" htmlFor={`vital-${field}`}>
+              {label} <span className="mc-unit">({unit})</span>
             </label>
             <input
-              id="reading-diastolic"
+              id={`vital-${field}`}
               className="mc-input"
               type="number"
-              step="0.1"
-              required
-              value={secondary}
-              onChange={(e) => setSecondary(e.target.value)}
-              placeholder="mmHg"
+              step={step}
+              value={values[field] ?? ""}
+              onChange={(e) => set(field, e.target.value)}
+              placeholder={placeholder}
             />
           </div>
-        )}
+        ))}
       </div>
 
       {record.isError && (

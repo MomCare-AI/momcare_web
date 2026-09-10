@@ -12,6 +12,7 @@ import {
   useResolveAlert,
 } from "@/features/alerts/hooks/useAlerts";
 import type { Alert, AlertEvent } from "@/features/alerts/types";
+import { RiskBadge } from "@/features/monitoring/components/RiskBadge";
 import { usePortal } from "../layout";
 import { usePageTitle } from "@/hooks/usePageTitle";
 
@@ -191,9 +192,7 @@ function AlertRow({
         <div className="mc-alertrow-main">
           <div className="mc-alertrow-top">
             <span className="mc-alertrow-name">{alert.patient_name}</span>
-            <span className={`mc-badge mc-badge-${alert.level}`}>
-              {alert.level}
-            </span>
+            <RiskBadge level={alert.level} />
             {/* Status carries a word as well as a colour — colour alone is not
                 a label a colour-blind clinician can read. */}
             <span className="mc-badge mc-badge-neutral">

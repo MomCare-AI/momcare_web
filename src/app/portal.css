@@ -458,12 +458,14 @@ a.mc-kpi:hover {
 .mc-badge svg {
   flex: none;
 }
-.mc-badge-stable {
+.mc-badge-stable,
+.mc-badge-low {
   color: var(--c-stable);
   background: #edf7f4;
   border-color: #cfe8e0;
 }
-.mc-badge-moderate {
+.mc-badge-moderate,
+.mc-badge-medium {
   color: #96631a;
   background: #fdf5e8;
   border-color: #f2e0bd;
@@ -1367,7 +1369,8 @@ select.mc-input {
   margin-top: 7px;
   background: var(--c-faint);
 }
-.mc-finding.is-moderate .mc-finding-mark {
+.mc-finding.is-moderate .mc-finding-mark,
+.mc-finding.is-medium .mc-finding-mark {
   background: var(--c-moderate);
 }
 .mc-finding.is-high .mc-finding-mark {
@@ -1429,7 +1432,8 @@ select.mc-input {
   outline: 2px solid var(--c-teal);
   outline-offset: -2px;
 }
-.mc-queue-row.is-moderate {
+.mc-queue-row.is-moderate,
+.mc-queue-row.is-medium {
   border-left-color: var(--c-moderate);
 }
 .mc-queue-row.is-high {
@@ -1587,7 +1591,8 @@ select.mc-input {
 .mc-bell-item:last-child {
   border-bottom: none;
 }
-.mc-bell-item.is-moderate {
+.mc-bell-item.is-moderate,
+.mc-bell-item.is-medium {
   border-left-color: var(--c-moderate);
 }
 .mc-bell-item.is-high {

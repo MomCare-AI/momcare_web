@@ -208,7 +208,13 @@ export default function PatientProfilePage({
 
           {current && <VitalsPanel pregnancyId={current.id} />}
 
-          {current && <RiskPanel pregnancyId={current.id} />}
+          {current && (
+            <RiskPanel
+              pregnancyId={current.id}
+              patientName={patient.full_name}
+              canVerify={isClinician}
+            />
+          )}
         </>
       )}
 

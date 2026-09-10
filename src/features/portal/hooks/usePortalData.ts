@@ -35,6 +35,11 @@ export interface OrgSummary {
   patient_count: number;
   location_count: number;
   building_photo: string | null;
+  /** This hospital's own override, or null when it has never set one. */
+  confidence_threshold: string | null;
+  /** What scoring actually uses: the override above, or the platform
+   *  default when there is none. Always a number, never null. */
+  effective_confidence_threshold: string;
 }
 
 export interface CurrentUser {
@@ -48,13 +53,13 @@ export interface CurrentUser {
   staff_id: string | null;
 }
 
+/** The model's own three-level scale — see core/organization/api/dashboard.py. */
 export interface DashboardRisk {
-  critical: number;
   high: number;
-  moderate: number;
-  stable: number;
+  medium: number;
+  low: number;
   /** Enrolled, but no assessment has ever been written for this pregnancy —
-   *  kept apart from "stable" everywhere in this app: a patient nobody has
+   *  kept apart from "low" everywhere in this app: a patient nobody has
    *  measured is not a patient who is well. */
   not_assessed: number;
   total: number;
@@ -159,4 +164,41 @@ export function useRefreshPortal() {
     queryClient.invalidateQueries({ queryKey: portalKeys.organization });
     queryClient.invalidateQueries({ queryKey: portalKeys.currentUser });
   };
+}
+
+/**
+ * This hospital's model-confidence threshold.
+ *
+ * An assessment scoring below it is flagged for a doctor to look again,
+ * whatever the risk level. hospital_admin only — the server enforces that
+ * too. Passing null clears the override so the hospital follows the platform
+ * default live, including any later change to it.
+ */
+export function useUpdateConfidenceThreshold() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (threshold: number | null) => {
+      const res = await authFetch(
+        "/api/organization/me/confidence-threshold/",
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ confidence_threshold: threshold }),
+        }
+      );
+      const body = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(
+          body?.confidence_threshold?.[0] ??
+            body?.detail ??
+            "Could not save this threshold."
+        );
+      }
+      return body as OrgSummary;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: portalKeys.organization });
+    },
+  });
 }

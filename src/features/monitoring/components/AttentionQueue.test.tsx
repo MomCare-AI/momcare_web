@@ -45,11 +45,10 @@ function row(overrides: Partial<AttentionPatient> = {}): AttentionPatient {
     full_name: "Ayesha Bibi",
     mrn: "MRN-1",
     gestational_age: "28w",
-    level: "high",
-    level_display: "High",
-    reasons: ["Elevated blood pressure"],
+    risk_level: "high",
+    risk_level_display: "High",
     assessed_at: new Date().toISOString(),
-    needs_acknowledgement: true,
+    needs_review: true,
     assigned_staff_name: "Dr. Sana Iqbal",
     has_responsible_clinician: true,
     ...overrides,
@@ -93,16 +92,16 @@ describe("AttentionQueue", () => {
 
   it("distinguishes a level filter with no matches from a truly empty queue", () => {
     mockedUseAttentionQueue.mockReturnValue({
-      data: { results: [row({ level: "high" })] },
+      data: { results: [row({ risk_level: "low" })] },
       isPending: false,
       isError: false,
     } as ReturnType<typeof useAttentionQueue>);
 
-    render(<AttentionQueue level="critical" />);
+    render(<AttentionQueue level="high" />);
     screen.getByText("None at this level");
   });
 
-  it("renders a row with its risk badge, reasons, and assigned clinician", () => {
+  it("renders a row with its risk badge, review state, and assigned clinician", () => {
     mockedUseAttentionQueue.mockReturnValue({
       data: { results: [row()] },
       isPending: false,
@@ -112,7 +111,10 @@ describe("AttentionQueue", () => {
     render(<AttentionQueue />);
     screen.getByText("Ayesha Bibi");
     screen.getByText("High");
-    screen.getByText("Elevated blood pressure");
+    screen.getByText("MRN-1");
+    // An unjudged row has to say so — the queue looking attended to when
+    // nobody has reviewed anything is the failure this list exists to prevent.
+    screen.getByText("Awaiting review");
     screen.getByText("Dr. Sana Iqbal");
   });
 
@@ -133,14 +135,14 @@ describe("AttentionQueue", () => {
       data: {
         results: [
           row({
-            pregnancy_id: "p-critical",
-            level: "critical",
-            full_name: "Critical Patient",
+            pregnancy_id: "p-high",
+            risk_level: "high",
+            full_name: "High Patient",
           }),
           row({
-            pregnancy_id: "p-moderate",
-            level: "moderate",
-            full_name: "Moderate Patient",
+            pregnancy_id: "p-medium",
+            risk_level: "medium",
+            full_name: "Medium Patient",
           }),
         ],
       },
@@ -148,9 +150,9 @@ describe("AttentionQueue", () => {
       isError: false,
     } as ReturnType<typeof useAttentionQueue>);
 
-    render(<AttentionQueue level="critical" />);
-    screen.getByText("Critical Patient");
-    expect(screen.queryByText("Moderate Patient")).toBeNull();
+    render(<AttentionQueue level="high" />);
+    screen.getByText("High Patient");
+    expect(screen.queryByText("Medium Patient")).toBeNull();
   });
 
   it("reports how many more rows are hidden beyond the limit", () => {
