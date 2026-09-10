@@ -22,14 +22,16 @@ import { RISK_FACTORS, pregnancyTone } from "@/features/patients/types";
 import { ClinicalNotesPanel } from "@/features/patients/components/ClinicalNotesPanel";
 import { CareTeamPanel } from "@/features/patients/components/CareTeamPanel";
 import { RiskPanel } from "@/features/monitoring/components/RiskPanel";
+import { RiskAssessmentInput } from "@/features/monitoring/components/RiskAssessmentInput";
 import { VitalsPanel } from "@/features/monitoring/components/VitalsPanel";
 import { usePortal } from "../../layout";
 import { usePageTitle } from "@/hooks/usePageTitle";
 
-type Tab = "overview" | "pregnancy" | "history" | "consent";
+type Tab = "overview" | "risk" | "pregnancy" | "history" | "consent";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "overview", label: "Overview" },
+  { id: "risk", label: "AI Risk Assessment" },
   { id: "pregnancy", label: "Pregnancy" },
   { id: "history", label: "History" },
   { id: "consent", label: "Consent" },
@@ -207,13 +209,28 @@ export default function PatientProfilePage({
           </section>
 
           {current && <VitalsPanel pregnancyId={current.id} />}
+        </>
+      )}
 
-          {current && (
-            <RiskPanel
-              pregnancyId={current.id}
-              patientName={patient.full_name}
-              canVerify={isClinician}
-            />
+      {tab === "risk" && (
+        <>
+          {current ? (
+            <>
+              <RiskPanel pregnancyId={current.id} canVerify={isClinician} />
+              <RiskAssessmentInput
+                pregnancyId={current.id}
+                patientName={patient.full_name}
+              />
+            </>
+          ) : (
+            <div className="mc-card">
+              <div className="mc-empty">
+                <span className="mc-empty-title">No active pregnancy</span>
+                <span className="mc-empty-text">
+                  Risk assessment needs an active pregnancy to score against.
+                </span>
+              </div>
+            </div>
           )}
         </>
       )}

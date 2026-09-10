@@ -5,7 +5,6 @@ import {
   AlertTriangle,
   Brain,
   Check,
-  Microscope,
   RefreshCw,
   ShieldCheck,
 } from "lucide-react";
@@ -24,11 +23,9 @@ import {
 } from "../types";
 import { useOrganization } from "@/features/portal/hooks/usePortalData";
 import { RiskBadge } from "./RiskBadge";
-import { RiskAssessmentModal } from "./RiskAssessmentModal";
 
 interface Props {
   pregnancyId: string;
-  patientName?: string;
   /** Only a clinician may review an assessment — the server enforces it too. */
   canVerify?: boolean;
 }
@@ -43,12 +40,7 @@ const LEVELS: RiskLevel[] = ["low", "medium", "high"];
  * and let an unreviewed high assessment look the same as one a clinician has
  * actually judged.
  */
-export function RiskPanel({
-  pregnancyId,
-  patientName = "Patient",
-  canVerify = true,
-}: Props) {
-  const [showModal, setShowModal] = useState(false);
+export function RiskPanel({ pregnancyId, canVerify = true }: Props) {
   const risk = useRiskHistory(pregnancyId);
   const verify = useVerifyRisk(pregnancyId);
   const reassess = useReassessRisk(pregnancyId);
@@ -64,149 +56,129 @@ export function RiskPanel({
   const history = risk.data?.history ?? [];
 
   return (
-    <>
-      <section className="mc-card">
-        <div className="mc-card-head">
-          <div>
-            <div className="mc-card-title">Risk assessment</div>
-            <div className="mc-card-sub">
-              {current
-                ? assessmentSource(current)
-                : "Decision support, reviewed by a clinician"}
-            </div>
-          </div>
-          <div className="mc-row-actions">
-            {/* final_risk_level, not risk_level: this is the level the
-                alerting layer acted on, so it is the only honest badge. */}
-            {current && <RiskBadge level={current.final_risk_level} />}
-            <button
-              type="button"
-              className="mc-btn-ghost mc-btn-sm"
-              onClick={() => setShowModal(true)}
-              title="Score a set of vitals through the model"
-            >
-              <Microscope size={13} strokeWidth={2} aria-hidden />
-              Test AI
-            </button>
-            <button
-              type="button"
-              className="mc-btn-ghost mc-btn-sm"
-              onClick={() => reassess.mutate()}
-              disabled={reassess.isPending}
-            >
-              <RefreshCw size={13} strokeWidth={2} aria-hidden />
-              {reassess.isPending ? "Scoring…" : "Re-score"}
-            </button>
+    <section className="mc-card">
+      <div className="mc-card-head">
+        <div>
+          <div className="mc-card-title">Risk assessment</div>
+          <div className="mc-card-sub">
+            {current
+              ? assessmentSource(current)
+              : "Decision support, reviewed by a clinician"}
           </div>
         </div>
+        <div className="mc-row-actions">
+          {/* final_risk_level, not risk_level: this is the level the
+              alerting layer acted on, so it is the only honest badge. */}
+          {current && <RiskBadge level={current.final_risk_level} />}
+          <button
+            type="button"
+            className="mc-btn-ghost mc-btn-sm"
+            onClick={() => reassess.mutate()}
+            disabled={reassess.isPending}
+          >
+            <RefreshCw size={13} strokeWidth={2} aria-hidden />
+            {reassess.isPending ? "Scoring…" : "Re-score"}
+          </button>
+        </div>
+      </div>
 
-        {risk.isPending ? (
-          <div className="mc-empty">Loading assessment…</div>
-        ) : risk.isError ? (
-          <div className="mc-empty">
-            <span className="mc-empty-title">Assessment unavailable</span>
-            <span className="mc-empty-text">
-              This could not be loaded, so it is not a statement that the
-              patient is low risk. Refresh to try again.
-            </span>
-          </div>
-        ) : !current ? (
-          <div className="mc-empty">
-            <span className="mc-empty-icon">
-              <ShieldCheck size={20} strokeWidth={1.9} aria-hidden />
-            </span>
-            <span className="mc-empty-title">Not assessed yet</span>
-            <span className="mc-empty-text">
-              Risk is scored the moment a reading arrives. Record a vital or
-              assign a wearable band, and the first assessment will appear here.
-            </span>
-          </div>
-        ) : (
-          <>
-            <div className="mc-card-body">
-              <CategoryList assessment={current} />
+      {risk.isPending ? (
+        <div className="mc-empty">Loading assessment…</div>
+      ) : risk.isError ? (
+        <div className="mc-empty">
+          <span className="mc-empty-title">Assessment unavailable</span>
+          <span className="mc-empty-text">
+            This could not be loaded, so it is not a statement that the patient
+            is low risk. Refresh to try again.
+          </span>
+        </div>
+      ) : !current ? (
+        <div className="mc-empty">
+          <span className="mc-empty-icon">
+            <ShieldCheck size={20} strokeWidth={1.9} aria-hidden />
+          </span>
+          <span className="mc-empty-title">Not assessed yet</span>
+          <span className="mc-empty-text">
+            Risk is scored the moment a reading arrives. Record a vital or
+            assign a wearable band, and the first assessment will appear here.
+          </span>
+        </div>
+      ) : (
+        <>
+          <div className="mc-card-body">
+            <CategoryList assessment={current} />
 
-              {/* The model was trained region-blind, so an Africa-region
+            {/* The model was trained region-blind, so an Africa-region
                   Medium is escalated before anything acts on it. Saying so
                   keeps the badge from contradicting the stated confidence. */}
-              {current.final_risk_level !== current.risk_level && (
+            {current.final_risk_level !== current.risk_level && (
+              <p className="mc-note-line">
+                The model returned{" "}
+                <strong>{riskLabel(current.risk_level)}</strong>; this
+                hospital&rsquo;s population adjustment raised it to{" "}
+                <strong>{riskLabel(current.final_risk_level)}</strong>, which is
+                the level acted on.
+              </p>
+            )}
+
+            {current.previous_risk_level &&
+              current.previous_risk_level !== current.final_risk_level && (
                 <p className="mc-note-line">
-                  The model returned{" "}
-                  <strong>{riskLabel(current.risk_level)}</strong>; this
-                  hospital&rsquo;s population adjustment raised it to{" "}
-                  <strong>{riskLabel(current.final_risk_level)}</strong>, which
-                  is the level acted on.
+                  Changed from{" "}
+                  <strong>{riskLabel(current.previous_risk_level)}</strong> to{" "}
+                  <strong>{riskLabel(current.final_risk_level)}</strong> on{" "}
+                  {new Date(current.assessed_at).toLocaleString()}.
                 </p>
               )}
 
-              {current.previous_risk_level &&
-                current.previous_risk_level !== current.final_risk_level && (
-                  <p className="mc-note-line">
-                    Changed from{" "}
-                    <strong>{riskLabel(current.previous_risk_level)}</strong> to{" "}
-                    <strong>{riskLabel(current.final_risk_level)}</strong> on{" "}
-                    {new Date(current.assessed_at).toLocaleString()}.
-                  </p>
-                )}
-
-              {current.flagged_for_review && (
-                <p className="mc-alert mc-alert-notice">
-                  <AlertTriangle size={14} strokeWidth={2} aria-hidden />
-                  {/* The threshold is a separate fetch by design — the risk
+            {current.flagged_for_review && (
+              <p className="mc-alert mc-alert-notice">
+                <AlertTriangle size={14} strokeWidth={2} aria-hidden />
+                {/* The threshold is a separate fetch by design — the risk
                       endpoint deliberately does not carry it. Naming both
                       numbers turns "flagged" from a verdict into something a
                       clinician can actually judge. */}
-                  The model was{" "}
-                  {current.confidence
-                    ? `${Math.round(Number(current.confidence) * 100)}% sure`
-                    : "not sure enough"}
-                  {threshold !== null &&
-                    `, below this hospital's ${threshold}%`}
-                  . The result stands, but a clinician should look again.
-                </p>
-              )}
+                The model was{" "}
+                {current.confidence
+                  ? `${Math.round(Number(current.confidence) * 100)}% sure`
+                  : "not sure enough"}
+                {threshold !== null && `, below this hospital's ${threshold}%`}.
+                The result stands, but a clinician should look again.
+              </p>
+            )}
 
-              {reassess.data?.detail && !reassess.data.changed && (
-                <p className="mc-note-line">{reassess.data.detail}</p>
-              )}
+            {reassess.data?.detail && !reassess.data.changed && (
+              <p className="mc-note-line">{reassess.data.detail}</p>
+            )}
 
-              <div className="mc-ai">
-                <span className="mc-ai-tag">
-                  <Brain size={12} strokeWidth={2.3} aria-hidden />
-                  AI model
-                </span>
-                <p className="mc-ai-note">
-                  Produced by the maternal risk model. Decision support only —
-                  never a diagnosis, and always reviewed by a clinician.
-                </p>
-              </div>
+            <div className="mc-ai">
+              <span className="mc-ai-tag">
+                <Brain size={12} strokeWidth={2.3} aria-hidden />
+                AI model
+              </span>
+              <p className="mc-ai-note">
+                Produced by the maternal risk model. Decision support only —
+                never a diagnosis, and always reviewed by a clinician.
+              </p>
             </div>
+          </div>
 
-            <div className="mc-card-foot">
-              <ReviewControl
-                assessment={current}
-                canVerify={canVerify}
-                pending={verify.isPending}
-                error={verify.error}
-                onVerify={(confirmedLevel) =>
-                  verify.mutate({ assessmentId: current.id, confirmedLevel })
-                }
-              />
-            </div>
-          </>
-        )}
-
-        {history.length > 1 && <RiskHistoryList history={history} />}
-      </section>
-
-      {showModal && (
-        <RiskAssessmentModal
-          pregnancyId={pregnancyId}
-          patientName={patientName}
-          onClose={() => setShowModal(false)}
-        />
+          <div className="mc-card-foot">
+            <ReviewControl
+              assessment={current}
+              canVerify={canVerify}
+              pending={verify.isPending}
+              error={verify.error}
+              onVerify={(confirmedLevel) =>
+                verify.mutate({ assessmentId: current.id, confirmedLevel })
+              }
+            />
+          </div>
+        </>
       )}
-    </>
+
+      {history.length > 1 && <RiskHistoryList history={history} />}
+    </section>
   );
 }
 
