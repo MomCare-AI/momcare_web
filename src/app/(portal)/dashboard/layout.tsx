@@ -13,7 +13,6 @@ import {
   LogOut,
   Search,
   Settings,
-  MapPin,
   Menu,
   Stethoscope,
   Users,
@@ -82,14 +81,6 @@ const NAV = [
     adminOnly: true,
   },
 ];
-
-/** Approval state maps to a clinical badge; never colour alone — each carries a label. */
-const STATUS_TONE: Record<OrgSummary["status"], string> = {
-  approved: "stable",
-  pending: "moderate",
-  rejected: "high",
-  suspended: "neutral",
-};
 
 export default function DashboardLayout({
   children,
@@ -309,23 +300,7 @@ export default function DashboardLayout({
           </nav>
         </div>
 
-        <div className="mc-page">
-          <div className="mc-org">
-            <div>
-              <div className="mc-org-name">{org.name}</div>
-              <div className="mc-org-meta">
-                <MapPin size={13} strokeWidth={2} aria-hidden />
-                {[org.city, org.state, org.country].filter(Boolean).join(", ")}
-              </div>
-            </div>
-            <div className="mc-org-right">
-              <span className={`mc-badge mc-badge-${STATUS_TONE[org.status]}`}>
-                {org.status_display}
-              </span>
-            </div>
-          </div>
-          {children}
-        </div>
+        <div className="mc-page">{children}</div>
       </div>
     </PortalContext.Provider>
   );
