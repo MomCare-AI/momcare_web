@@ -1,23 +1,22 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
-import Link from "next/link";
-import Image from "next/image";
-import { usePathname, useRouter } from "next/navigation";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useSyncExternalStore,
+} from "react";
+import { useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import {
   Activity,
   BellRing,
   Building2,
-  Heart,
   LayoutDashboard,
-  LogOut,
-  Search,
-  Settings,
-  Menu,
   Stethoscope,
   Users,
   Watch,
-  X,
 } from "lucide-react";
 import {
   clearAccessToken,
@@ -25,7 +24,6 @@ import {
   SessionExpiredError,
 } from "@/core/api/authFetch";
 import { clearQueryCache } from "@/core/query/queryClient";
-import { AlertBell } from "@/features/alerts/components/AlertBell";
 import {
   useCurrentUser,
   useOrganization,
@@ -33,6 +31,10 @@ import {
   type CurrentUser,
   type OrgSummary,
 } from "@/features/portal/hooks/usePortalData";
+import { AppHeader } from "./components/AppHeader";
+import { MobileSidebarDrawer } from "./components/MobileSidebarDrawer";
+import { Sidebar } from "./components/Sidebar";
+import type { NavItem } from "./components/SidebarNavItem";
 import "../../portal.css";
 
 // Re-exported so pages can keep importing these from the layout they already
@@ -52,6 +54,33 @@ interface PortalValue {
 
 const CLINICAL_ROLES = new Set(["provider", "nurse", "care_manager"]);
 
+/**
+ * How a role reads on the sidebar's own identity card. "Dr." is a role
+ * convention shown for every provider, not a stored title on any one
+ * person's record — provider is this system's doctor role (see
+ * core/common/permissions.py's IsClinician), so the prefix is derived,
+ * never a per-user hardcode.
+ */
+const ROLE_LABELS: Record<string, string> = {
+  hospital_admin: "Hospital Administrator",
+  provider: "Doctor",
+  nurse: "Nurse",
+  care_manager: "Care Manager",
+  platform_admin: "Platform Administrator",
+  patient: "Patient",
+};
+
+// Exported for tests only — not part of this module's real public surface,
+// since nothing outside the sidebar itself has a reason to format identity.
+export function displayNameFor(user: CurrentUser): string {
+  const name = `${user.first_name} ${user.last_name}`.trim() || user.email;
+  return user.role_code === "provider" ? `Dr. ${name}` : name;
+}
+
+export function roleLabelFor(roleCode: string): string {
+  return ROLE_LABELS[roleCode] ?? roleCode.replace(/_/g, " ");
+}
+
 const PortalContext = createContext<PortalValue | null>(null);
 
 /** Portal data, fetched once by the shell rather than by every page. */
@@ -62,7 +91,7 @@ export function usePortal(): PortalValue {
   return ctx;
 }
 
-const NAV = [
+const NAV: NavItem[] = [
   { href: "/dashboard", label: "Overview", Icon: LayoutDashboard },
   {
     href: "/dashboard/attention",
@@ -82,6 +111,54 @@ const NAV = [
   },
 ];
 
+const COLLAPSE_STORAGE_KEY = "mc-sidebar-collapsed";
+const DESKTOP_QUERY = "(min-width: 1024px)";
+
+/**
+ * Which tier applies right now — desktop (>=1024px) or not. A
+ * useSyncExternalStore subscription rather than a matchMedia listener
+ * wired up in an effect: this is genuinely an external, synchronous store
+ * (the browser's own media-query state), which is exactly what the hook
+ * exists for, and it sidesteps the "setState synchronously in an effect"
+ * problem entirely rather than working around it.
+ *
+ * Both `change` and `resize` trigger the same re-check. Belt and braces:
+ * matchMedia's own event is the correct, precise signal, but a plain
+ * `resize` costs nothing extra to also listen for (React's own
+ * Object.is comparison on the snapshot throws away any call that didn't
+ * actually cross the breakpoint) and closes any environment where the
+ * former doesn't fire reliably on a live resize.
+ */
+function subscribeToDesktopTier(onChange: () => void) {
+  const media = window.matchMedia(DESKTOP_QUERY);
+  media.addEventListener("change", onChange);
+  window.addEventListener("resize", onChange);
+  return () => {
+    media.removeEventListener("change", onChange);
+    window.removeEventListener("resize", onChange);
+  };
+}
+function getIsDesktopTier() {
+  return window.matchMedia(DESKTOP_QUERY).matches;
+}
+// The real sidebar never appears in server-rendered HTML — this layout
+// gates all of it behind the org/user data load below, which only ever
+// resolves client-side. The server snapshot is never actually shown, so
+// its exact value doesn't matter beyond being a valid boolean.
+function getIsDesktopTierServer() {
+  return true;
+}
+
+function readStoredCollapsed(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return localStorage.getItem(COLLAPSE_STORAGE_KEY) === "1";
+  } catch {
+    // Private browsing, storage disabled - default (expanded) stands.
+    return false;
+  }
+}
+
 export default function DashboardLayout({
   children,
 }: {
@@ -92,6 +169,35 @@ export default function DashboardLayout({
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [navSearch, setNavSearch] = useState("");
+
+  // The tablet tier (860–1023px) always shows the icon rail regardless of
+  // this preference — only the desktop tier ever reads it. Resizing within
+  // a tier must never change this value; only crossing the 1024px line
+  // changes which tier's rule applies.
+  const isDesktopTier = useSyncExternalStore(
+    subscribeToDesktopTier,
+    getIsDesktopTier,
+    getIsDesktopTierServer
+  );
+
+  // Read once, lazily, rather than defaulted-then-corrected in an effect —
+  // safe here because the sidebar this drives is never part of any
+  // server-rendered HTML in the first place (see getIsDesktopTierServer).
+  const [manualCollapsed, setManualCollapsed] = useState(readStoredCollapsed);
+
+  const toggleCollapse = () => {
+    setManualCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(COLLAPSE_STORAGE_KEY, next ? "1" : "0");
+      } catch {
+        // Nothing to persist to - the preference just won't survive reload.
+      }
+      return next;
+    });
+  };
+
+  const effectiveCollapsed = isDesktopTier ? manualCollapsed : true;
 
   const submitNavSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -177,130 +283,52 @@ export default function DashboardLayout({
   const visibleNav = NAV.filter((item) => {
     // Hidden rather than disabled. A greyed-out link tells somebody only
     // that they are not trusted with it, without saying why.
-    if ("clinicalOnly" in item && item.clinicalOnly && !value.isClinician)
-      return false;
-    if ("adminOnly" in item && item.adminOnly && !value.isHospitalAdmin)
-      return false;
+    if (item.clinicalOnly && !value.isClinician) return false;
+    if (item.adminOnly && !value.isHospitalAdmin) return false;
     return true;
   });
 
-  const renderLink = (item: (typeof NAV)[number]) => {
-    const { Icon } = item;
-    // Sub-pages keep their section highlighted — /dashboard/patients/new should
-    // still show Patients as current. Overview matches exactly, or it would
-    // light up on every page.
-    const isCurrent =
-      item.href === "/dashboard"
-        ? pathname === item.href
-        : pathname.startsWith(item.href);
-
-    return (
-      <Link
-        key={item.href}
-        href={item.href}
-        className="mc-navlink"
-        aria-current={isCurrent ? "page" : undefined}
-      >
-        <Icon size={16} strokeWidth={1.9} aria-hidden />
-        {item.label}
-      </Link>
-    );
+  const identity = {
+    orgName: org.name,
+    userDisplayName: displayNameFor(user),
+    roleLabel: roleLabelFor(user.role_code),
+    initials,
   };
 
   return (
     <PortalContext.Provider value={value}>
       <div className="mc-portal">
-        <header className="mc-nav">
-          <button
-            className="mc-burger"
-            onClick={() => setMenuOpen((v) => !v)}
-            aria-label={menuOpen ? "Close menu" : "Open menu"}
-            aria-expanded={menuOpen}
-          >
-            {menuOpen ? <X size={19} /> : <Menu size={19} />}
-          </button>
+        <Sidebar
+          variant="desktop"
+          collapsed={effectiveCollapsed}
+          navItems={visibleNav}
+          pathname={pathname}
+          onSignOut={signOut}
+          onToggleCollapse={isDesktopTier ? toggleCollapse : undefined}
+          {...identity}
+        />
 
-          <Link href="/dashboard" className="mc-brand">
-            <Image
-              src="/avatars/logo.png"
-              alt="MomCare Logo"
-              width={180}
-              height={44}
-              style={{ objectFit: "contain", height: "44px", width: "auto" }}
-              priority
-            />
-          </Link>
+        <MobileSidebarDrawer
+          open={menuOpen}
+          onClose={() => setMenuOpen(false)}
+          navItems={visibleNav}
+          pathname={pathname}
+          onSignOut={signOut}
+          {...identity}
+        />
 
-          <nav className="mc-navlinks" aria-label="Main">
-            {visibleNav.map(renderLink)}
-          </nav>
-
-          <form
-            className="mc-navsearch"
-            onSubmit={submitNavSearch}
-            role="search"
-          >
-            <Search size={15} strokeWidth={2} aria-hidden />
-            <input
-              type="text"
-              placeholder="Search patients…"
-              value={navSearch}
-              onChange={(e) => setNavSearch(e.target.value)}
-              aria-label="Search patients"
-            />
-          </form>
-
-          <div className="mc-nav-right">
-            <AlertBell />
-            <div className="mc-user">
-              <span className="mc-avatar" aria-hidden>
-                {initials}
-              </span>
-              <span className="mc-user-text">
-                <span className="mc-user-name">
-                  {user.first_name} {user.last_name}
-                </span>
-                <span className="mc-user-role">
-                  {value.isHospitalAdmin
-                    ? "Hospital administrator"
-                    : user.role_code.replace("_", " ")}
-                </span>
-              </span>
-            </div>
-            <Link
-              href="/dashboard/settings"
-              className="mc-iconbtn"
-              aria-label="Settings"
-              title="Settings"
-            >
-              <Settings size={17} strokeWidth={1.9} />
-            </Link>
-            <button
-              className="mc-iconbtn"
-              onClick={signOut}
-              aria-label="Sign out"
-              title="Sign out"
-            >
-              <LogOut size={17} strokeWidth={1.9} />
-            </button>
-          </div>
-        </header>
-
-        <div
-          className="mc-drawer"
-          data-open={menuOpen}
-          onClick={() => setMenuOpen(false)}
-        >
-          <nav
-            className="mc-drawer-panel"
-            aria-label="Mobile"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {visibleNav.map(renderLink)}
-          </nav>
+        <div className="mc-shell">
+          <AppHeader
+            showMenuTrigger
+            menuOpen={menuOpen}
+            onToggleMenu={() => setMenuOpen((v) => !v)}
+            navSearch={navSearch}
+            onNavSearchChange={setNavSearch}
+            onSubmitSearch={submitNavSearch}
+            initials={initials}
+          />
+          <div className="mc-page">{children}</div>
         </div>
-
-        <div className="mc-page">{children}</div>
       </div>
     </PortalContext.Provider>
   );

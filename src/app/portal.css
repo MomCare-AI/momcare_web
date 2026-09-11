@@ -51,85 +51,317 @@
   box-sizing: border-box;
 }
 
-/* ── Top navigation ──────────────────────────────────────────────────── */
-.mc-nav {
+/* ── App shell: sidebar + content ────────────────────────────────────────
+   .mc-portal is a row: a fixed-width sidebar column, then everything else.
+   The sidebar is a real flex child, not an overlay — content reflows beside
+   it by construction, so there is no way for it to sit on top of a page. */
+.mc-portal {
+  display: flex;
+  align-items: stretch;
+}
+
+.mc-shell {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Sidebar ─────────────────────────────────────────────────────────────
+   One component, rendered twice: the permanent desktop column and the
+   mobile drawer's panel content. Both get the same blue surface and the
+   same on-blue text tokens, scoped locally so nothing outside this
+   subtree has to know the sidebar isn't using the app's usual light
+   surface. */
+.mc-sidebar {
+  --sb-bg: var(--c-teal);
+  --sb-bg-active: rgba(255, 255, 255, 0.16);
+  --sb-bg-hover: rgba(255, 255, 255, 0.09);
+  --sb-text: rgba(255, 255, 255, 0.94);
+  --sb-text-muted: rgba(255, 255, 255, 0.64);
+  --sb-border: rgba(255, 255, 255, 0.16);
+
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  height: 100vh;
+  flex: none;
+  width: 260px;
+  display: flex;
+  flex-direction: column;
+  background: var(--sb-bg);
+  color: var(--sb-text);
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  transition: width 0.25s ease;
+}
+.mc-sidebar[data-collapsed="true"] {
+  width: 76px;
+}
+
+.mc-sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 18px 14px;
+  min-width: 0;
+}
+.mc-sidebar-mark {
+  position: relative;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.12);
+}
+.mc-sidebar-mark img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.mc-sidebar-brandtext {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.3;
+}
+.mc-sidebar-brand-momcare {
+  font-size: 15.5px;
+  font-weight: 700;
+  color: var(--sb-text);
+  letter-spacing: -0.01em;
+}
+.mc-sidebar-brand-org {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--sb-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mc-sidebar-collapse-btn {
+  display: grid;
+  place-items: center;
+  align-self: flex-end;
+  width: 22px;
+  height: 22px;
+  margin: 0 18px 4px auto;
+  border-radius: 50%;
+  border: 1px solid var(--sb-border);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--sb-text-muted);
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+.mc-sidebar-collapse-btn:hover {
+  background: var(--sb-bg-hover);
+  color: var(--sb-text);
+}
+.mc-sidebar[data-collapsed="true"] .mc-sidebar-collapse-btn {
+  margin-inline: auto;
+}
+
+.mc-sidebar-divider {
+  height: 1px;
+  margin: 4px 18px 10px;
+  background: var(--sb-border);
+  flex: none;
+}
+
+.mc-sidebar-nav {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 12px;
+  min-height: 0;
+}
+
+.mc-sidebar-navitem {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: var(--r-control);
+  border: none;
+  background: none;
+  color: var(--sb-text-muted);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background 0.16s ease,
+    color 0.16s ease;
+}
+.mc-sidebar-navitem:hover {
+  background: var(--sb-bg-hover);
+  color: var(--sb-text);
+}
+.mc-sidebar-navitem[data-active="true"] {
+  background: var(--sb-bg-active);
+  color: #ffffff;
+  font-weight: 600;
+}
+/* An inset bar, not a filled pill — the surface change already says
+   "active"; this just makes it findable at a glance down the list. */
+.mc-sidebar-navitem[data-active="true"]::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: #ffffff;
+}
+.mc-sidebar-navitem-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 20px;
+  height: 20px;
+}
+.mc-sidebar-navitem-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mc-sidebar-navitem-danger:hover {
+  background: rgba(217, 104, 95, 0.28);
+  color: #ffffff;
+}
+
+/* Icon-only tooltip — collapsed desktop rail and the tablet tier. A plain
+   CSS reveal, not a portal: the content is a couple of words, and this
+   never needs to escape its own stacking context. */
+.mc-sidebar-tooltip {
+  position: absolute;
+  left: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%) translateX(-4px);
+  padding: 6px 10px;
+  border-radius: var(--r-control);
+  background: var(--c-ink);
+  color: #ffffff;
+  font-size: 12.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  box-shadow: var(--shadow-pop);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
+  z-index: 50;
+}
+.mc-sidebar-navitem:hover .mc-sidebar-tooltip,
+.mc-sidebar-navitem:focus-visible .mc-sidebar-tooltip,
+.mc-sidebar-mark:hover .mc-sidebar-tooltip,
+.mc-sidebar-mark:focus-visible .mc-sidebar-tooltip {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
+
+.mc-sidebar-footer {
+  flex: none;
+  padding: 10px 12px 16px;
+}
+.mc-sidebar-identity {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px 12px;
+  min-width: 0;
+}
+.mc-sidebar-identity-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.3;
+}
+.mc-sidebar-identity-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--sb-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mc-sidebar-identity-role {
+  font-size: 11.5px;
+  color: var(--sb-text-muted);
+}
+
+/* Reused as-is by the compact header avatar too, on the app's usual light
+   surface — the teal-on-white pairing there already reads fine without a
+   separate variant. */
+.mc-avatar {
+  width: 34px;
+  height: 34px;
+  flex: none;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--c-teal-wash);
+  color: var(--c-teal);
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.mc-sidebar-identity .mc-avatar {
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+}
+
+/* ── Mobile drawer ───────────────────────────────────────────────────────
+   The old dropdown-under-the-header is gone; this is a true off-canvas
+   panel with a backdrop, driven by `motion` (already a dependency) rather
+   than new CSS keyframes, so it can honour prefers-reduced-motion through
+   one useReducedMotion() check instead of a duplicate media query here. */
+.mc-sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  background: rgba(15, 30, 40, 0.4);
+}
+.mc-sidebar-drawer-panel {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 46;
+  width: min(84vw, 300px);
+  box-shadow: var(--shadow-pop);
+}
+.mc-sidebar-drawer-panel .mc-sidebar {
+  position: static;
+  width: 100%;
+  height: 100%;
+}
+
+/* ── Application header ──────────────────────────────────────────────────
+   What's left once primary navigation moves into the sidebar: search, the
+   alert bell, and a compact link to the account. */
+.mc-appheader {
   position: sticky;
   top: 0;
   z-index: 40;
   display: flex;
   align-items: center;
-  gap: 26px;
+  gap: 16px;
   height: 70px;
   padding: 0 32px;
   background: var(--c-card);
   border-bottom: 1px solid var(--c-border);
-}
-
-.mc-brand {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: none;
-  text-decoration: none;
-}
-.mc-brand-mark {
-  color: var(--c-coral);
-  display: grid;
-  place-items: center;
-}
-.mc-brand-name {
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--c-teal);
-  letter-spacing: -0.015em;
-}
-
-.mc-navlinks {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  flex: 1;
-  min-width: 0;
-}
-
-.mc-navlink {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 0 13px;
-  height: 70px;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--c-body);
-  text-decoration: none;
-  white-space: nowrap;
-  border: none;
-  background: none;
-  cursor: pointer;
-  transition: color 0.18s ease;
-}
-.mc-navlink:hover {
-  color: var(--c-ink);
-}
-.mc-navlink[aria-current="page"] {
-  color: var(--c-teal);
-  font-weight: 600;
-}
-/* Underline marks the active section — a rule, not a filled pill. */
-.mc-navlink[aria-current="page"]::after {
-  content: "";
-  position: absolute;
-  left: 13px;
-  right: 13px;
-  bottom: 0;
-  height: 2px;
-  background: var(--c-teal);
-  border-radius: 2px 2px 0 0;
-}
-.mc-navlink[aria-disabled="true"] {
-  color: var(--c-faint);
-  cursor: default;
 }
 
 .mc-navsearch {
@@ -137,7 +369,7 @@
   align-items: center;
   gap: 8px;
   flex: none;
-  width: 220px;
+  width: 260px;
   height: 36px;
   padding: 0 12px;
   border-radius: 999px;
@@ -175,12 +407,19 @@
   color: var(--c-faint);
 }
 
-.mc-nav-right {
+.mc-appheader-right {
   display: flex;
   align-items: center;
   gap: 10px;
   flex: none;
   margin-left: auto;
+}
+.mc-appheader-avatar {
+  text-decoration: none;
+  transition: box-shadow 0.15s ease;
+}
+.mc-appheader-avatar:hover {
+  box-shadow: 0 0 0 2px var(--c-teal-soft);
 }
 
 .mc-iconbtn {
@@ -202,53 +441,20 @@
   border-color: var(--c-teal-soft);
 }
 
-.mc-user {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  padding-left: 12px;
-  border-left: 1px solid var(--c-border);
-}
-.mc-avatar {
-  width: 34px;
-  height: 34px;
-  flex: none;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  background: var(--c-teal-wash);
-  color: var(--c-teal);
-  font-size: 12.5px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-}
-.mc-user-text {
-  display: flex;
-  flex-direction: column;
-  line-height: 1.25;
-  min-width: 0;
-}
-.mc-user-name {
-  font-size: 13.5px;
-  font-weight: 600;
-  color: var(--c-ink);
-  white-space: nowrap;
-}
-.mc-user-role {
-  font-size: 11.5px;
-  color: var(--c-faint);
-  text-transform: capitalize;
-}
-
 .mc-burger {
   display: none;
 }
 
-/* ── Page frame ──────────────────────────────────────────────────────── */
+/* ── Page frame ──────────────────────────────────────────────────────── *
+ * Fills .mc-shell edge to edge (minus this padding) rather than capping at
+ * a fixed pixel width — a sidebar'd workspace (Linear, Notion, Vercel) uses
+ * whatever room the sidebar leaves it, it doesn't stop short and leave a
+ * dead strip beside the content. The KPI grid and card sections beneath
+ * this are all `auto-fit`/100%-width already, so they stretch cleanly with
+ * it: more columns and wider cards on a big screen, never empty space. */
 .mc-page {
-  max-width: 1440px;
-  margin: 0 auto;
   padding: 0 40px 64px;
+  width: 100%;
 }
 
 /* Organisation band — which tenant you are operating in. */
@@ -1236,13 +1442,26 @@ select.mc-input {
   }
 }
 
-@media (max-width: 860px) {
-  .mc-nav {
+/* Tablet tier: the sidebar itself stays mounted and visible, but always as
+   the icon rail — regardless of the desktop collapse preference, which
+   only ever applies at the desktop tier (see the layout's isDesktopTier
+   check). This is a fixed rule for the tier, not a third user-toggleable
+   state. */
+@media (min-width: 860px) and (max-width: 1023px) {
+  .mc-sidebar {
+    width: 76px;
+  }
+}
+
+/* Mobile tier: no permanent sidebar at all — the drawer takes over
+   entirely, triggered by the header's hamburger. */
+@media (max-width: 859px) {
+  .mc-sidebar[data-variant="desktop"] {
+    display: none;
+  }
+  .mc-appheader {
     padding: 0 16px;
     gap: 12px;
-  }
-  .mc-navlinks {
-    display: none;
   }
   .mc-burger {
     display: grid;
@@ -1256,60 +1475,8 @@ select.mc-input {
     cursor: pointer;
     flex: none;
   }
-  .mc-user-text {
-    display: none;
-  }
-  .mc-user {
-    padding-left: 0;
-    border-left: none;
-  }
   .mc-page {
     padding: 0 16px 48px;
-  }
-}
-
-/* Mobile drawer */
-.mc-drawer {
-  display: none;
-}
-@media (max-width: 860px) {
-  .mc-drawer[data-open="true"] {
-    display: block;
-    position: fixed;
-    inset: 70px 0 0;
-    z-index: 39;
-    background: rgba(23, 59, 77, 0.32);
-  }
-  .mc-drawer-panel {
-    background: var(--c-card);
-    border-bottom: 1px solid var(--c-border);
-    padding: 8px 0;
-    animation: mcDrawerIn 0.18s ease;
-  }
-  .mc-drawer .mc-navlink {
-    height: auto;
-    width: 100%;
-    padding: 13px 20px;
-    font-size: 15px;
-  }
-  .mc-drawer .mc-navlink[aria-current="page"]::after {
-    left: 0;
-    right: auto;
-    top: 0;
-    bottom: 0;
-    width: 3px;
-    height: auto;
-    border-radius: 0;
-  }
-}
-@keyframes mcDrawerIn {
-  from {
-    opacity: 0;
-    transform: translateY(-6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
   }
 }
 
@@ -1702,61 +1869,6 @@ select.mc-input {
     left: 12px;
     width: auto;
   }
-}
-
-/* ── Header crowding ──────────────────────────────────────────────────────
-   The horizontal navigation needs roughly 1050px before the drawer takes
-   over at 860px, so between those widths the links, the brand and the user
-   block competed for space the header did not have — and because nothing
-   clipped or wrapped, they simply drew on top of each other.
-
-   Two changes, widest-first: the user's name and role are the least load
-   bearing thing in the bar (the avatar still identifies them), so they go
-   first; below that the drawer takes over entirely. */
-
-@media (max-width: 1200px) {
-  .mc-user-text {
-    display: none;
-  }
-  .mc-user {
-    padding-left: 0;
-    border-left: none;
-  }
-}
-
-@media (max-width: 1024px) {
-  .mc-navlinks {
-    display: none;
-  }
-  .mc-navsearch {
-    display: none;
-  }
-  .mc-burger {
-    display: grid;
-    place-items: center;
-    width: 36px;
-    height: 36px;
-    border-radius: var(--r-control);
-    border: 1px solid var(--c-border);
-    background: var(--c-card);
-    color: var(--c-ink);
-    cursor: pointer;
-    flex: none;
-  }
-}
-
-/* A last line of defence. If the links ever outgrow their room again they
-   scroll rather than overlapping whatever sits beside them — a bar that
-   scrolls is recoverable, one that overlaps is unreadable. */
-.mc-navlinks {
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-.mc-navlinks::-webkit-scrollbar {
-  display: none;
-}
-.mc-navlink {
-  flex: none;
 }
 
 /* The count a severity tab is filtering to. It is the reason to press the tab,
