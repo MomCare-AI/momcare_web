@@ -13,6 +13,7 @@ import {
 } from "@/features/alerts/hooks/useAlerts";
 import type { Alert, AlertEvent } from "@/features/alerts/types";
 import { RiskBadge } from "@/features/monitoring/components/RiskBadge";
+import { RowSkeleton } from "@/shared/ui/RowSkeleton";
 import { usePortal } from "../layout";
 import { usePageTitle } from "@/hooks/usePageTitle";
 
@@ -116,7 +117,11 @@ export default function AlertsPage() {
         })}
       </div>
 
-      {alerts.isPending && <div className="mc-empty">Loading alerts…</div>}
+      {alerts.isPending && (
+        <div className="mc-alertlist">
+          <RowSkeleton count={4} variant="card" />
+        </div>
+      )}
 
       {alerts.isError && (
         /* An error must never render as an empty list. "No alerts" and "we

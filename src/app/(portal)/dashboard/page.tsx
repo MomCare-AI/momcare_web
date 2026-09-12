@@ -79,6 +79,15 @@ function describeActivity(entry: DashboardActivity): string {
   return entry.resource ? `${verb} ${entry.resource}` : verb;
 }
 
+/** A page view is not an "activity" worth reporting back to an admin — the
+ *  audit log records it because HIPAA requires every access logged, not
+ *  because it's news. Without this, a shift of normal clicking around
+ *  buries the handful of entries (enrolled a patient, resolved an alert)
+ *  that are actually worth seeing. */
+function isNoteworthy(entry: DashboardActivity): boolean {
+  return entry.action !== "READ";
+}
+
 function timeAgo(iso: string): string {
   const minutes = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
   if (minutes < 1) return "just now";
@@ -109,6 +118,12 @@ export default function OverviewPage() {
 
   const hasStaff = org.staff_count > 0;
   const hasPatients = org.patient_count > 0;
+
+  // The server returns every audit-logged action, reads included; the
+  // activity feed only wants the ones that changed something.
+  const meaningfulActivity = (summary.data?.activity ?? []).filter(
+    isNoteworthy
+  );
 
   return (
     <>
@@ -420,12 +435,12 @@ export default function OverviewPage() {
               </div>
             </div>
             <div className="mc-card-body">
-              {summary.isSuccess && summary.data.activity.length === 0 && (
-                <div className="mc-hint">Nothing has been recorded yet.</div>
+              {summary.isSuccess && meaningfulActivity.length === 0 && (
+                <div className="mc-hint">No changes recorded yet.</div>
               )}
-              {summary.isSuccess && summary.data.activity.length > 0 && (
+              {summary.isSuccess && meaningfulActivity.length > 0 && (
                 <ol className="mc-trail">
-                  {summary.data.activity.map((entry, index) => (
+                  {meaningfulActivity.map((entry, index) => (
                     <li key={`${entry.at}-${index}`} className="mc-trail-item">
                       <span className="mc-trail-dot" aria-hidden />
                       <div>

@@ -15,6 +15,7 @@ import {
 import { usePortal } from "../layout";
 import { SessionExpiredError } from "@/core/api/authFetch";
 import { InitialsAvatar } from "@/shared/ui/InitialsAvatar";
+import { RowSkeleton } from "@/shared/ui/RowSkeleton";
 import {
   useCreateInvite,
   useInvites,
@@ -109,7 +110,13 @@ export default function StaffPage() {
   };
 
   if (staffQuery.isPending)
-    return <div className="mc-loading">Loading your team…</div>;
+    return (
+      <section className="mc-card">
+        <div className="mc-rows">
+          <RowSkeleton count={5} variant="plain" />
+        </div>
+      </section>
+    );
 
   const pending = invites.filter((i) => i.status === "pending");
 

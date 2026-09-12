@@ -21,6 +21,7 @@ import { WorklistPanel } from "@/features/patients/components/WorklistPanel";
 import { RiskBadge } from "@/features/monitoring/components/RiskBadge";
 import { pregnancyTone } from "@/features/patients/types";
 import { InitialsAvatar } from "@/shared/ui/InitialsAvatar";
+import { RowSkeleton } from "@/shared/ui/RowSkeleton";
 import { usePortal } from "../layout";
 import { usePageTitle } from "@/hooks/usePageTitle";
 
@@ -151,7 +152,11 @@ export default function PatientsPage() {
           </div>
         </section>
       ) : isPending ? (
-        <div className="mc-loading">Loading patients…</div>
+        <section className="mc-card">
+          <div className="mc-rows">
+            <RowSkeleton count={6} variant="plain" />
+          </div>
+        </section>
       ) : (
         <>
           {error && !(error instanceof SessionExpiredError) && (

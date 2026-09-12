@@ -10,6 +10,7 @@ import {
   useRegisterDevice,
 } from "@/features/monitoring/hooks/useMonitoring";
 import { ACQUISITION_OPTIONS, type Device } from "@/features/monitoring/types";
+import { RowSkeleton } from "@/shared/ui/RowSkeleton";
 import { usePageTitle } from "@/hooks/usePageTitle";
 
 /**
@@ -88,7 +89,11 @@ export default function DevicesPage() {
         })}
       </div>
 
-      {devices.isPending && <div className="mc-empty">Loading devices…</div>}
+      {devices.isPending && (
+        <div className="mc-alertlist">
+          <RowSkeleton count={4} variant="card" />
+        </div>
+      )}
 
       {devices.isError && (
         <div className="mc-empty">

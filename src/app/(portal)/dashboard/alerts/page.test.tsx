@@ -124,8 +124,9 @@ describe("AlertsPage", () => {
       isSuccess: false,
     } as unknown as ReturnType<typeof useAlerts>);
 
-    render(<AlertsPage />);
-    screen.getByText("Loading alerts…");
+    const { container } = render(<AlertsPage />);
+    expect(container.querySelector(".mc-alertlist")).toBeTruthy();
+    expect(screen.queryByText("No live alerts")).toBeNull();
   });
 
   it("distinguishes a failed load from nothing being wrong", () => {
