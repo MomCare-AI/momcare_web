@@ -141,46 +141,10 @@ export default function OverviewPage() {
       {/* Metrics reflect what the database actually holds. Scheduling does not
           exist yet and its tile says so rather than showing a zero — a dashboard
           that invents clinical numbers is worse than one that admits it has none. */}
+      {/* Ordered by urgency, not by how the data is sourced: what needs a
+          clinician's attention leads, ahead of administrative counts and
+          the one metric that isn't live yet. */}
       <section className="mc-kpis">
-        <Link href="/dashboard/staff" className="mc-kpi mc-kpi-fill-teal">
-          <div className="mc-kpi-top">
-            <span className="mc-kpi-label">Doctors &amp; staff</span>
-            <span className="mc-kpi-icon mc-kpi-icon-teal">
-              <Stethoscope size={17} strokeWidth={1.9} aria-hidden />
-            </span>
-          </div>
-          <span className="mc-kpi-value">{org.staff_count}</span>
-          <span className="mc-kpi-foot">
-            {hasStaff ? "Active clinical team" : "No team members yet"}
-          </span>
-        </Link>
-
-        <Link href="/dashboard/patients" className="mc-kpi mc-kpi-fill-coral">
-          <div className="mc-kpi-top">
-            <span className="mc-kpi-label">Patients</span>
-            <span className="mc-kpi-icon mc-kpi-icon-coral">
-              <Users size={17} strokeWidth={1.9} aria-hidden />
-            </span>
-          </div>
-          <span className="mc-kpi-value">{org.patient_count}</span>
-          <span className="mc-kpi-foot">
-            {hasPatients
-              ? "Enrolled at this hospital"
-              : "No patients enrolled yet"}
-          </span>
-        </Link>
-
-        <div className="mc-kpi">
-          <div className="mc-kpi-top">
-            <span className="mc-kpi-label">Today&apos;s appointments</span>
-            <span className="mc-kpi-icon">
-              <CalendarDays size={17} strokeWidth={1.9} aria-hidden />
-            </span>
-          </div>
-          <span className="mc-kpi-value">—</span>
-          <span className="mc-kpi-foot">Scheduling not yet available</span>
-        </div>
-
         <div
           className={`mc-kpi ${attentionCount ? "mc-kpi-fill-alert" : "mc-kpi-fill-attn"}`}
         >
@@ -205,6 +169,45 @@ export default function OverviewPage() {
                 : "Patients outside clinical range"}
           </span>
         </div>
+
+        <Link href="/dashboard/patients" className="mc-kpi mc-kpi-fill-coral">
+          <div className="mc-kpi-top">
+            <span className="mc-kpi-label">Patients</span>
+            <span className="mc-kpi-icon mc-kpi-icon-coral">
+              <Users size={17} strokeWidth={1.9} aria-hidden />
+            </span>
+          </div>
+          <span className="mc-kpi-value">{org.patient_count}</span>
+          <span className="mc-kpi-foot">
+            {hasPatients
+              ? "Enrolled at this hospital"
+              : "No patients enrolled yet"}
+          </span>
+        </Link>
+
+        <Link href="/dashboard/staff" className="mc-kpi mc-kpi-fill-teal">
+          <div className="mc-kpi-top">
+            <span className="mc-kpi-label">Doctors &amp; staff</span>
+            <span className="mc-kpi-icon mc-kpi-icon-teal">
+              <Stethoscope size={17} strokeWidth={1.9} aria-hidden />
+            </span>
+          </div>
+          <span className="mc-kpi-value">{org.staff_count}</span>
+          <span className="mc-kpi-foot">
+            {hasStaff ? "Active clinical team" : "No team members yet"}
+          </span>
+        </Link>
+
+        <div className="mc-kpi">
+          <div className="mc-kpi-top">
+            <span className="mc-kpi-label">Today&apos;s appointments</span>
+            <span className="mc-kpi-icon">
+              <CalendarDays size={17} strokeWidth={1.9} aria-hidden />
+            </span>
+          </div>
+          <span className="mc-kpi-value">—</span>
+          <span className="mc-kpi-foot">Scheduling not yet available</span>
+        </div>
       </section>
 
       {isHospitalAdmin && (
@@ -224,6 +227,37 @@ export default function OverviewPage() {
       )}
 
       <div className="mc-fullstack">
+        {/* Leads the stack: this is the one section with a next action
+            (open a patient), so it comes before the two that only
+            summarize — same reasoning as the KPI reorder above. */}
+        <section className="mc-card mc-lift">
+          <div className="mc-card-head">
+            <div className="mc-section-head">
+              <span
+                className={`mc-section-icon mc-kpi-icon-attn${
+                  attentionCount ? " mc-kpi-icon-alert" : ""
+                }`}
+              >
+                <AlertTriangle size={17} strokeWidth={1.9} aria-hidden />
+              </span>
+              <div>
+                <div className="mc-card-title">
+                  Patients requiring attention
+                </div>
+                <div className="mc-card-sub">
+                  Most severe first, unreviewed above reviewed
+                </div>
+              </div>
+            </div>
+            {attentionCount ? (
+              <span className="mc-badge mc-badge-neutral">
+                {attentionCount}
+              </span>
+            ) : null}
+          </div>
+          <AttentionQueue limit={5} />
+        </section>
+
         <section className="mc-card">
           <div className="mc-card-head">
             <div className="mc-section-head">
@@ -355,34 +389,6 @@ export default function OverviewPage() {
               </p>
             </div>
           </div>
-        </section>
-
-        <section className="mc-card mc-lift">
-          <div className="mc-card-head">
-            <div className="mc-section-head">
-              <span
-                className={`mc-section-icon mc-kpi-icon-attn${
-                  attentionCount ? " mc-kpi-icon-alert" : ""
-                }`}
-              >
-                <AlertTriangle size={17} strokeWidth={1.9} aria-hidden />
-              </span>
-              <div>
-                <div className="mc-card-title">
-                  Patients requiring attention
-                </div>
-                <div className="mc-card-sub">
-                  Most severe first, unreviewed above reviewed
-                </div>
-              </div>
-            </div>
-            {attentionCount ? (
-              <span className="mc-badge mc-badge-neutral">
-                {attentionCount}
-              </span>
-            ) : null}
-          </div>
-          <AttentionQueue limit={5} />
         </section>
 
         {isHospitalAdmin && (

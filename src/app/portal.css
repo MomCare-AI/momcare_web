@@ -23,7 +23,11 @@
   --c-border-soft: #eef3f2;
   --c-ink: #173b4d;
   --c-body: #5f7180;
-  --c-faint: #8b9aa5;
+  /* Was #8b9aa5 — ~2.9:1 against white/card, failing WCAG AA at any text
+     size despite being the color for meta text, timestamps and header
+     status. This value holds ~4.6:1 while staying visibly a shade lighter
+     than --c-body, so the two remain distinguishable. */
+  --c-faint: #677783;
 
   /* Clinical state — meaning only, never decoration */
   --c-stable: #17866f;
