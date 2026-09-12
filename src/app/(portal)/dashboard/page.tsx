@@ -6,6 +6,7 @@ import {
   Brain,
   Building2,
   CalendarDays,
+  ChevronRight,
   Clock,
   HeartPulse,
   Info,
@@ -145,7 +146,8 @@ export default function OverviewPage() {
           clinician's attention leads, ahead of administrative counts and
           the one metric that isn't live yet. */}
       <section className="mc-kpis">
-        <div
+        <Link
+          href="/dashboard/attention"
           className={`mc-kpi ${attentionCount ? "mc-kpi-fill-alert" : "mc-kpi-fill-attn"}`}
         >
           <div className="mc-kpi-top">
@@ -168,7 +170,7 @@ export default function OverviewPage() {
                 ? "No patient outside range"
                 : "Patients outside clinical range"}
           </span>
-        </div>
+        </Link>
 
         <Link href="/dashboard/patients" className="mc-kpi mc-kpi-fill-coral">
           <div className="mc-kpi-top">
@@ -349,6 +351,17 @@ export default function OverviewPage() {
                   : "pregnancies need"}{" "}
                 review right now.
               </div>
+
+              {summary.data.risk.needing_attention > 0 && (
+                <Link
+                  href="/dashboard/attention"
+                  className="mc-link"
+                  style={{ marginTop: 12 }}
+                >
+                  View queue
+                  <ChevronRight size={14} strokeWidth={2.2} aria-hidden />
+                </Link>
+              )}
             </div>
           )}
         </section>

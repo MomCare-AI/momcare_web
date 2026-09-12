@@ -906,7 +906,11 @@ a.mc-kpi:hover {
 }
 .mc-input:focus {
   border-color: var(--c-teal);
-  box-shadow: 0 0 0 3px rgba(8, 127, 115, 0.12);
+  /* rgb(67,97,238) is --c-teal's own value — hardcoded because box-shadow's
+     alpha channel can't reference a hex custom property directly. Was
+     rgba(8,127,115,…), a leftover green from before the brand color moved
+     to blue that never got swept along with it. */
+  box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.12);
 }
 select.mc-input {
   cursor: pointer;
@@ -2160,7 +2164,7 @@ select.mc-input {
   background:
     radial-gradient(
       560px 200px at 88% -20%,
-      rgba(8, 127, 115, 0.09),
+      rgba(67, 97, 238, 0.09),
       transparent 70%
     ),
     linear-gradient(180deg, var(--c-teal-wash) 0%, var(--c-card) 130%);
@@ -2185,7 +2189,7 @@ select.mc-input {
   height: 6px;
   border-radius: 50%;
   background: var(--c-teal);
-  box-shadow: 0 0 0 3px rgba(8, 127, 115, 0.16);
+  box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.16);
 }
 
 /* Cards worth noticing get a little lift, not just a border tint — kept off
