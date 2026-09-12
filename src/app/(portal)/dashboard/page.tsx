@@ -5,7 +5,6 @@ import {
   AlertTriangle,
   Brain,
   Building2,
-  CalendarDays,
   ChevronRight,
   Clock,
   HeartPulse,
@@ -214,17 +213,6 @@ export default function OverviewPage() {
             {hasStaff ? "Active clinical team" : "No team members yet"}
           </span>
         </Link>
-
-        <div className="mc-kpi">
-          <div className="mc-kpi-top">
-            <span className="mc-kpi-label">Today&apos;s appointments</span>
-            <span className="mc-kpi-icon">
-              <CalendarDays size={17} strokeWidth={1.9} aria-hidden />
-            </span>
-          </div>
-          <span className="mc-kpi-value">—</span>
-          <span className="mc-kpi-foot">Scheduling not yet available</span>
-        </div>
       </section>
 
       {isHospitalAdmin && (
@@ -381,43 +369,30 @@ export default function OverviewPage() {
           )}
         </section>
 
-        <section className="mc-card">
-          <div className="mc-card-head">
-            <div className="mc-section-head">
-              <span className="mc-section-icon mc-kpi-icon-info">
-                <Brain size={17} strokeWidth={1.9} aria-hidden />
-              </span>
-              <div>
-                <div className="mc-card-title">AI clinical insights</div>
-                <div className="mc-card-sub">
-                  Decision support, reviewed by a clinician
-                </div>
-              </div>
-            </div>
+        {/* A compact banner, not a full card: this is the same static
+            sentence for every hospital on every load, so it shouldn't
+            carry the same visual weight as sections backed by real,
+            per-hospital data. */}
+        <div className="mc-ai">
+          <span className="mc-ai-tag">
+            <Brain size={12} strokeWidth={2.3} aria-hidden />
+            AI insight
+          </span>
+          {/* The model is live and scores every reading as it arrives.
+              This card does not yet have an endpoint of its own, so it
+              says where the scoring actually is rather than implying a
+              summary nobody is computing. */}
+          <div style={{ fontSize: 13.5, color: "var(--c-body)" }}>
+            The maternal risk model is live and scores every reading as it
+            arrives. Each judgement, its confidence and the vitals behind it are
+            on the patient&rsquo;s own record; the ones needing a clinician are
+            listed under Needs attention.
           </div>
-          <div className="mc-card-body">
-            <div className="mc-ai">
-              <span className="mc-ai-tag">
-                <Brain size={12} strokeWidth={2.3} aria-hidden />
-                AI insight
-              </span>
-              {/* The model is live and scores every reading as it arrives.
-                  This card does not yet have an endpoint of its own, so it
-                  says where the scoring actually is rather than implying a
-                  summary nobody is computing. */}
-              <div style={{ fontSize: 13.5, color: "var(--c-body)" }}>
-                The maternal risk model is live and scores every reading as it
-                arrives. Each judgement, its confidence and the vitals behind it
-                are on the patient&rsquo;s own record; the ones needing a
-                clinician are listed under Needs attention.
-              </div>
-              <p className="mc-ai-note">
-                AI output is decision support only and is never a diagnosis. A
-                clinician reviews every insight before it informs care.
-              </p>
-            </div>
-          </div>
-        </section>
+          <p className="mc-ai-note">
+            AI output is decision support only and is never a diagnosis. A
+            clinician reviews every insight before it informs care.
+          </p>
+        </div>
 
         {isHospitalAdmin && (
           <section className="mc-card">
