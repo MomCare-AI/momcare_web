@@ -153,12 +153,8 @@ export default function OverviewPage() {
         </div>
       </div>
 
-      {/* Metrics reflect what the database actually holds. Scheduling does not
-          exist yet and its tile says so rather than showing a zero — a dashboard
-          that invents clinical numbers is worse than one that admits it has none. */}
       {/* Ordered by urgency, not by how the data is sourced: what needs a
-          clinician's attention leads, ahead of administrative counts and
-          the one metric that isn't live yet. */}
+          clinician's attention leads, ahead of the administrative counts. */}
       <section className="mc-kpis">
         <Link
           href="/dashboard/attention"
