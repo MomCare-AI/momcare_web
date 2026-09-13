@@ -1,9 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { motion } from "motion/react";
 import { ClipboardList } from "lucide-react";
 
 import { useWorklist } from "../hooks/usePatients";
+
+const MotionLink = motion.create(Link);
 
 interface Props {
   assignedToMe: boolean;
@@ -59,11 +62,14 @@ export function WorklistPanel({ assignedToMe }: Props) {
 
   return (
     <div className="mc-queue">
-      {rows.map((row) => (
-        <Link
+      {rows.map((row, index) => (
+        <MotionLink
           key={row.pregnancy_id}
           href={`/dashboard/patients/${row.patient_id}`}
           className="mc-queue-row"
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.2, delay: Math.min(index, 8) * 0.03 }}
         >
           <div className="mc-queue-main">
             <div className="mc-queue-top">
@@ -81,7 +87,7 @@ export function WorklistPanel({ assignedToMe }: Props) {
           <div className="mc-queue-meta">
             <span>{row.gestational_age}</span>
           </div>
-        </Link>
+        </MotionLink>
       ))}
     </div>
   );

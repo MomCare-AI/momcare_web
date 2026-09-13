@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { motion } from "motion/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   AlertCircle,
@@ -24,6 +25,8 @@ import { InitialsAvatar } from "@/shared/ui/InitialsAvatar";
 import { RowSkeleton } from "@/shared/ui/RowSkeleton";
 import { usePortal } from "../layout";
 import { usePageTitle } from "@/hooks/usePageTitle";
+
+const MotionLink = motion.create(Link);
 
 /** Per role_code — what this page is called and what an empty list means.
  *  hospital_admin sees the whole hospital and isn't in this map. */
@@ -231,11 +234,17 @@ export default function PatientsPage() {
               </div>
             ) : (
               <div className="mc-rows">
-                {patients.map((p) => (
-                  <Link
+                {patients.map((p, index) => (
+                  <MotionLink
                     key={p.id}
                     href={`/dashboard/patients/${p.id}`}
                     className="mc-row mc-row-link"
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{
+                      duration: 0.2,
+                      delay: Math.min(index, 8) * 0.03,
+                    }}
                   >
                     <InitialsAvatar name={p.full_name} />
                     <div className="mc-row-main">
@@ -263,7 +272,7 @@ export default function PatientsPage() {
                         No pregnancy recorded
                       </span>
                     )}
-                  </Link>
+                  </MotionLink>
                 ))}
               </div>
             )}

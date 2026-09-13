@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { motion } from "motion/react";
 import {
   AlertTriangle,
   Brain,
@@ -55,6 +56,11 @@ const RISK_LEVELS: {
     color: "var(--c-faint)",
   },
 ];
+
+/** A `Link` that also accepts motion's animation props — same pattern the
+ *  KPI cards need for their entrance and the alert/device rows already use
+ *  for theirs, just on an anchor instead of a div. */
+const MotionLink = motion.create(Link);
 
 /** CSS conic-gradient stops for the risk donut — no charting library needed
  *  for five static segments, and it stays crisp at any size. */
@@ -156,9 +162,12 @@ export default function OverviewPage() {
       {/* Ordered by urgency, not by how the data is sourced: what needs a
           clinician's attention leads, ahead of the administrative counts. */}
       <section className="mc-kpis">
-        <Link
+        <MotionLink
           href="/dashboard/attention"
           className={`mc-kpi ${attentionCount ? "mc-kpi-fill-alert" : "mc-kpi-fill-attn"}`}
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.22, delay: 0 }}
         >
           <div className="mc-kpi-top">
             <span className="mc-kpi-label">Needing attention</span>
@@ -180,9 +189,15 @@ export default function OverviewPage() {
                 ? "No patient outside range"
                 : "Patients outside clinical range"}
           </span>
-        </Link>
+        </MotionLink>
 
-        <Link href="/dashboard/patients" className="mc-kpi">
+        <MotionLink
+          href="/dashboard/patients"
+          className="mc-kpi"
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.22, delay: 0.05 }}
+        >
           <div className="mc-kpi-top">
             <span className="mc-kpi-label">Patients</span>
             <span className="mc-kpi-icon mc-kpi-icon-coral">
@@ -195,9 +210,15 @@ export default function OverviewPage() {
               ? "Enrolled at this hospital"
               : "No patients enrolled yet"}
           </span>
-        </Link>
+        </MotionLink>
 
-        <Link href="/dashboard/staff" className="mc-kpi">
+        <MotionLink
+          href="/dashboard/staff"
+          className="mc-kpi"
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.22, delay: 0.1 }}
+        >
           <div className="mc-kpi-top">
             <span className="mc-kpi-label">Doctors &amp; staff</span>
             <span className="mc-kpi-icon mc-kpi-icon-teal">
@@ -208,7 +229,7 @@ export default function OverviewPage() {
           <span className="mc-kpi-foot">
             {hasStaff ? "Active clinical team" : "No team members yet"}
           </span>
-        </Link>
+        </MotionLink>
       </section>
 
       {isHospitalAdmin && (
@@ -300,11 +321,14 @@ export default function OverviewPage() {
           {summary.isSuccess && summary.data.risk.total > 0 && (
             <div className="mc-card-body">
               <div className="mc-donut-wrap">
-                <div
+                <motion.div
                   className="mc-donut"
                   style={{ background: donutGradient(summary.data.risk) }}
                   role="img"
                   aria-label={`${summary.data.risk.total} active pregnancies, ${summary.data.risk.needing_attention} needing review`}
+                  initial={{ opacity: 0, scale: 0.85 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
                 >
                   <div className="mc-donut-hole">
                     <span className="mc-donut-value">
@@ -312,9 +336,9 @@ export default function OverviewPage() {
                     </span>
                     <span className="mc-donut-label">active pregnancies</span>
                   </div>
-                </div>
+                </motion.div>
                 <div className="mc-riskbars">
-                  {RISK_LEVELS.map(({ key, label, color }) => {
+                  {RISK_LEVELS.map(({ key, label, color }, index) => {
                     const count = summary.data.risk[key];
                     const pct =
                       summary.data.risk.total > 0
@@ -331,9 +355,16 @@ export default function OverviewPage() {
                           {label}
                         </span>
                         <div className="mc-riskbar-track">
-                          <div
+                          <motion.div
                             className="mc-riskbar-fill"
-                            style={{ width: `${pct}%`, background: color }}
+                            style={{ background: color }}
+                            initial={{ width: 0 }}
+                            animate={{ width: `${pct}%` }}
+                            transition={{
+                              duration: 0.5,
+                              delay: 0.1 + index * 0.08,
+                              ease: [0.16, 1, 0.3, 1],
+                            }}
                           />
                         </div>
                         <span className="mc-riskbar-count">{count}</span>

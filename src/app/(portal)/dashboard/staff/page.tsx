@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import {
   AlertCircle,
@@ -254,8 +255,14 @@ export default function StaffPage() {
             </span>
           </div>
           <div className="mc-rows">
-            {pending.map((inv) => (
-              <div key={inv.id} className="mc-row">
+            {pending.map((inv, index) => (
+              <motion.div
+                key={inv.id}
+                className="mc-row"
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2, delay: Math.min(index, 8) * 0.03 }}
+              >
                 <InitialsAvatar
                   name={
                     [inv.first_name, inv.last_name].filter(Boolean).join(" ") ||
@@ -295,7 +302,7 @@ export default function StaffPage() {
                     <X size={13} strokeWidth={2.3} aria-hidden /> Revoke
                   </button>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
         </section>
@@ -348,11 +355,19 @@ export default function StaffPage() {
           </div>
         ) : (
           <div className="mc-rows">
-            {staff.map((m) => {
+            {staff.map((m, index) => {
               const isSelf = m.id === user.staff_id;
               const expanded = expandedId === m.id;
               return (
-                <div key={m.id}>
+                <motion.div
+                  key={m.id}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{
+                    duration: 0.2,
+                    delay: Math.min(index, 8) * 0.03,
+                  }}
+                >
                   <button
                     type="button"
                     className="mc-row"
@@ -405,15 +420,25 @@ export default function StaffPage() {
                     />
                   </button>
 
-                  {expanded && (
-                    <div style={{ padding: "0 4px 14px" }}>
-                      <StaffCredentialsPanel
-                        member={m}
-                        canEdit={isHospitalAdmin || isSelf}
-                      />
-                    </div>
-                  )}
-                </div>
+                  <AnimatePresence initial={false}>
+                    {expanded && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        style={{ overflow: "hidden" }}
+                      >
+                        <div style={{ padding: "0 4px 14px" }}>
+                          <StaffCredentialsPanel
+                            member={m}
+                            canEdit={isHospitalAdmin || isSelf}
+                          />
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
               );
             })}
           </div>
