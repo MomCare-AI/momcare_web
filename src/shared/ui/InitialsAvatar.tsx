@@ -1,8 +1,3 @@
-// Decorative-only avatar colors, deliberately excluding the clinical risk
-// palette (--c-stable/moderate/high/critical) — those mean something on this
-// dashboard, and reusing them here would dull that signal.
-const TINTS = ["#4361ee", "#4cc9f0", "#f28c82", "#3978b8", "#7c6fda"];
-
 function initialsOf(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return "?";
@@ -10,14 +5,15 @@ function initialsOf(name: string): string {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-function tintFor(name: string): string {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
-  }
-  return TINTS[hash % TINTS.length];
-}
-
+/**
+ * One brand-tinted style for every person, not a hash-based color per
+ * name — the color system's own avatar spec (§18): a random palette here
+ * would read as decoration competing with the clinical risk colors, which
+ * are the only colors on this dashboard actually meant to carry meaning.
+ * References the portal's own --c-teal/--c-teal-wash tokens (inherited from
+ * wherever this renders in the DOM) rather than a hardcoded hex, so it
+ * stays in sync with the brand color automatically.
+ */
 export function InitialsAvatar({
   name,
   size = 38,
@@ -25,7 +21,6 @@ export function InitialsAvatar({
   name: string;
   size?: number;
 }) {
-  const tint = tintFor(name || "?");
   return (
     <span
       aria-hidden
@@ -36,8 +31,8 @@ export function InitialsAvatar({
         width: size,
         height: size,
         borderRadius: "50%",
-        background: `${tint}1a`,
-        color: tint,
+        background: "var(--c-teal-wash)",
+        color: "var(--c-teal)",
         fontSize: size * 0.38,
         fontWeight: 700,
         flexShrink: 0,

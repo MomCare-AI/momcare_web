@@ -32,13 +32,20 @@ import {
  * the model called it high, and staying under one does not mean it did not.
  */
 
+// Mirrors portal.css's own --c-* tokens rather than reading them live: an
+// SVG `stroke` prop here is a plain string handed to recharts, not a DOM
+// style, so CSS custom properties don't resolve through it the way they do
+// in the contentStyle object below. Was a stale pre-rebrand teal-green
+// palette that never got swept when the brand moved to blue — the primary
+// line is now the brand color per the chart-colors spec (§21): "Brand data:
+// --c-teal, neutral gray for secondary/reference data."
 const CHART_COLOURS = {
-  primary: "#087f73",
-  secondary: "#2fa89b",
-  grid: "#eef3f2",
-  axis: "#8b9aa5",
-  moderate: "#d99a32",
-  critical: "#b83c3c",
+  primary: "#4662e8",
+  secondary: "#8a9aa3",
+  grid: "#e8eef0",
+  axis: "#607582",
+  moderate: "#c98a2e",
+  critical: "#b94343",
 };
 
 interface Threshold {
@@ -214,7 +221,7 @@ export function VitalsChart({ readings, metric, height = 260 }: Props) {
           ]}
           contentStyle={{
             borderRadius: 9,
-            border: "1px solid #e2ebe9",
+            border: "1px solid var(--c-border)",
             fontSize: 12.5,
           }}
         />

@@ -200,7 +200,7 @@ export default function OverviewPage() {
         >
           <div className="mc-kpi-top">
             <span className="mc-kpi-label">Patients</span>
-            <span className="mc-kpi-icon mc-kpi-icon-coral">
+            <span className="mc-kpi-icon mc-kpi-icon-teal">
               <Users size={17} strokeWidth={1.9} aria-hidden />
             </span>
           </div>
@@ -221,7 +221,7 @@ export default function OverviewPage() {
         >
           <div className="mc-kpi-top">
             <span className="mc-kpi-label">Doctors &amp; staff</span>
-            <span className="mc-kpi-icon mc-kpi-icon-teal">
+            <span className="mc-kpi-icon mc-kpi-icon-stable">
               <Stethoscope size={17} strokeWidth={1.9} aria-hidden />
             </span>
           </div>

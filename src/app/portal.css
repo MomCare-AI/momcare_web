@@ -10,35 +10,67 @@
    ══════════════════════════════════════════════════════════════════════ */
 
 .mc-portal {
-  /* Brand */
-  --c-teal: #4361ee;
+  /* Brand — locked values from the 2026 color-system spec. #4662e8 reads as
+     the same strong blue as the old #4361ee (a few units per channel), so
+     the sidebar's appearance is unchanged; this just makes the brand hex
+     exact and gives buttons real hover/active states instead of the old
+     stray dark-teal hover left over from before the brand moved to blue. */
+  --c-teal: #4662e8;
+  --c-teal-hover: #3b56d4;
+  --c-teal-active: #5b73ec;
   --c-teal-soft: #4cc9f0;
-  --c-teal-wash: #eef6f5;
+  --c-teal-wash: #eef1ff;
   --c-coral: #f28c82;
 
   /* Neutrals */
-  --c-ground: #f6f9f9;
+  --c-ground: #f6f8f9;
   --c-card: #ffffff;
-  --c-border: #e2ebe9;
-  --c-border-soft: #eef3f2;
-  --c-ink: #173b4d;
-  --c-body: #5f7180;
-  /* Was #8b9aa5 — ~2.9:1 against white/card, failing WCAG AA at any text
-     size despite being the color for meta text, timestamps and header
-     status. This value holds ~4.6:1 while staying visibly a shade lighter
-     than --c-body, so the two remain distinguishable. */
+  --c-surface-subtle: #eff3f4;
+  --c-border: #e2e9ec;
+  --c-border-soft: #e8eef0;
+  /* Buttons/inputs get a very slightly darker border than cards/dividers —
+     the spec calls these out as two distinct values, not one reused twice. */
+  --c-border-control: #dce5e8;
+  --c-ink: #193b4d;
+  --c-body: #607582;
+  /* Spec's muted-text value is #8a9aa3 — kept here instead: that hex is
+     ~2.9:1 against white/card, failing WCAG AA at any text size, and this
+     project already discovered and fixed that exact failure earlier (it's
+     the color for meta text, timestamps and header status, so it's read as
+     body copy, not decoration). This holds ~4.6:1 while staying visibly a
+     shade lighter than --c-body. See the color-system task's own §30. */
   --c-faint: #677783;
 
-  /* Clinical state — meaning only, never decoration */
-  --c-stable: #17866f;
-  --c-moderate: #d99a32;
-  --c-high: #d9685f;
-  --c-critical: #b83c3c;
+  /* Clinical state — meaning only, never decoration. Each has a soft
+     background + border for badges/cards, and a separate "-text" variant:
+     the raw primary is what a icon/left-border/chart-line needs, but isn't
+     always dark enough for 12px badge text on its own soft background
+     (moderate/amber especially) — see the per-tier comments below. */
+  --c-stable: #2f8a72;
+  --c-stable-soft: #eaf5f1;
+  --c-stable-border: #cbe8dd;
+  --c-stable-text: #1f6d59; /* --c-stable itself is ~3.8:1 on --c-stable-soft */
+
+  --c-moderate: #c98a2e;
+  --c-moderate-soft: #fff5e3;
+  --c-moderate-border: #f1d9a8;
+  --c-moderate-text: #96631a; /* --c-moderate itself is ~2.7:1 on its soft bg */
+
+  --c-high: #d65f58;
+  --c-high-soft: #fcedec;
+  --c-high-border: #f2c7c4;
+  --c-high-text: #a8433a; /* --c-high itself is ~3.3:1 on its soft bg */
+
+  --c-critical: #b94343;
+  --c-critical-soft: #fbe5e5;
+  --c-critical-border: #ebc0c0;
+  --c-critical-text: #a23a3a; /* --c-critical itself is ~4.4:1, just short of 4.5 */
+
   --c-info: #3978b8;
 
   --r-card: 13px;
   --r-control: 9px;
-  --shadow-card: 0 1px 2px rgba(23, 59, 77, 0.04);
+  --shadow-card: 0 2px 8px rgba(25, 59, 77, 0.035);
   --shadow-pop: 0 8px 24px rgba(23, 59, 77, 0.1);
 
   background: var(--c-ground);
@@ -66,7 +98,7 @@
 html,
 body {
   scrollbar-width: thin;
-  scrollbar-color: #e2ebe9 transparent;
+  scrollbar-color: #e2e9ec transparent;
 }
 html::-webkit-scrollbar,
 body::-webkit-scrollbar {
@@ -78,9 +110,9 @@ body::-webkit-scrollbar-track {
 }
 html::-webkit-scrollbar-thumb,
 body::-webkit-scrollbar-thumb {
-  background: #e2ebe9;
+  background: #e2e9ec;
   border-radius: 999px;
-  border: 2px solid #f6f9f9;
+  border: 2px solid #f6f8f9;
 }
 html::-webkit-scrollbar-thumb:hover,
 body::-webkit-scrollbar-thumb:hover {
@@ -410,7 +442,11 @@ body::-webkit-scrollbar-thumb:hover {
   padding: 0 12px;
   border-radius: 999px;
   border: 1px solid transparent;
-  background: var(--c-ground);
+  /* One-off #f1f4f5 rather than a new token: it only needs to read as
+     "recessed into the white navbar," and it's distinct enough from
+     --c-ground on its own for that without another near-duplicate gray
+     added to the system (see the color-system task's own §26). */
+  background: #f1f4f5;
   color: var(--c-faint);
   transition:
     background 0.18s ease,
@@ -707,25 +743,28 @@ a.mc-kpi:hover {
 }
 .mc-badge-stable,
 .mc-badge-low {
-  color: var(--c-stable);
-  background: #edf7f4;
-  border-color: #cfe8e0;
+  color: var(--c-stable-text);
+  background: var(--c-stable-soft);
+  border-color: var(--c-stable-border);
 }
 .mc-badge-moderate,
 .mc-badge-medium {
-  color: #96631a;
-  background: #fdf5e8;
-  border-color: #f2e0bd;
+  color: var(--c-moderate-text);
+  background: var(--c-moderate-soft);
+  border-color: var(--c-moderate-border);
 }
 .mc-badge-high {
-  color: #a8433a;
-  background: #fdf0ef;
-  border-color: #f4d3d0;
+  color: var(--c-high-text);
+  background: var(--c-high-soft);
+  border-color: var(--c-high-border);
 }
+/* Soft background even for critical — the spec is explicit that no tier
+   gets a huge solid fill, severity comes from the (darker) text color and
+   the word itself, not from turning the whole pill into a block of red. */
 .mc-badge-critical {
-  color: #fff;
-  background: var(--c-critical);
-  border-color: var(--c-critical);
+  color: var(--c-critical-text);
+  background: var(--c-critical-soft);
+  border-color: var(--c-critical-border);
 }
 .mc-badge-info {
   color: #2b5f94;
@@ -734,7 +773,7 @@ a.mc-kpi:hover {
 }
 .mc-badge-neutral {
   color: var(--c-body);
-  background: #f2f5f5;
+  background: var(--c-surface-subtle);
   border-color: var(--c-border);
 }
 
@@ -793,9 +832,16 @@ a.mc-kpi:hover {
     background 0.18s ease,
     border-color 0.18s ease;
 }
+/* Was #066b61 — a dark teal-green hover left over from before the brand
+   moved to blue; every other blue on this page already updated, this one
+   never did. */
 .mc-btn:hover:not(:disabled) {
-  background: #066b61;
-  border-color: #066b61;
+  background: var(--c-teal-hover);
+  border-color: var(--c-teal-hover);
+}
+.mc-btn:active:not(:disabled) {
+  background: var(--c-teal-active);
+  border-color: var(--c-teal-active);
 }
 .mc-btn:disabled {
   opacity: 0.55;
@@ -808,7 +854,7 @@ a.mc-kpi:hover {
   gap: 7px;
   padding: 9px 15px;
   border-radius: var(--r-control);
-  border: 1px solid var(--c-border);
+  border: 1px solid var(--c-border-control);
   background: var(--c-card);
   color: var(--c-ink);
   font-family: inherit;
@@ -816,13 +862,10 @@ a.mc-kpi:hover {
   font-weight: 600;
   cursor: pointer;
   text-decoration: none;
-  transition:
-    border-color 0.18s ease,
-    color 0.18s ease;
+  transition: background 0.18s ease;
 }
 .mc-btn-ghost:hover {
-  border-color: var(--c-teal-soft);
-  color: var(--c-teal);
+  background: var(--c-ground);
 }
 .mc-btn-sm {
   padding: 6px 12px;
@@ -927,7 +970,7 @@ a.mc-kpi:hover {
 .mc-input {
   width: 100%;
   padding: 9px 12px;
-  border: 1px solid var(--c-border);
+  border: 1px solid var(--c-border-control);
   border-radius: var(--r-control);
   background: var(--c-card);
   font-family: inherit;
@@ -943,11 +986,9 @@ a.mc-kpi:hover {
 }
 .mc-input:focus {
   border-color: var(--c-teal);
-  /* rgb(67,97,238) is --c-teal's own value — hardcoded because box-shadow's
-     alpha channel can't reference a hex custom property directly. Was
-     rgba(8,127,115,…), a leftover green from before the brand color moved
-     to blue that never got swept along with it. */
-  box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.12);
+  /* rgb(70,98,232) is --c-teal's own value — hardcoded because box-shadow's
+     alpha channel can't reference a hex custom property directly. */
+  box-shadow: 0 0 0 3px rgba(70, 98, 232, 0.12);
 }
 select.mc-input {
   cursor: pointer;
@@ -981,14 +1022,14 @@ select.mc-input {
   margin-top: 1px;
 }
 .mc-alert-error {
-  color: #a8433a;
-  background: #fdf0ef;
-  border-color: #f4d3d0;
+  color: var(--c-high-text);
+  background: var(--c-high-soft);
+  border-color: var(--c-high-border);
 }
 .mc-alert-notice {
-  color: #96631a;
-  background: #fdf5e8;
-  border-color: #f2e0bd;
+  color: var(--c-moderate-text);
+  background: var(--c-moderate-soft);
+  border-color: var(--c-moderate-border);
 }
 
 /* ── Empty states ────────────────────────────────────────────────────── */
@@ -1006,8 +1047,11 @@ select.mc-input {
   width: 42px;
   height: 42px;
   border-radius: 50%;
-  background: var(--c-teal-wash);
-  color: var(--c-teal);
+  /* Neutral, not brand-tinted — "nothing to show" isn't a product moment,
+     and a blue icon here would read as a false positive next to a real
+     empty state. */
+  background: var(--c-surface-subtle);
+  color: var(--c-body);
   margin-bottom: 2px;
 }
 .mc-empty-title {
@@ -1084,7 +1128,7 @@ select.mc-input {
   transition: background 0.15s ease;
 }
 .mc-row-link:hover {
-  background: var(--c-teal-wash);
+  background: var(--c-ground);
 }
 
 /* ── Pager ───────────────────────────────────────────────────────────── */
@@ -1272,8 +1316,11 @@ select.mc-input {
   margin-top: 14px;
   padding: 11px 15px;
   border-radius: var(--r-control);
-  background: var(--c-teal-wash);
-  border: 1px solid #cfe4e1;
+  /* Informational, not a brand moment — same neutral treatment as the
+     info pills (§11 of the color system), not the old teal wash with its
+     own stray non-token border color. */
+  background: var(--c-surface-subtle);
+  border: 1px solid var(--c-border);
   color: var(--c-ink);
   font-size: 13.5px;
 }
@@ -1353,7 +1400,7 @@ select.mc-input {
   border-right: none;
 }
 .mc-segment:hover {
-  background: #f3f7f7;
+  background: var(--c-ground);
 }
 .mc-segment[aria-pressed="true"] {
   background: var(--c-teal);
@@ -1361,9 +1408,9 @@ select.mc-input {
 }
 
 .mc-alert-success {
-  color: #146c52;
-  background: #edf7f4;
-  border-color: #cfe8e0;
+  color: var(--c-stable-text);
+  background: var(--c-stable-soft);
+  border-color: var(--c-stable-border);
 }
 
 /* ── Vitals ──────────────────────────────────────────────────────────── */
@@ -1389,9 +1436,10 @@ select.mc-input {
   transition: background 0.15s ease;
 }
 .mc-vital:hover {
-  background: var(--c-teal-wash);
+  background: var(--c-ground);
 }
-/* The selected measurement is the one plotted below. */
+/* The selected measurement is the one plotted below — brand-tinted since
+   this is the one genuinely-selected state in the list, not just a hover. */
 .mc-vital[aria-pressed="true"] {
   background: var(--c-teal-wash);
   box-shadow: inset 3px 0 0 var(--c-teal);
@@ -1428,7 +1476,7 @@ select.mc-input {
 /* Stale readings are called out: a panel that looks calm because data stopped
    arriving is worse than one showing a bad number. */
 .mc-vital-age.is-stale {
-  color: #96631a;
+  color: var(--c-moderate-text);
   font-weight: 600;
 }
 
@@ -1638,7 +1686,7 @@ select.mc-input {
   transition: background 0.12s ease;
 }
 .mc-queue-row:hover {
-  background: var(--c-teal-wash);
+  background: var(--c-ground);
 }
 .mc-queue-row:focus-visible {
   outline: 2px solid var(--c-teal);
@@ -1926,7 +1974,7 @@ select.mc-input {
   margin-left: 8px;
   padding: 0 6px;
   border-radius: 10px;
-  background: var(--c-bg);
+  background: var(--c-ground);
   color: var(--c-body);
   font-size: 11.5px;
   font-weight: 600;
@@ -1982,7 +2030,7 @@ select.mc-input {
   cursor: pointer;
 }
 .mc-alertrow-head:hover {
-  background: var(--c-bg);
+  background: var(--c-ground);
 }
 .mc-alertrow-head:focus-visible {
   outline: 2px solid var(--c-teal);
@@ -2201,7 +2249,7 @@ select.mc-input {
   background:
     radial-gradient(
       560px 200px at 88% -20%,
-      rgba(67, 97, 238, 0.09),
+      rgba(70, 98, 232, 0.09),
       transparent 70%
     ),
     linear-gradient(180deg, var(--c-teal-wash) 0%, var(--c-card) 130%);
@@ -2226,7 +2274,7 @@ select.mc-input {
   height: 6px;
   border-radius: 50%;
   background: var(--c-teal);
-  box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.16);
+  box-shadow: 0 0 0 3px rgba(70, 98, 232, 0.16);
 }
 
 /* Cards worth noticing get a little lift, not just a border tint — kept off
@@ -2244,9 +2292,13 @@ a.mc-kpi:hover,
   transform: translateY(-2px);
 }
 
-/* Icon chip: a tinted circle instead of a bare glyph, colour carrying the
-   same clinical meaning the badges use rather than one brand colour for
-   everything — a KPI about risk should not look as calm as one about staff. */
+/* Icon chip: a soft-tinted circle, not a bare glyph or a solid fill — same
+   "soft background + colored icon" system the risk badges use (§6-7 of the
+   color system), so a KPI about risk doesn't look as calm as one about
+   staff, without turning the tile itself into a block of color. Brand blue
+   and stable green go to the two administrative counts (Patients, Doctors
+   & Staff) since neither is a severity reading; "Needing attention" is the
+   one real clinical signal here and stays on the moderate/high scale. */
 .mc-kpi-icon {
   width: 34px;
   height: 34px;
@@ -2254,35 +2306,25 @@ a.mc-kpi:hover,
   background: var(--c-border-soft);
   color: var(--c-body);
 }
-/* Solid, saturated chips pulling the landing page's own brand palette
-   (--primary/--mint/--coral there, mirrored here as --c-teal/--c-teal-soft/
-   --c-coral) - deliberately more vivid than the rest of the clinical
-   portal, by explicit request, for cards that are operational counts, not
-   a clinical severity reading. "Needing attention" stays semantic (amber →
-   red) since that one number is a real urgency signal, not decoration. */
 .mc-kpi-icon-teal {
-  background: var(--c-teal);
-  color: #fff;
+  background: var(--c-teal-wash);
+  color: var(--c-teal);
 }
-.mc-kpi-icon-coral {
-  background: var(--c-coral);
-  color: #fff;
-}
-.mc-kpi-icon-mint {
-  background: var(--c-teal-soft);
-  color: #fff;
+.mc-kpi-icon-stable {
+  background: var(--c-stable-soft);
+  color: var(--c-stable);
 }
 .mc-kpi-icon-attn {
-  background: #f0a63a;
-  color: #fff;
+  background: var(--c-moderate-soft);
+  color: var(--c-moderate);
 }
 .mc-kpi-icon-attn.mc-kpi-icon-alert {
-  background: var(--c-high);
-  color: #fff;
+  background: var(--c-high-soft);
+  color: var(--c-high);
 }
 .mc-kpi-icon-info {
-  background: var(--c-info);
-  color: #fff;
+  background: #eef4fa;
+  color: var(--c-info);
 }
 .mc-kpi-icon-neutral {
   background: var(--c-border-soft);
@@ -2295,7 +2337,7 @@ a.mc-kpi:hover,
    (.mc-kpi-icon-* above) already carries this everywhere else; this just
    repeats it at a glance before a reader's eye even reaches the icon. */
 .mc-kpi-fill-attn {
-  border-left-color: #f0a63a;
+  border-left-color: var(--c-moderate);
 }
 .mc-kpi-fill-alert {
   border-left-color: var(--c-high);
