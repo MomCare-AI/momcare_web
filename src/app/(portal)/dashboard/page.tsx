@@ -182,7 +182,7 @@ export default function OverviewPage() {
           </span>
         </Link>
 
-        <Link href="/dashboard/patients" className="mc-kpi mc-kpi-fill-coral">
+        <Link href="/dashboard/patients" className="mc-kpi">
           <div className="mc-kpi-top">
             <span className="mc-kpi-label">Patients</span>
             <span className="mc-kpi-icon mc-kpi-icon-coral">
@@ -197,7 +197,7 @@ export default function OverviewPage() {
           </span>
         </Link>
 
-        <Link href="/dashboard/staff" className="mc-kpi mc-kpi-fill-teal">
+        <Link href="/dashboard/staff" className="mc-kpi">
           <div className="mc-kpi-top">
             <span className="mc-kpi-label">Doctors &amp; staff</span>
             <span className="mc-kpi-icon mc-kpi-icon-teal">

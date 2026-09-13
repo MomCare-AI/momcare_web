@@ -607,6 +607,11 @@
 .mc-kpi {
   background: var(--c-card);
   border: 1px solid var(--c-border);
+  /* A left-edge accent gutter, colored only for cards carrying a real
+     severity signal (see .mc-kpi-fill-attn/-alert below) — the same
+     convention .mc-alertrow uses, so a card reads as "this number means
+     something is wrong" without needing to fill the whole tile. */
+  border-left: 3px solid var(--c-border);
   border-radius: var(--r-card);
   box-shadow: var(--shadow-card);
   padding: 17px 19px 16px;
@@ -2252,59 +2257,16 @@ a.mc-kpi:hover,
   color: var(--c-faint);
 }
 
-/* Whole-card colour, not just the icon chip — the landing page's own
-   vivid brand palette, by explicit request. Kept off "Today's
-   appointments" (still plain white): that card is an unbuilt feature, and
-   dressing it up the same as the working three would visually claim it's
-   live when "Scheduling not yet available" says otherwise. */
-.mc-kpi-fill-teal,
-.mc-kpi-fill-coral,
-.mc-kpi-fill-mint,
-.mc-kpi-fill-attn,
-.mc-kpi-fill-alert {
-  border-color: transparent;
-}
-.mc-kpi-fill-teal {
-  background: linear-gradient(135deg, var(--c-teal), #5b72f5);
-}
-.mc-kpi-fill-coral {
-  background: linear-gradient(135deg, var(--c-coral), #f5a58f);
-}
-.mc-kpi-fill-mint {
-  background: linear-gradient(135deg, var(--c-teal-soft), #7fdcf7);
-}
+/* Severity gets the accent, not decoration — "Needing attention" is a real
+   clinical urgency signal, so it keeps a colored left edge (amber, or red
+   once something is actually outstanding). The icon chip's own color
+   (.mc-kpi-icon-* above) already carries this everywhere else; this just
+   repeats it at a glance before a reader's eye even reaches the icon. */
 .mc-kpi-fill-attn {
-  background: linear-gradient(135deg, #f0a63a, #f5c26b);
+  border-left-color: #f0a63a;
 }
 .mc-kpi-fill-alert {
-  background: linear-gradient(135deg, #dc2626, var(--c-critical));
-}
-.mc-kpi-fill-teal .mc-kpi-label,
-.mc-kpi-fill-teal .mc-kpi-value,
-.mc-kpi-fill-coral .mc-kpi-label,
-.mc-kpi-fill-coral .mc-kpi-value,
-.mc-kpi-fill-mint .mc-kpi-label,
-.mc-kpi-fill-mint .mc-kpi-value,
-.mc-kpi-fill-attn .mc-kpi-label,
-.mc-kpi-fill-attn .mc-kpi-value,
-.mc-kpi-fill-alert .mc-kpi-label,
-.mc-kpi-fill-alert .mc-kpi-value {
-  color: #fff;
-}
-.mc-kpi-fill-teal .mc-kpi-foot,
-.mc-kpi-fill-coral .mc-kpi-foot,
-.mc-kpi-fill-mint .mc-kpi-foot,
-.mc-kpi-fill-attn .mc-kpi-foot,
-.mc-kpi-fill-alert .mc-kpi-foot {
-  color: rgba(255, 255, 255, 0.85);
-}
-.mc-kpi-fill-teal .mc-kpi-icon,
-.mc-kpi-fill-coral .mc-kpi-icon,
-.mc-kpi-fill-mint .mc-kpi-icon,
-.mc-kpi-fill-attn .mc-kpi-icon,
-.mc-kpi-fill-alert .mc-kpi-icon {
-  background: rgba(255, 255, 255, 0.22);
-  color: #fff;
+  border-left-color: var(--c-high);
 }
 
 /* A section card reads as bare without something to anchor the title —
