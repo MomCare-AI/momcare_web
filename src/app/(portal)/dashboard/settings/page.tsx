@@ -12,6 +12,8 @@ import {
 } from "@/features/portal/hooks/usePortalData";
 import { useStaffList } from "@/features/staff/hooks/useStaff";
 import { StaffCredentialsPanel } from "@/features/staff/components/StaffCredentialsPanel";
+import { Card, CardBody, CardHeader } from "@/shared/ui/Card";
+import { Pair } from "@/shared/ui/Pair";
 import { usePageTitle } from "@/hooks/usePageTitle";
 
 /**
@@ -137,16 +139,16 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      <section className="mc-card">
-        <div className="mc-card-head">
+      <Card>
+        <CardHeader>
           <div>
             <h2 className="mc-card-title">Your details</h2>
             <p className="mc-card-sub">
               Set by your hospital when your account was created.
             </p>
           </div>
-        </div>
-        <div className="mc-card-body">
+        </CardHeader>
+        <CardBody>
           <div className="mc-pairs">
             <Pair
               label="Name"
@@ -161,12 +163,12 @@ export default function SettingsPage() {
             granted by {org.name}. To change any of them, ask your hospital
             administrator.
           </p>
-        </div>
-      </section>
+        </CardBody>
+      </Card>
 
       {user.staff_id && (
-        <section className="mc-card">
-          <div className="mc-card-head">
+        <Card>
+          <CardHeader>
             <div>
               <h2 className="mc-card-title">
                 <GraduationCap size={17} strokeWidth={1.9} aria-hidden />{" "}
@@ -177,18 +179,18 @@ export default function SettingsPage() {
                 not independently verified.
               </p>
             </div>
-          </div>
-          <div className="mc-card-body">
+          </CardHeader>
+          <CardBody>
             {staffQuery.isPending && <div className="mc-hint">Loading…</div>}
             {myProfile && <StaffCredentialsPanel member={myProfile} canEdit />}
-          </div>
-        </section>
+          </CardBody>
+        </Card>
       )}
 
       {isHospitalAdmin && <ConfidenceThresholdCard org={org} />}
 
-      <section className="mc-card">
-        <div className="mc-card-head">
+      <Card>
+        <CardHeader>
           <div>
             <h2 className="mc-card-title">
               <KeyRound size={17} strokeWidth={1.9} aria-hidden /> Change
@@ -198,8 +200,11 @@ export default function SettingsPage() {
               You will be signed out everywhere and asked to sign in again.
             </p>
           </div>
-        </div>
+        </CardHeader>
 
+        {/* A <form> here, not <CardBody> — the card-body class applies fine
+            to any element, but this one genuinely needs to be a real form
+            for submit-on-Enter and onSubmit to work. */}
         <form onSubmit={handleSubmit} noValidate className="mc-card-body">
           <div>
             <label className="mc-label" htmlFor="current_password">
@@ -264,7 +269,7 @@ export default function SettingsPage() {
             </button>
           </div>
         </form>
-      </section>
+      </Card>
     </>
   );
 }
@@ -296,8 +301,8 @@ function ConfidenceThresholdCard({ org }: { org: OrgSummary }) {
   };
 
   return (
-    <section className="mc-card">
-      <div className="mc-card-head">
+    <Card>
+      <CardHeader>
         <div>
           <h2 className="mc-card-title">
             <Gauge size={17} strokeWidth={1.9} aria-hidden /> Model confidence
@@ -308,7 +313,7 @@ function ConfidenceThresholdCard({ org }: { org: OrgSummary }) {
             clinician to look again — whatever risk level it landed on.
           </p>
         </div>
-      </div>
+      </CardHeader>
 
       <form onSubmit={submit} className="mc-card-body">
         <div className="mc-pairs" style={{ marginBottom: 16 }}>
@@ -369,17 +374,6 @@ function ConfidenceThresholdCard({ org }: { org: OrgSummary }) {
           )}
         </div>
       </form>
-    </section>
-  );
-}
-
-/** Matches the dashboard's own pair renderer. The label and value are block
- *  elements: as spans they sit on one line and read as "EMAILyou@example.com". */
-function Pair({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <div className="mc-pair-label">{label}</div>
-      <div className="mc-pair-value">{value || "—"}</div>
-    </div>
+    </Card>
   );
 }

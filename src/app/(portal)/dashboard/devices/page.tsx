@@ -10,6 +10,7 @@ import {
   useRegisterDevice,
 } from "@/features/monitoring/hooks/useMonitoring";
 import { ACQUISITION_OPTIONS, type Device } from "@/features/monitoring/types";
+import { EmptyState } from "@/shared/ui/EmptyState";
 import { RowSkeleton } from "@/shared/ui/RowSkeleton";
 import { usePageTitle } from "@/hooks/usePageTitle";
 
@@ -96,33 +97,28 @@ export default function DevicesPage() {
       )}
 
       {devices.isError && (
-        <div className="mc-empty">
-          <span className="mc-empty-title">Devices unavailable</span>
-          <span className="mc-empty-text">
-            This is not a statement that no device exists — the list could not
-            be loaded. Refresh to try again.
-          </span>
-        </div>
+        <EmptyState
+          title="Devices unavailable"
+          text="This is not a statement that no device exists — the list could not be loaded. Refresh to try again."
+        />
       )}
 
       {devices.isSuccess && grouped.length === 0 && (
-        <div className="mc-empty">
-          <span className="mc-empty-icon">
-            <Watch size={20} strokeWidth={1.9} aria-hidden />
-          </span>
-          <span className="mc-empty-title">
-            {tab === "assigned"
+        <EmptyState
+          icon={<Watch size={20} strokeWidth={1.9} aria-hidden />}
+          title={
+            tab === "assigned"
               ? "No band is currently assigned"
               : tab === "in_stock"
                 ? "Nothing waiting in stock"
-                : "Nothing needs attention"}
-          </span>
-          <span className="mc-empty-text">
-            {tab === "in_stock"
+                : "Nothing needs attention"
+          }
+          text={
+            tab === "in_stock"
               ? "Register a device to add it to the hospital's stock."
-              : "Devices move here as their status changes."}
-          </span>
-        </div>
+              : "Devices move here as their status changes."
+          }
+        />
       )}
 
       <div className="mc-alertlist">

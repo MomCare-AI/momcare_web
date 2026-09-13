@@ -1528,8 +1528,25 @@ select.mc-input {
   }
 }
 
-/* ── Responsive ──────────────────────────────────────────────────────── */
+/* ── Responsive ──────────────────────────────────────────────────────────
+   Two canonical tiers, set by the sidebar and reused exactly (not
+   coincidentally) by every other tier-driven rule below: mobile is
+   max-width: 859px, tablet is min-width: 860px and max-width: 1023px,
+   desktop is min-width: 1024px. New tier-driven CSS should match these
+   exactly rather than pick a nearby number.
+
+   Media queries besides these three are deliberately NOT on this scale —
+   each wraps/reflows one component's own content (an alert row's inline
+   metadata, a patient subnav's tab strip) at the width where that specific
+   content stops fitting, which rarely lines up with a layout tier. Forcing
+   those onto 860/1024 would fix a number that was never the problem.
+
+   --c-* custom properties can't help here: `@media (min-width: var(--x))`
+   isn't valid CSS, so these widths can't be tokenized the way colors were.
+   ───────────────────────────────────────────────────────────────────── */
 @media (max-width: 1100px) {
+  /* .mc-grid-2 is unused by any component today — this rule is dead code,
+     kept only because the class itself hasn't been removed. */
   .mc-grid-2 {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -2306,7 +2323,10 @@ a.mc-kpi:hover,
   background: var(--c-border-soft);
   color: var(--c-body);
 }
-.mc-kpi-icon-teal {
+/* Was .mc-kpi-icon-teal — a name left over from when the brand color was
+   literally teal. It's been blue for a while now; the class name finally
+   says so. */
+.mc-kpi-icon-brand {
   background: var(--c-teal-wash);
   color: var(--c-teal);
 }

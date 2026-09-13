@@ -13,6 +13,7 @@ import {
 } from "@/features/alerts/hooks/useAlerts";
 import type { Alert, AlertEvent } from "@/features/alerts/types";
 import { RiskBadge } from "@/features/monitoring/components/RiskBadge";
+import { EmptyState } from "@/shared/ui/EmptyState";
 import { RowSkeleton } from "@/shared/ui/RowSkeleton";
 import { usePortal } from "../layout";
 import { usePageTitle } from "@/hooks/usePageTitle";
@@ -126,31 +127,24 @@ export default function AlertsPage() {
       {alerts.isError && (
         /* An error must never render as an empty list. "No alerts" and "we
            could not find out" are opposite messages to a clinician. */
-        <div className="mc-empty">
-          <span className="mc-empty-title">Alerts unavailable</span>
-          <span className="mc-empty-text">
-            This is not a statement that nothing is wrong — the list could not
-            be loaded. Refresh to try again.
-          </span>
-        </div>
+        <EmptyState
+          title="Alerts unavailable"
+          text="This is not a statement that nothing is wrong — the list could not be loaded. Refresh to try again."
+        />
       )}
 
       {alerts.isSuccess && rows.length === 0 && (
-        <div className="mc-empty">
-          <span className="mc-empty-icon">
-            <BellRing size={20} strokeWidth={1.9} aria-hidden />
-          </span>
-          <span className="mc-empty-title">
-            {tab === "live" ? "No live alerts" : "Nothing resolved yet"}
-          </span>
-          <span className="mc-empty-text">
-            {tab === "live"
+        <EmptyState
+          icon={<BellRing size={20} strokeWidth={1.9} aria-hidden />}
+          title={tab === "live" ? "No live alerts" : "Nothing resolved yet"}
+          text={
+            tab === "live"
               ? assignedToMe
                 ? "None of your assigned patients currently have an open alert."
                 : "Nobody is currently waiting on a response. Alerts appear here the moment a reading crosses a clinical threshold."
-              : "Alerts move here once somebody records what happened."}
-          </span>
-        </div>
+              : "Alerts move here once somebody records what happened."
+          }
+        />
       )}
 
       <div className="mc-alertlist">

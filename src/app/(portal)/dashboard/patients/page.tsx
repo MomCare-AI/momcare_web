@@ -21,6 +21,7 @@ import {
 import { WorklistPanel } from "@/features/patients/components/WorklistPanel";
 import { RiskBadge } from "@/features/monitoring/components/RiskBadge";
 import { pregnancyTone } from "@/features/patients/types";
+import { EmptyState } from "@/shared/ui/EmptyState";
 import { InitialsAvatar } from "@/shared/ui/InitialsAvatar";
 import { RowSkeleton } from "@/shared/ui/RowSkeleton";
 import { usePortal } from "../layout";
@@ -205,33 +206,31 @@ export default function PatientsPage() {
 
           <section className="mc-card">
             {patients.length === 0 ? (
-              <div className="mc-empty">
-                <span className="mc-empty-icon">
-                  <Users size={20} strokeWidth={1.9} aria-hidden />
-                </span>
-                <span className="mc-empty-title">
-                  {isSearching
+              <EmptyState
+                icon={<Users size={20} strokeWidth={1.9} aria-hidden />}
+                title={
+                  isSearching
                     ? "No matching patients"
                     : workspace
                       ? `No patients yet`
-                      : "No patients enrolled yet"}
-                </span>
-                <span className="mc-empty-text">
-                  {isSearching
+                      : "No patients enrolled yet"
+                }
+                text={
+                  isSearching
                     ? "Try a phone number, CNIC or medical record number."
                     : workspace
                       ? workspace.empty
-                      : "Enrol your first patient to start tracking her pregnancy."}
-                </span>
-                {!isSearching && (
-                  <span className="mc-empty-actions">
+                      : "Enrol your first patient to start tracking her pregnancy."
+                }
+                actions={
+                  !isSearching && (
                     <Link href="/dashboard/patients/new" className="mc-btn">
                       <UserPlus size={15} strokeWidth={2} aria-hidden />
                       Enrol patient
                     </Link>
-                  </span>
-                )}
-              </div>
+                  )
+                }
+              />
             ) : (
               <div className="mc-rows">
                 {patients.map((p, index) => (

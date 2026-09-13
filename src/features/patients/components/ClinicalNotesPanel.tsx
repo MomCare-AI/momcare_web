@@ -7,6 +7,7 @@ import {
   useAddClinicalNote,
   useClinicalNotes,
 } from "@/features/patients/hooks/usePatients";
+import { EmptyState } from "@/shared/ui/EmptyState";
 
 /**
  * A pregnancy's clinical notes — append-only, newest first.
@@ -97,17 +98,15 @@ export function ClinicalNotesPanel({
           <div className="mc-hint">Notes could not be loaded.</div>
         )}
         {notesQuery.isSuccess && notes.length === 0 && (
-          <div className="mc-empty">
-            <span className="mc-empty-icon">
-              <NotebookPen size={20} strokeWidth={1.9} aria-hidden />
-            </span>
-            <span className="mc-empty-title">Nothing recorded yet</span>
-            <span className="mc-empty-text">
-              {canWrite
+          <EmptyState
+            icon={<NotebookPen size={20} strokeWidth={1.9} aria-hidden />}
+            title="Nothing recorded yet"
+            text={
+              canWrite
                 ? "The first note here becomes part of this pregnancy's permanent record."
-                : "A clinician has not recorded a note for this pregnancy yet."}
-            </span>
-          </div>
+                : "A clinician has not recorded a note for this pregnancy yet."
+            }
+          />
         )}
         {notes.length > 0 && (
           <ol className="mc-trail">

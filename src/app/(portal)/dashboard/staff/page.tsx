@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 import { usePortal } from "../layout";
 import { SessionExpiredError } from "@/core/api/authFetch";
+import { Card, CardBody, CardHeader } from "@/shared/ui/Card";
+import { EmptyState } from "@/shared/ui/EmptyState";
 import { InitialsAvatar } from "@/shared/ui/InitialsAvatar";
 import { RowSkeleton } from "@/shared/ui/RowSkeleton";
 import {
@@ -112,11 +114,11 @@ export default function StaffPage() {
 
   if (staffQuery.isPending)
     return (
-      <section className="mc-card">
+      <Card>
         <div className="mc-rows">
           <RowSkeleton count={5} variant="plain" />
         </div>
-      </section>
+      </Card>
     );
 
   const pending = invites.filter((i) => i.status === "pending");
@@ -154,8 +156,8 @@ export default function StaffPage() {
       )}
 
       {isHospitalAdmin && showForm && (
-        <section className="mc-card" style={{ marginBottom: 18 }}>
-          <div className="mc-card-head">
+        <Card style={{ marginBottom: 18 }}>
+          <CardHeader>
             <div>
               <div className="mc-card-title">Invite a team member</div>
               <div className="mc-card-sub">
@@ -163,8 +165,8 @@ export default function StaffPage() {
                 email, WhatsApp, or in person.
               </div>
             </div>
-          </div>
-          <div className="mc-card-body">
+          </CardHeader>
+          <CardBody>
             <form onSubmit={submitInvite}>
               <div className="mc-formgrid">
                 <div>
@@ -242,18 +244,18 @@ export default function StaffPage() {
                 {submitting ? "Creating…" : "Create invitation"}
               </button>
             </form>
-          </div>
-        </section>
+          </CardBody>
+        </Card>
       )}
 
       {isHospitalAdmin && pending.length > 0 && (
-        <section className="mc-card" style={{ marginBottom: 18 }}>
-          <div className="mc-card-head">
+        <Card style={{ marginBottom: 18 }}>
+          <CardHeader>
             <div className="mc-card-title">Pending invitations</div>
             <span className="mc-badge mc-badge-moderate">
               {pending.length} awaiting
             </span>
-          </div>
+          </CardHeader>
           <div className="mc-rows">
             {pending.map((inv, index) => (
               <motion.div
@@ -305,54 +307,47 @@ export default function StaffPage() {
               </motion.div>
             ))}
           </div>
-        </section>
+        </Card>
       )}
 
-      <section className="mc-card">
-        <div className="mc-card-head">
+      <Card>
+        <CardHeader>
           <div>
             <div className="mc-card-title">Clinical team</div>
             <div className="mc-card-sub">
               Everyone with access to this hospital
             </div>
           </div>
-        </div>
+        </CardHeader>
         {loadFailed ? (
-          <div className="mc-empty">
-            <span className="mc-empty-icon">
-              <AlertCircle size={20} strokeWidth={1.9} aria-hidden />
-            </span>
-            <span className="mc-empty-title">Couldn&apos;t load your team</span>
-            <span className="mc-empty-text">
-              This is a problem reaching the server, not an empty team — your
-              staff records are unaffected.
-            </span>
-            <span className="mc-empty-actions">
+          <EmptyState
+            icon={<AlertCircle size={20} strokeWidth={1.9} aria-hidden />}
+            title="Couldn't load your team"
+            text="This is a problem reaching the server, not an empty team — your staff records are unaffected."
+            actions={
               <button className="mc-btn" onClick={() => staffQuery.refetch()}>
                 Try again
               </button>
-            </span>
-          </div>
+            }
+          />
         ) : staff.length === 0 ? (
-          <div className="mc-empty">
-            <span className="mc-empty-icon">
-              <Stethoscope size={20} strokeWidth={1.9} aria-hidden />
-            </span>
-            <span className="mc-empty-title">No doctors yet</span>
-            <span className="mc-empty-text">
-              {isHospitalAdmin
+          <EmptyState
+            icon={<Stethoscope size={20} strokeWidth={1.9} aria-hidden />}
+            title="No doctors yet"
+            text={
+              isHospitalAdmin
                 ? "Your clinical team hasn't been added yet. Invite doctors and staff to start managing your hospital."
-                : "No team members have been added yet."}
-            </span>
-            {isHospitalAdmin && (
-              <span className="mc-empty-actions">
+                : "No team members have been added yet."
+            }
+            actions={
+              isHospitalAdmin && (
                 <button className="mc-btn" onClick={() => setShowForm(true)}>
                   <UserPlus size={15} strokeWidth={2} aria-hidden />
                   Add staff
                 </button>
-              </span>
-            )}
-          </div>
+              )
+            }
+          />
         ) : (
           <div className="mc-rows">
             {staff.map((m, index) => {
@@ -443,7 +438,7 @@ export default function StaffPage() {
             })}
           </div>
         )}
-      </section>
+      </Card>
     </>
   );
 }

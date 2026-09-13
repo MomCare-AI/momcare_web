@@ -11,8 +11,12 @@
   --bg: #fbf7f1;
   --shadow-dark: rgba(23, 59, 77, 0.12);
   --shadow-light: rgba(255, 255, 255, 0.9);
-  --primary: #4361ee;
-  --primary-dark: #324bc3;
+  /* Synced to the dashboard's own brand blue (portal.css's --c-teal /
+     --c-teal-hover) so the product has one brand blue, not two that are a
+     few units apart — was #4361ee / #324bc3, the pre-reconciliation values
+     from before the portal's own color-system pass locked the exact hex. */
+  --primary: #4662e8;
+  --primary-dark: #3b56d4;
   --mint: #4cc9f0;
   --coral: #f2785c;
   --text: #17293a;
@@ -201,9 +205,11 @@ body {
      register and the hospital wizard keep their own palette
      until that migration happens separately. Deep navy for
      primary text, a professional teal for interactive elements,
-     and a muted orange held back for small focal points only. */
-  --primary: #4361ee;
-  --primary-dark: #324bc3;
+     and a muted orange held back for small focal points only.
+     --primary/--primary-dark synced to the dashboard's brand blue
+     (portal.css's --c-teal/--c-teal-hover) — was #4361ee/#324bc3. */
+  --primary: #4662e8;
+  --primary-dark: #3b56d4;
   --mint: #0ea5e9;
   --coral: #f97316;
   --text: #0f172a;

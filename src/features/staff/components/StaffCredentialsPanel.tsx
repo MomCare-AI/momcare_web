@@ -5,6 +5,7 @@ import Image from "next/image";
 import { GraduationCap } from "lucide-react";
 
 import { useUpdateStaffProfile, type StaffMember } from "../hooks/useStaff";
+import { Pair } from "@/shared/ui/Pair";
 
 /**
  * A person's credentialing profile — qualification, specialty, registration,
@@ -260,15 +261,6 @@ export function StaffCredentialsPanel({
           </button>
         )}
       </div>
-    </div>
-  );
-}
-
-function Pair({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <div className="mc-pair-label">{label}</div>
-      <div className="mc-pair-value">{value}</div>
     </div>
   );
 }

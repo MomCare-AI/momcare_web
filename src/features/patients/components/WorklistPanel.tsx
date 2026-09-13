@@ -5,6 +5,7 @@ import { motion } from "motion/react";
 import { ClipboardList } from "lucide-react";
 
 import { useWorklist } from "../hooks/usePatients";
+import { EmptyState } from "@/shared/ui/EmptyState";
 
 const MotionLink = motion.create(Link);
 
@@ -33,13 +34,10 @@ export function WorklistPanel({ assignedToMe }: Props) {
     // An error must never render as "nothing needs attention" - those are
     // opposite claims, same discipline as the Attention Queue.
     return (
-      <div className="mc-empty">
-        <span className="mc-empty-title">Worklist unavailable</span>
-        <span className="mc-empty-text">
-          This is not a statement that every case is up to date — the list could
-          not be loaded. Refresh to try again.
-        </span>
-      </div>
+      <EmptyState
+        title="Worklist unavailable"
+        text="This is not a statement that every case is up to date — the list could not be loaded. Refresh to try again."
+      />
     );
   }
 
@@ -47,16 +45,11 @@ export function WorklistPanel({ assignedToMe }: Props) {
 
   if (rows.length === 0) {
     return (
-      <div className="mc-empty">
-        <span className="mc-empty-icon">
-          <ClipboardList size={20} strokeWidth={1.9} aria-hidden />
-        </span>
-        <span className="mc-empty-title">Nothing outstanding</span>
-        <span className="mc-empty-text">
-          No case is missing a recent reading, a recent note, an answered risk
-          history, or a lead clinician right now.
-        </span>
-      </div>
+      <EmptyState
+        icon={<ClipboardList size={20} strokeWidth={1.9} aria-hidden />}
+        title="Nothing outstanding"
+        text="No case is missing a recent reading, a recent note, an answered risk history, or a lead clinician right now."
+      />
     );
   }
 

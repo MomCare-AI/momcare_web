@@ -22,6 +22,7 @@ import {
   type RiskLevel,
 } from "../types";
 import { useOrganization } from "@/features/portal/hooks/usePortalData";
+import { EmptyState } from "@/shared/ui/EmptyState";
 import { RiskBadge } from "./RiskBadge";
 
 interface Props {
@@ -85,24 +86,16 @@ export function RiskPanel({ pregnancyId, canVerify = true }: Props) {
       {risk.isPending ? (
         <div className="mc-empty">Loading assessment…</div>
       ) : risk.isError ? (
-        <div className="mc-empty">
-          <span className="mc-empty-title">Assessment unavailable</span>
-          <span className="mc-empty-text">
-            This could not be loaded, so it is not a statement that the patient
-            is low risk. Refresh to try again.
-          </span>
-        </div>
+        <EmptyState
+          title="Assessment unavailable"
+          text="This could not be loaded, so it is not a statement that the patient is low risk. Refresh to try again."
+        />
       ) : !current ? (
-        <div className="mc-empty">
-          <span className="mc-empty-icon">
-            <ShieldCheck size={20} strokeWidth={1.9} aria-hidden />
-          </span>
-          <span className="mc-empty-title">Not assessed yet</span>
-          <span className="mc-empty-text">
-            Risk is scored the moment a reading arrives. Record a vital or
-            assign a wearable band, and the first assessment will appear here.
-          </span>
-        </div>
+        <EmptyState
+          icon={<ShieldCheck size={20} strokeWidth={1.9} aria-hidden />}
+          title="Not assessed yet"
+          text="Risk is scored the moment a reading arrives. Record a vital or assign a wearable band, and the first assessment will appear here."
+        />
       ) : (
         <>
           <div className="mc-card-body">

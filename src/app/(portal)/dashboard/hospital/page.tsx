@@ -6,6 +6,8 @@ import { Building2, MapPin, ShieldCheck } from "lucide-react";
 
 import { usePortal } from "../layout";
 import { useUpdateOrganizationPhoto } from "@/features/portal/hooks/usePortalData";
+import { Card, CardBody, CardHeader } from "@/shared/ui/Card";
+import { Pair } from "@/shared/ui/Pair";
 import { usePageTitle } from "@/hooks/usePageTitle";
 
 /**
@@ -17,15 +19,6 @@ import { usePageTitle } from "@/hooks/usePageTitle";
  * quietly alter the evidence its approval rested on. A correction goes through
  * a platform administrator, the same as the original review did.
  */
-
-function Pair({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <div className="mc-pair-label">{label}</div>
-      <div className="mc-pair-value">{value || "—"}</div>
-    </div>
-  );
-}
 
 export default function HospitalPage() {
   usePageTitle("Hospital");
@@ -79,13 +72,13 @@ export default function HospitalPage() {
         </div>
       </div>
 
-      <div className="mc-card">
-        <div className="mc-card-head">
+      <Card>
+        <CardHeader>
           <span className="mc-card-title">
             <Building2 size={16} strokeWidth={1.9} aria-hidden /> Building photo
           </span>
-        </div>
-        <div className="mc-card-body">
+        </CardHeader>
+        <CardBody>
           <div
             style={{
               display: "flex",
@@ -175,16 +168,16 @@ export default function HospitalPage() {
               )}
             </div>
           </div>
-        </div>
-      </div>
+        </CardBody>
+      </Card>
 
-      <div className="mc-card">
-        <div className="mc-card-head">
+      <Card>
+        <CardHeader>
           <span className="mc-card-title">
             <Building2 size={16} strokeWidth={1.9} aria-hidden /> Overview
           </span>
-        </div>
-        <div className="mc-card-body">
+        </CardHeader>
+        <CardBody>
           <div className="mc-pairs">
             <Pair label="Owner" value={org.owner_name} />
             <Pair label="Email" value={org.email} />
@@ -193,33 +186,27 @@ export default function HospitalPage() {
             <Pair label="Patients" value={String(org.patient_count)} />
             <Pair label="Locations" value={String(org.location_count)} />
           </div>
-        </div>
+        </CardBody>
 
-        <div
-          className="mc-card-head"
-          style={{ borderTop: "1px solid var(--c-border-soft)" }}
-        >
+        <CardHeader style={{ borderTop: "1px solid var(--c-border-soft)" }}>
           <span className="mc-card-title">
             <MapPin size={16} strokeWidth={1.9} aria-hidden /> Address
           </span>
-        </div>
-        <div className="mc-card-body">
+        </CardHeader>
+        <CardBody>
           <div className="mc-pairs">
             <Pair label="Address" value={address} />
             <Pair label="Country" value={org.country} />
           </div>
-        </div>
+        </CardBody>
 
-        <div
-          className="mc-card-head"
-          style={{ borderTop: "1px solid var(--c-border-soft)" }}
-        >
+        <CardHeader style={{ borderTop: "1px solid var(--c-border-soft)" }}>
           <span className="mc-card-title">
             <ShieldCheck size={16} strokeWidth={1.9} aria-hidden /> Licence and
             region
           </span>
-        </div>
-        <div className="mc-card-body">
+        </CardHeader>
+        <CardBody>
           <div className="mc-pairs">
             <Pair label="Licence number" value={org.license_no} />
             <Pair
@@ -233,8 +220,8 @@ export default function HospitalPage() {
               ? "Set automatically from the country above. Risk predictions use data for this population."
               : "No model has been trained for this population, so risk is assessed by clinical rules instead."}
           </p>
-        </div>
-      </div>
+        </CardBody>
+      </Card>
 
       <p className="mc-hint">
         To correct any of this, contact platform support — these fields were

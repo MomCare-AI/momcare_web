@@ -24,6 +24,8 @@ import { CareTeamPanel } from "@/features/patients/components/CareTeamPanel";
 import { RiskPanel } from "@/features/monitoring/components/RiskPanel";
 import { RiskAssessmentInput } from "@/features/monitoring/components/RiskAssessmentInput";
 import { VitalsPanel } from "@/features/monitoring/components/VitalsPanel";
+import { EmptyState } from "@/shared/ui/EmptyState";
+import { Pair } from "@/shared/ui/Pair";
 import { usePortal } from "../../layout";
 import { usePageTitle } from "@/hooks/usePageTitle";
 
@@ -224,12 +226,10 @@ export default function PatientProfilePage({
             </>
           ) : (
             <div className="mc-card">
-              <div className="mc-empty">
-                <span className="mc-empty-title">No active pregnancy</span>
-                <span className="mc-empty-text">
-                  Risk assessment needs an active pregnancy to score against.
-                </span>
-              </div>
+              <EmptyState
+                title="No active pregnancy"
+                text="Risk assessment needs an active pregnancy to score against."
+              />
             </div>
           )}
         </>
@@ -320,15 +320,11 @@ export default function PatientProfilePage({
               )}
             </div>
           ) : (
-            <div className="mc-empty">
-              <span className="mc-empty-icon">
-                <Activity size={20} strokeWidth={1.9} aria-hidden />
-              </span>
-              <span className="mc-empty-title">No active pregnancy</span>
-              <span className="mc-empty-text">
-                Past pregnancies, if any, are listed under History.
-              </span>
-            </div>
+            <EmptyState
+              icon={<Activity size={20} strokeWidth={1.9} aria-hidden />}
+              title="No active pregnancy"
+              text="Past pregnancies, if any, are listed under History."
+            />
           )}
         </section>
       )}
@@ -362,9 +358,7 @@ export default function PatientProfilePage({
             </div>
           </div>
           {pregnancies.length === 0 ? (
-            <div className="mc-empty">
-              <span className="mc-empty-title">Nothing recorded</span>
-            </div>
+            <EmptyState title="Nothing recorded" />
           ) : (
             <div className="mc-rows">
               {pregnancies.map((p) => (
@@ -414,9 +408,7 @@ export default function PatientProfilePage({
             </div>
           </div>
           {patient.consents.length === 0 ? (
-            <div className="mc-empty">
-              <span className="mc-empty-title">No consent recorded</span>
-            </div>
+            <EmptyState title="No consent recorded" />
           ) : (
             <div className="mc-rows">
               {patient.consents.map((c) => (
@@ -448,15 +440,6 @@ export default function PatientProfilePage({
         </section>
       )}
     </>
-  );
-}
-
-function Pair({ label, value }: { label: string; value: string | null }) {
-  return (
-    <div>
-      <div className="mc-pair-label">{label}</div>
-      <div className="mc-pair-value">{value || "—"}</div>
-    </div>
   );
 }
 

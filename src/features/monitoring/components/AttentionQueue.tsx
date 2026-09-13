@@ -7,6 +7,7 @@ import { motion } from "motion/react";
 import { useAttentionQueue } from "../hooks/useMonitoring";
 import { readingAge } from "../types";
 import { RiskBadge } from "./RiskBadge";
+import { EmptyState } from "@/shared/ui/EmptyState";
 
 interface Props {
   /** The dashboard shows a short list; the full page shows everything. */
@@ -39,31 +40,24 @@ export function AttentionQueue({ limit, level, hideMore }: Props) {
     // An error must not render as an empty queue: "nothing to review" and
     // "we could not find out" are opposite messages to a clinician.
     return (
-      <div className="mc-empty">
-        <span className="mc-empty-title">Queue unavailable</span>
-        <span className="mc-empty-text">
-          The attention queue could not be loaded, so this is not a statement
-          that no patient needs review. Refresh to try again.
-        </span>
-      </div>
+      <EmptyState
+        title="Queue unavailable"
+        text="The attention queue could not be loaded, so this is not a statement that no patient needs review. Refresh to try again."
+      />
     );
   }
 
   if (rows.length === 0) {
     return (
-      <div className="mc-empty">
-        <span className="mc-empty-icon">
-          <Activity size={20} strokeWidth={1.9} aria-hidden />
-        </span>
-        <span className="mc-empty-title">
-          {level ? "None at this level" : "Nothing to review"}
-        </span>
-        <span className="mc-empty-text">
-          {level
+      <EmptyState
+        icon={<Activity size={20} strokeWidth={1.9} aria-hidden />}
+        title={level ? "None at this level" : "Nothing to review"}
+        text={
+          level
             ? "No patient is currently at this severity. Others may still need attention — check the other tabs."
-            : "No monitored patient is currently outside range. Patients appear here the moment a reading crosses a clinical threshold — or stops arriving."}
-        </span>
-      </div>
+            : "No monitored patient is currently outside range. Patients appear here the moment a reading crosses a clinical threshold — or stops arriving."
+        }
+      />
     );
   }
 

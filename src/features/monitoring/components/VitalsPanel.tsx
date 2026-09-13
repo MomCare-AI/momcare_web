@@ -17,6 +17,7 @@ import {
   type VitalMetric,
 } from "../types";
 import { VitalsChart } from "./VitalsChart";
+import { EmptyState } from "@/shared/ui/EmptyState";
 
 /**
  * The monitoring surface for one pregnancy.
@@ -62,13 +63,10 @@ export function VitalsPanel({ pregnancyId }: Props) {
         <div className="mc-card-head">
           <div className="mc-card-title">Vitals</div>
         </div>
-        <div className="mc-empty">
-          <span className="mc-empty-title">Readings unavailable</span>
-          <span className="mc-empty-text">
-            These could not be loaded, so this is not a statement that no vitals
-            have been recorded. Refresh to try again.
-          </span>
-        </div>
+        <EmptyState
+          title="Readings unavailable"
+          text="These could not be loaded, so this is not a statement that no vitals have been recorded. Refresh to try again."
+        />
       </section>
     );
   }
@@ -127,16 +125,11 @@ export function VitalsPanel({ pregnancyId }: Props) {
       )}
 
       {totalCount === 0 ? (
-        <div className="mc-empty">
-          <span className="mc-empty-icon">
-            <HeartPulse size={20} strokeWidth={1.9} aria-hidden />
-          </span>
-          <span className="mc-empty-title">No readings yet</span>
-          <span className="mc-empty-text">
-            Assign a monitoring band or record a reading by hand. Risk is scored
-            the moment the first vital arrives.
-          </span>
-        </div>
+        <EmptyState
+          icon={<HeartPulse size={20} strokeWidth={1.9} aria-hidden />}
+          title="No readings yet"
+          text="Assign a monitoring band or record a reading by hand. Risk is scored the moment the first vital arrives."
+        />
       ) : (
         <>
           <div className="mc-vitals-row">

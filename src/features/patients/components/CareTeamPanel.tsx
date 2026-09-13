@@ -10,6 +10,7 @@ import {
   useEndCareTeamMembership,
 } from "@/features/patients/hooks/usePatients";
 import type { CareTeamRole } from "@/features/patients/types";
+import { EmptyState } from "@/shared/ui/EmptyState";
 
 const ROLE_OPTIONS: { value: CareTeamRole; label: string }[] = [
   { value: "nurse", label: "Nurse" },
@@ -191,17 +192,15 @@ export function CareTeamPanel({
         )}
 
         {teamQuery.isSuccess && members.length === 0 && (
-          <div className="mc-empty">
-            <span className="mc-empty-icon">
-              <Users size={20} strokeWidth={1.9} aria-hidden />
-            </span>
-            <span className="mc-empty-title">No supporting members yet</span>
-            <span className="mc-empty-text">
-              {canWrite
+          <EmptyState
+            icon={<Users size={20} strokeWidth={1.9} aria-hidden />}
+            title="No supporting members yet"
+            text={
+              canWrite
                 ? "Add a nurse, co-provider or care manager to this pregnancy's team."
-                : "Nobody has been added to this pregnancy's care team yet."}
-            </span>
-          </div>
+                : "Nobody has been added to this pregnancy's care team yet."
+            }
+          />
         )}
 
         {members.length > 0 && (

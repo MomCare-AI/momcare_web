@@ -22,6 +22,9 @@ import {
   type DashboardActivity,
   type DashboardRisk,
 } from "@/features/portal/hooks/usePortalData";
+import { Card, CardBody, CardHeader } from "@/shared/ui/Card";
+import { EmptyState } from "@/shared/ui/EmptyState";
+import { Pair } from "@/shared/ui/Pair";
 import { usePortal } from "./layout";
 import { usePageTitle } from "@/hooks/usePageTitle";
 
@@ -200,7 +203,7 @@ export default function OverviewPage() {
         >
           <div className="mc-kpi-top">
             <span className="mc-kpi-label">Patients</span>
-            <span className="mc-kpi-icon mc-kpi-icon-teal">
+            <span className="mc-kpi-icon mc-kpi-icon-brand">
               <Users size={17} strokeWidth={1.9} aria-hidden />
             </span>
           </div>
@@ -252,8 +255,8 @@ export default function OverviewPage() {
         {/* Leads the stack: this is the one section with a next action
             (open a patient), so it comes before the two that only
             summarize — same reasoning as the KPI reorder above. */}
-        <section className="mc-card mc-lift">
-          <div className="mc-card-head">
+        <Card className="mc-lift">
+          <CardHeader>
             <div className="mc-section-head">
               <span
                 className={`mc-section-icon mc-kpi-icon-attn${
@@ -276,14 +279,14 @@ export default function OverviewPage() {
                 {attentionCount}
               </span>
             ) : null}
-          </div>
+          </CardHeader>
           <AttentionQueue limit={5} />
-        </section>
+        </Card>
 
-        <section className="mc-card">
-          <div className="mc-card-head">
+        <Card>
+          <CardHeader>
             <div className="mc-section-head">
-              <span className="mc-section-icon mc-kpi-icon-teal">
+              <span className="mc-section-icon mc-kpi-icon-brand">
                 <HeartPulse size={17} strokeWidth={1.9} aria-hidden />
               </span>
               <div>
@@ -293,33 +296,25 @@ export default function OverviewPage() {
                 </div>
               </div>
             </div>
-          </div>
+          </CardHeader>
 
           {summary.isError && (
-            <div className="mc-empty">
-              <span className="mc-empty-title">Overview unavailable</span>
-              <span className="mc-empty-text">
-                This is not a statement that no patient needs review — the
-                summary could not be loaded. Refresh to try again.
-              </span>
-            </div>
+            <EmptyState
+              title="Overview unavailable"
+              text="This is not a statement that no patient needs review — the summary could not be loaded. Refresh to try again."
+            />
           )}
 
           {summary.isSuccess && summary.data.risk.total === 0 && (
-            <div className="mc-empty">
-              <span className="mc-empty-icon">
-                <HeartPulse size={20} strokeWidth={1.9} aria-hidden />
-              </span>
-              <span className="mc-empty-title">No health data yet</span>
-              <span className="mc-empty-text">
-                A breakdown by risk level will appear here once patients are
-                enrolled and their readings begin arriving.
-              </span>
-            </div>
+            <EmptyState
+              icon={<HeartPulse size={20} strokeWidth={1.9} aria-hidden />}
+              title="No health data yet"
+              text="A breakdown by risk level will appear here once patients are enrolled and their readings begin arriving."
+            />
           )}
 
           {summary.isSuccess && summary.data.risk.total > 0 && (
-            <div className="mc-card-body">
+            <CardBody>
               <div className="mc-donut-wrap">
                 <motion.div
                   className="mc-donut"
@@ -392,9 +387,9 @@ export default function OverviewPage() {
                   <ChevronRight size={14} strokeWidth={2.2} aria-hidden />
                 </Link>
               )}
-            </div>
+            </CardBody>
           )}
-        </section>
+        </Card>
 
         {/* A compact banner, not a full card: this is the same static
             sentence for every hospital on every load, so it shouldn't
@@ -422,8 +417,8 @@ export default function OverviewPage() {
         </div>
 
         {isHospitalAdmin && (
-          <section className="mc-card">
-            <div className="mc-card-head">
+          <Card>
+            <CardHeader>
               <div className="mc-section-head">
                 <span className="mc-section-icon mc-kpi-icon-neutral">
                   <Clock size={17} strokeWidth={1.9} aria-hidden />
@@ -435,8 +430,8 @@ export default function OverviewPage() {
                   </div>
                 </div>
               </div>
-            </div>
-            <div className="mc-card-body">
+            </CardHeader>
+            <CardBody>
               {summary.isSuccess && meaningfulActivity.length === 0 && (
                 <div className="mc-hint">No changes recorded yet.</div>
               )}
@@ -459,36 +454,31 @@ export default function OverviewPage() {
                   ))}
                 </ol>
               )}
-            </div>
-          </section>
+            </CardBody>
+          </Card>
         )}
       </div>
 
       {!hasStaff && isHospitalAdmin && (
-        <section className="mc-card" style={{ marginBottom: 18 }}>
-          <div className="mc-empty">
-            <span className="mc-empty-icon">
-              <Stethoscope size={20} strokeWidth={1.9} aria-hidden />
-            </span>
-            <span className="mc-empty-title">No doctors yet</span>
-            <span className="mc-empty-text">
-              Your clinical team hasn&apos;t been added. Invite doctors, nurses
-              and care managers to start running your hospital on MomCare.
-            </span>
-            <span className="mc-empty-actions">
+        <Card style={{ marginBottom: 18 }}>
+          <EmptyState
+            icon={<Stethoscope size={20} strokeWidth={1.9} aria-hidden />}
+            title="No doctors yet"
+            text="Your clinical team hasn't been added. Invite doctors, nurses and care managers to start running your hospital on MomCare."
+            actions={
               <Link href="/dashboard/staff" className="mc-btn">
                 <UserPlus size={15} strokeWidth={2} aria-hidden />
                 Add staff
               </Link>
-            </span>
-          </div>
-        </section>
+            }
+          />
+        </Card>
       )}
 
-      <section className="mc-card">
-        <div className="mc-card-head">
+      <Card>
+        <CardHeader>
           <div className="mc-section-head">
-            <span className="mc-section-icon mc-kpi-icon-teal">
+            <span className="mc-section-icon mc-kpi-icon-brand">
               <Building2 size={17} strokeWidth={1.9} aria-hidden />
             </span>
             <div>
@@ -502,8 +492,8 @@ export default function OverviewPage() {
             <Building2 size={12} strokeWidth={2.2} aria-hidden />
             {org.license_authority_display || "Authority not recorded"}
           </span>
-        </div>
-        <div className="mc-card-body">
+        </CardHeader>
+        <CardBody>
           <div className="mc-pairs">
             <Pair label="Hospital" value={org.name} />
             <Pair label="Administrator" value={org.owner_name} />
@@ -528,7 +518,7 @@ export default function OverviewPage() {
                 clinical rules instead, and should be able to see that. */}
             <Pair label="Risk model region" value={org.region_display} />
           </div>
-        </div>
+        </CardBody>
         {hasPatients && (
           <div className="mc-card-foot">
             <span className="mc-link">
@@ -537,16 +527,7 @@ export default function OverviewPage() {
             </span>
           </div>
         )}
-      </section>
+      </Card>
     </>
-  );
-}
-
-function Pair({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <div className="mc-pair-label">{label}</div>
-      <div className="mc-pair-value">{value || "—"}</div>
-    </div>
   );
 }

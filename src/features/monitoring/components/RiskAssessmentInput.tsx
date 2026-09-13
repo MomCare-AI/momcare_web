@@ -14,6 +14,7 @@ import {
   type RiskAssessment,
 } from "../types";
 import { RiskBadge } from "./RiskBadge";
+import { Pair } from "@/shared/ui/Pair";
 
 interface Props {
   pregnancyId: string;
@@ -201,15 +202,6 @@ function ScoreResult({ assessment }: { assessment: RiskAssessment }) {
           diagnosis, and always reviewed by a clinician.
         </p>
       </div>
-    </div>
-  );
-}
-
-function Pair({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <div className="mc-pair-label">{label}</div>
-      <div className="mc-pair-value">{value}</div>
     </div>
   );
 }
