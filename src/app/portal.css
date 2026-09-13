@@ -55,6 +55,38 @@
   box-sizing: border-box;
 }
 
+/* The page's own scroll uses the OS's default scrollbar otherwise — thick,
+   opaque, and the one visibly dated thing left on an otherwise deliberate
+   surface. This file only loads on portal routes (Next scopes a nested
+   layout's CSS to its own subtree), so it can target html/body directly
+   without touching the marketing site's scrollbar. Values are the portal's
+   own --c-border/--c-ground, hardcoded because custom properties don't
+   cascade upward from .mc-portal to its html/body ancestors. Matches the
+   sidebar's own scrollbar-width: thin, just for the rest of the page. */
+html,
+body {
+  scrollbar-width: thin;
+  scrollbar-color: #e2ebe9 transparent;
+}
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  width: 10px;
+}
+html::-webkit-scrollbar-track,
+body::-webkit-scrollbar-track {
+  background: transparent;
+}
+html::-webkit-scrollbar-thumb,
+body::-webkit-scrollbar-thumb {
+  background: #e2ebe9;
+  border-radius: 999px;
+  border: 2px solid #f6f9f9;
+}
+html::-webkit-scrollbar-thumb:hover,
+body::-webkit-scrollbar-thumb:hover {
+  background: #677783;
+}
+
 /* ── App shell: sidebar + content ────────────────────────────────────────
    .mc-portal is a row: a fixed-width sidebar column, then everything else.
    The sidebar is a real flex child, not an overlay — content reflows beside
