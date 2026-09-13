@@ -24,8 +24,10 @@ import {
   SessionExpiredError,
 } from "@/core/api/authFetch";
 import { clearQueryCache } from "@/core/query/queryClient";
+import { useAttentionQueue } from "@/features/monitoring/hooks/useMonitoring";
 import {
   useCurrentUser,
+  useDashboardSummary,
   useOrganization,
   useRefreshPortal,
   type CurrentUser,
@@ -159,6 +161,21 @@ function readStoredCollapsed(): boolean {
   }
 }
 
+/**
+ * Starts the Overview page's own data as soon as the shell mounts, instead
+ * of waiting for org/user to resolve and page.tsx to mount before either
+ * request even begins — the two waterfalls were fully sequential otherwise.
+ * React Query dedupes by query key, so Overview's own hooks just subscribe
+ * to whatever this already kicked off rather than firing a second request.
+ * Mounted only for the Overview route so other dashboard pages don't pay
+ * for data they never use.
+ */
+function OverviewPrefetch() {
+  useAttentionQueue();
+  useDashboardSummary();
+  return null;
+}
+
 export default function DashboardLayout({
   children,
 }: {
@@ -263,6 +280,7 @@ export default function DashboardLayout({
   if (!org || !user) {
     return (
       <div className="mc-portal">
+        {pathname === "/dashboard" && <OverviewPrefetch />}
         <div className="mc-loading">Loading your hospital…</div>
       </div>
     );
