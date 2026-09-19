@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import dynamic from "next/dynamic";
@@ -215,6 +215,33 @@ export function LandingPageClient() {
     });
   }, []);
 
+  // ── Nav anchor scroll: several sections below the fold (EngineShowcase,
+  // FaqCarousel, OurTeam, ...) are next/dynamic-loaded with a skeleton
+  // fallback. A plain <a href="#id"> resolves its scroll target once,
+  // synchronously, at click time — if that section's chunk hasn't finished
+  // mounting yet, the browser can't find the element, silently does
+  // nothing, and only the URL hash changes. This retries for up to ~1s
+  // (60 animation frames) so a click shortly after page load still lands
+  // on the right section once it mounts, instead of going nowhere.
+  const handleNavClick = useCallback((id: string) => {
+    return (e: React.MouseEvent<HTMLAnchorElement>) => {
+      e.preventDefault();
+      let attempts = 0;
+      const tryScroll = () => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "start" });
+          history.replaceState(null, "", `#${id}`);
+          return;
+        }
+        if (attempts++ < 60) {
+          requestAnimationFrame(tryScroll);
+        }
+      };
+      tryScroll();
+    };
+  }, []);
+
   return (
     <main className="landing">
       {/* ── Nav: a floating pill ────────────────────────────────── */}
@@ -248,30 +275,35 @@ export function LandingPageClient() {
           <div className="nav-links">
             <a
               href="#about"
+              onClick={handleNavClick("about")}
               className={`nav-link${activeSection === "about" ? " active" : ""}`}
             >
               About
             </a>
             <a
               href="#engine"
+              onClick={handleNavClick("engine")}
               className={`nav-link${activeSection === "engine" ? " active" : ""}`}
             >
               How it works
             </a>
             <a
               href="#built"
+              onClick={handleNavClick("built")}
               className={`nav-link${activeSection === "built" ? " active" : ""}`}
             >
               Team
             </a>
             <a
               href="#faq"
+              onClick={handleNavClick("faq")}
               className={`nav-link${activeSection === "faq" ? " active" : ""}`}
             >
               FAQ
             </a>
             <a
               href="#cta"
+              onClick={handleNavClick("cta")}
               className={`nav-link${activeSection === "cta" ? " active" : ""}`}
             >
               Contact
@@ -312,35 +344,50 @@ export function LandingPageClient() {
               <a
                 href="#about"
                 className={`nav-mobile-link${activeSection === "about" ? " active" : ""}`}
-                onClick={() => setMobileMenuOpen(false)}
+                onClick={(e) => {
+                  handleNavClick("about")(e);
+                  setMobileMenuOpen(false);
+                }}
               >
                 About
               </a>
               <a
                 href="#engine"
                 className={`nav-mobile-link${activeSection === "engine" ? " active" : ""}`}
-                onClick={() => setMobileMenuOpen(false)}
+                onClick={(e) => {
+                  handleNavClick("engine")(e);
+                  setMobileMenuOpen(false);
+                }}
               >
                 How it works
               </a>
               <a
                 href="#built"
                 className={`nav-mobile-link${activeSection === "built" ? " active" : ""}`}
-                onClick={() => setMobileMenuOpen(false)}
+                onClick={(e) => {
+                  handleNavClick("built")(e);
+                  setMobileMenuOpen(false);
+                }}
               >
                 Team
               </a>
               <a
                 href="#faq"
                 className={`nav-mobile-link${activeSection === "faq" ? " active" : ""}`}
-                onClick={() => setMobileMenuOpen(false)}
+                onClick={(e) => {
+                  handleNavClick("faq")(e);
+                  setMobileMenuOpen(false);
+                }}
               >
                 FAQ
               </a>
               <a
                 href="#cta"
                 className={`nav-mobile-link${activeSection === "cta" ? " active" : ""}`}
-                onClick={() => setMobileMenuOpen(false)}
+                onClick={(e) => {
+                  handleNavClick("cta")(e);
+                  setMobileMenuOpen(false);
+                }}
               >
                 Contact
               </a>
