@@ -6,10 +6,13 @@ import {
   BellRing,
   CheckCircle2,
   Clock,
+  Download,
   Mail,
   Stethoscope,
   UserPlus,
   Users,
+  UserX,
+  Wifi,
 } from "lucide-react";
 
 import { useAlerts } from "@/features/alerts/hooks/useAlerts";
@@ -32,8 +35,47 @@ import {
   aggregateStaffByRole,
   aggregateWorklistGaps,
 } from "@/features/reports/lib/aggregate";
+import { downloadCsv, toCsv, type CsvColumn } from "@/shared/lib/exportCsv";
 import { usePortal } from "../layout";
 import { usePageTitle } from "@/hooks/usePageTitle";
+
+/** Today's date as YYYYMMDD, for a filename that sorts and doesn't collide. */
+function exportDateStamp(): string {
+  return new Date().toISOString().slice(0, 10).replace(/-/g, "");
+}
+
+function ExportButton<T>({
+  rows,
+  columns,
+  filename,
+}: {
+  rows: T[];
+  columns: CsvColumn<T>[];
+  filename: string;
+}) {
+  return (
+    <button
+      type="button"
+      className="mc-btn-ghost"
+      disabled={rows.length === 0}
+      onClick={() =>
+        downloadCsv(
+          `${filename}-${exportDateStamp()}.csv`,
+          toCsv(rows, columns)
+        )
+      }
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6,
+        marginLeft: "auto",
+      }}
+    >
+      <Download size={15} strokeWidth={1.9} aria-hidden />
+      Export CSV
+    </button>
+  );
+}
 
 type Tab = "clinical" | "care-team" | "alerts";
 
@@ -46,7 +88,7 @@ function formatMinutes(minutes: number | null): string {
 }
 
 export default function ReportsPage() {
-  usePageTitle("Reports");
+  usePageTitle("Executive Dashboard");
   const { isHospitalAdmin } = usePortal();
   const [tab, setTab] = useState<Tab>("clinical");
 
@@ -54,7 +96,7 @@ export default function ReportsPage() {
     <>
       <div className="mc-head">
         <div>
-          <h1 className="mc-h1">Reports</h1>
+          <h1 className="mc-h1">Executive Dashboard</h1>
           <p className="mc-sub">Hospital-wide operational overview</p>
         </div>
       </div>
@@ -113,6 +155,9 @@ function ClinicalOverviewTab() {
     );
   }).length;
   const active = patients.filter((p) => p.is_active).length;
+  const inactive = patients.length - active;
+  const devices = devicesQuery.data ?? [];
+  const connectedDevices = devices.filter((d) => d.is_assigned).length;
 
   const trend = useMemo(() => aggregateEnrollmentTrend(patients), [patients]);
   const statusSlices = useMemo(
@@ -157,6 +202,23 @@ function ClinicalOverviewTab() {
 
   return (
     <>
+      <div style={{ display: "flex", marginBottom: 14 }}>
+        <ExportButton
+          rows={patients}
+          filename="clinical-overview"
+          columns={[
+            { header: "MRN", value: (p) => p.mrn ?? "" },
+            { header: "Full name", value: (p) => p.full_name },
+            { header: "Enrolled", value: (p) => p.created_at },
+            { header: "Active", value: (p) => (p.is_active ? "yes" : "no") },
+            {
+              header: "Pregnancy status",
+              value: (p) => p.pregnancy_status ?? "",
+            },
+            { header: "Risk level", value: (p) => p.risk_level ?? "" },
+          ]}
+        />
+      </div>
       <section className="mc-kpis">
         <div className="mc-kpi">
           <div className="mc-kpi-top">
@@ -176,9 +238,17 @@ function ClinicalOverviewTab() {
             </span>
           </div>
           <span className="mc-kpi-value">{active}</span>
-          <span className="mc-kpi-foot">
-            {patients.length - active} inactive
-          </span>
+          <span className="mc-kpi-foot">At this hospital</span>
+        </div>
+        <div className="mc-kpi">
+          <div className="mc-kpi-top">
+            <span className="mc-kpi-label">Inactive</span>
+            <span className="mc-kpi-icon mc-kpi-icon-neutral">
+              <UserX size={17} strokeWidth={1.9} aria-hidden />
+            </span>
+          </div>
+          <span className="mc-kpi-value">{inactive}</span>
+          <span className="mc-kpi-foot">No longer under care</span>
         </div>
         <div className="mc-kpi">
           <div className="mc-kpi-top">
@@ -189,6 +259,18 @@ function ClinicalOverviewTab() {
           </div>
           <span className="mc-kpi-value">{newThisMonth}</span>
           <span className="mc-kpi-foot">Enrolled since the 1st</span>
+        </div>
+        <div className="mc-kpi">
+          <div className="mc-kpi-top">
+            <span className="mc-kpi-label">Connected devices</span>
+            <span className="mc-kpi-icon mc-kpi-icon-stable">
+              <Wifi size={17} strokeWidth={1.9} aria-hidden />
+            </span>
+          </div>
+          <span className="mc-kpi-value">{connectedDevices}</span>
+          <span className="mc-kpi-foot">
+            of {devices.length} device{devices.length === 1 ? "" : "s"} total
+          </span>
         </div>
       </section>
 
@@ -291,6 +373,26 @@ function CareTeamTab({ isHospitalAdmin }: { isHospitalAdmin: boolean }) {
 
   return (
     <>
+      <div style={{ display: "flex", marginBottom: 14 }}>
+        <ExportButton
+          rows={staff}
+          filename="care-team"
+          columns={[
+            { header: "Employee ID", value: (m) => m.employee_id },
+            { header: "Full name", value: (m) => m.full_name },
+            { header: "Role", value: (m) => m.role_name },
+            { header: "Specialty", value: (m) => m.specialty },
+            {
+              header: "Years of experience",
+              value: (m) => m.years_of_experience ?? "",
+            },
+            {
+              header: "Active",
+              value: (m) => (m.is_active && m.is_user_active ? "yes" : "no"),
+            },
+          ]}
+        />
+      </div>
       <section className="mc-kpis">
         <div className="mc-kpi">
           <div className="mc-kpi-top">
@@ -391,6 +493,25 @@ function AlertsTab() {
 
   return (
     <>
+      <div style={{ display: "flex", marginBottom: 14 }}>
+        <ExportButton
+          rows={live}
+          filename="live-alerts"
+          columns={[
+            { header: "Patient", value: (a) => a.patient_name },
+            { header: "MRN", value: (a) => a.mrn },
+            { header: "Level", value: (a) => a.level },
+            { header: "Tier", value: (a) => a.tier_label },
+            { header: "Status", value: (a) => a.status_display },
+            { header: "Raised", value: (a) => a.raised_at },
+            { header: "Acknowledged", value: (a) => a.acknowledged_at },
+            {
+              header: "Assigned staff",
+              value: (a) => a.assigned_staff_name,
+            },
+          ]}
+        />
+      </div>
       <section className="mc-kpis">
         <div className="mc-kpi">
           <div className="mc-kpi-top">
