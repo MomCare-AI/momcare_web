@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import { usePathname } from "next/navigation";
 import {
   Activity,
+  BarChart3,
   BellRing,
   Building2,
   LayoutDashboard,
@@ -103,6 +104,7 @@ const NAV: NavItem[] = [
   },
   { href: "/dashboard/alerts", label: "Alerts", Icon: BellRing },
   { href: "/dashboard/devices", label: "Devices", Icon: Watch },
+  { href: "/dashboard/reports", label: "Reports", Icon: BarChart3 },
   { href: "/dashboard/patients", label: "Patients", Icon: Users },
   { href: "/dashboard/staff", label: "Doctors & Staff", Icon: Stethoscope },
   {

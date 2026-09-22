@@ -42,11 +42,20 @@ export interface EnrolmentInput {
 }
 
 export function listPatients(
-  params: { search?: string; page?: number; assignedToMe?: boolean } = {}
+  params: {
+    search?: string;
+    page?: number;
+    assignedToMe?: boolean;
+    /** Capped at 100 server-side (DefaultPagination.max_page_size) — used by
+     *  Reports to pull the whole hospital in a handful of pages rather than
+     *  the default 25/page. */
+    pageSize?: number;
+  } = {}
 ) {
   const query = new URLSearchParams();
   if (params.search) query.set("search", params.search);
   if (params.page && params.page > 1) query.set("page", String(params.page));
+  if (params.pageSize) query.set("page_size", String(params.pageSize));
   // Backed by CareTeamMembership + Pregnancy.assigned_staff on the server —
   // see core/patients/api/views.py:_scope_to_assigned. hospital_admin gets an
   // honest empty list for this param, so it's never sent for that role.
