@@ -336,6 +336,19 @@ function AlertTrail({ alert }: { alert: Alert }) {
             >
               Resolve — handled
             </button>
+            <button
+              type="button"
+              className="mc-btn mc-btn-ghost mc-btn-sm"
+              disabled={busy}
+              onClick={() =>
+                resolve.mutate({
+                  alertId: alert.id,
+                  resolution: "pregnancy_ended",
+                })
+              }
+            >
+              Resolve — pregnancy ended
+            </button>
           </>
         )}
       </div>
