@@ -3,28 +3,25 @@
 import Image from "next/image";
 import { motion } from "motion/react";
 
-// A real photo where we have one, an initials avatar where we don't — never
-// an unrelated stock photo captioned with a real teammate's name.
+// Real photos only — never an unrelated stock photo captioned with a real
+// teammate's name.
 const TEAM = [
   {
     name: "Zaka Ullah Waheed",
     role: "Full-Stack Developer",
     photo: "/team/Zaka.png",
-    color: "var(--primary)",
     offset: "md:mt-0",
   },
   {
     name: "Ahmed Nawaz",
     role: "AI/ML Expert",
     photo: "/team/Ahmed.png",
-    color: "var(--coral)",
     offset: "md:mt-16",
   },
   {
     name: "Saleha Aftab Satti",
     role: "Mobile App Developer",
-    initial: "S",
-    color: "var(--text)",
+    photo: "/team/Saleha.png",
     offset: "md:mt-0",
   },
 ] as const;
@@ -114,25 +111,16 @@ export function OurTeam() {
 
             <Connector flip={i % 2 === 1} />
 
-            {"photo" in person ? (
-              <div className="w-32 h-32 rounded-full overflow-hidden ring-4 ring-white shadow-lg">
-                <Image
-                  src={person.photo}
-                  alt={person.name}
-                  width={160}
-                  height={160}
-                  className="w-full h-full object-cover"
-                  style={{ objectPosition: "center 12%" }}
-                />
-              </div>
-            ) : (
-              <div
-                className="w-32 h-32 rounded-full flex items-center justify-center text-3xl font-bold text-white ring-4 ring-white shadow-lg"
-                style={{ background: person.color }}
-              >
-                {person.initial}
-              </div>
-            )}
+            <div className="w-32 h-32 rounded-full overflow-hidden ring-4 ring-white shadow-lg">
+              <Image
+                src={person.photo}
+                alt={person.name}
+                width={160}
+                height={160}
+                className="w-full h-full object-cover"
+                style={{ objectPosition: "center 12%" }}
+              />
+            </div>
           </motion.div>
         ))}
       </div>

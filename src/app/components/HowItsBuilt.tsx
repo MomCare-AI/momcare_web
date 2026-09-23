@@ -134,6 +134,11 @@ export function HowItsBuilt() {
               <AvatarFallback>Z</AvatarFallback>
             </Avatar>
             <Avatar className="size-11 ring-2 ring-white">
+              <AvatarImage
+                src="/team/Ahmed.png"
+                alt="Ahmed Nawaz"
+                className="object-cover"
+              />
               <AvatarFallback
                 style={{ background: "var(--coral)", color: "#fff" }}
               >
@@ -141,6 +146,11 @@ export function HowItsBuilt() {
               </AvatarFallback>
             </Avatar>
             <Avatar className="size-11 ring-2 ring-white">
+              <AvatarImage
+                src="/team/Saleha.png"
+                alt="Saleha Aftab Satti"
+                className="object-cover"
+              />
               <AvatarFallback
                 style={{ background: "var(--text)", color: "#fff" }}
               >

@@ -630,6 +630,11 @@ export function LandingPageClient() {
                 </AvatarGroupTooltip>
               </Avatar>
               <Avatar className="size-11 ring-2 ring-white/25">
+                <AvatarImage
+                  src="/team/Saleha.png"
+                  alt="Saleha Aftab Satti"
+                  className="object-cover"
+                />
                 <AvatarFallback
                   style={{ background: "#fff", color: "var(--primary-dark)" }}
                 >
