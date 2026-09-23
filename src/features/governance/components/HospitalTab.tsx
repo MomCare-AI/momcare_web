@@ -4,11 +4,10 @@ import { useState } from "react";
 import Image from "next/image";
 import { Building2, MapPin, ShieldCheck } from "lucide-react";
 
-import { usePortal } from "../layout";
+import { usePortal } from "@/app/(portal)/dashboard/layout";
 import { useUpdateOrganizationPhoto } from "@/features/portal/hooks/usePortalData";
 import { Card, CardBody, CardHeader } from "@/shared/ui/Card";
 import { Pair } from "@/shared/ui/Pair";
-import { usePageTitle } from "@/hooks/usePageTitle";
 
 /**
  * The hospital's own record — what was submitted at onboarding and what the
@@ -20,8 +19,7 @@ import { usePageTitle } from "@/hooks/usePageTitle";
  * a platform administrator, the same as the original review did.
  */
 
-export default function HospitalPage() {
-  usePageTitle("Hospital");
+export function HospitalTab() {
   const { org, isHospitalAdmin } = usePortal();
   const updatePhoto = useUpdateOrganizationPhoto();
   const [previewError, setPreviewError] = useState<string | null>(null);
@@ -57,11 +55,7 @@ export default function HospitalPage() {
     <>
       <div className="mc-head">
         <div>
-          <h1 className="mc-h1">{org.name}</h1>
-          <p className="mc-sub">
-            What this hospital submitted at onboarding, and what the platform
-            derived from it.
-          </p>
+          <p className="mc-sub">{org.name}</p>
         </div>
         <div className="mc-head-aside">
           <span

@@ -13,7 +13,7 @@ import {
   UserPlus,
   X,
 } from "lucide-react";
-import { usePortal } from "../layout";
+import { usePortal } from "@/app/(portal)/dashboard/layout";
 import { SessionExpiredError } from "@/core/api/authFetch";
 import { Card, CardBody, CardHeader } from "@/shared/ui/Card";
 import { EmptyState } from "@/shared/ui/EmptyState";
@@ -26,7 +26,6 @@ import {
   useStaffList,
 } from "@/features/staff/hooks/useStaff";
 import { StaffCredentialsPanel } from "@/features/staff/components/StaffCredentialsPanel";
-import { usePageTitle } from "@/hooks/usePageTitle";
 
 const ROLES = [
   { code: "provider", label: "Doctor / Provider" },
@@ -42,8 +41,7 @@ const EMPTY_FORM = {
   role_code: "provider",
 };
 
-export default function StaffPage() {
-  usePageTitle("Doctors & Staff");
+export function StaffTab() {
   const { isHospitalAdmin, user, refresh } = usePortal();
   const router = useRouter();
 
@@ -127,7 +125,6 @@ export default function StaffPage() {
     <>
       <div className="mc-head">
         <div>
-          <h1 className="mc-h1">Doctors &amp; staff</h1>
           <p className="mc-sub">
             {staff.length} {staff.length === 1 ? "person" : "people"} on your
             clinical team

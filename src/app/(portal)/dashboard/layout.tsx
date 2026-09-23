@@ -13,9 +13,8 @@ import {
   Activity,
   BarChart3,
   BellRing,
-  Building2,
   LayoutDashboard,
-  Stethoscope,
+  ShieldCheck,
   Users,
   Watch,
 } from "lucide-react";
@@ -110,12 +109,10 @@ const NAV: NavItem[] = [
     Icon: BarChart3,
   },
   { href: "/dashboard/patients", label: "Patients", Icon: Users },
-  { href: "/dashboard/staff", label: "Doctors & Staff", Icon: Stethoscope },
   {
-    href: "/dashboard/hospital",
-    label: "Hospital",
-    Icon: Building2,
-    adminOnly: true,
+    href: "/dashboard/governance",
+    label: "System Governance",
+    Icon: ShieldCheck,
   },
 ];
 

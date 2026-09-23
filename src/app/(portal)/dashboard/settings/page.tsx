@@ -175,8 +175,8 @@ export default function SettingsPage() {
                 Professional details
               </h2>
               <p className="mc-card-sub">
-                Shown on your profile in Doctors &amp; Staff — self-reported,
-                not independently verified.
+                Shown on your profile in System Governance — self-reported, not
+                independently verified.
               </p>
             </div>
           </CardHeader>

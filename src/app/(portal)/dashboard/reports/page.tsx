@@ -457,7 +457,7 @@ function CareTeamTab({ isHospitalAdmin }: { isHospitalAdmin: boolean }) {
             <EmptyState
               icon={<Stethoscope size={20} strokeWidth={1.9} aria-hidden />}
               title="No staff yet"
-              text="Invite doctors, nurses and care managers from Doctors & Staff."
+              text="Invite doctors, nurses and care managers from System Governance."
             />
           ) : (
             <CareTeamRoster staff={staff} />

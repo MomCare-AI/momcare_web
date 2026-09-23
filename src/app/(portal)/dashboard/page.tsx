@@ -216,7 +216,7 @@ export default function OverviewPage() {
         </MotionLink>
 
         <MotionLink
-          href="/dashboard/staff"
+          href="/dashboard/governance"
           className="mc-kpi"
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
@@ -241,7 +241,7 @@ export default function OverviewPage() {
             <UserPlus size={15} strokeWidth={2} aria-hidden />
             Enrol patient
           </Link>
-          <Link href="/dashboard/staff" className="mc-btn-ghost">
+          <Link href="/dashboard/governance" className="mc-btn-ghost">
             Invite staff
           </Link>
           <span className="mc-badge mc-badge-neutral">
@@ -466,7 +466,7 @@ export default function OverviewPage() {
             title="No doctors yet"
             text="Your clinical team hasn't been added. Invite doctors, nurses and care managers to start running your hospital on MomCare."
             actions={
-              <Link href="/dashboard/staff" className="mc-btn">
+              <Link href="/dashboard/governance" className="mc-btn">
                 <UserPlus size={15} strokeWidth={2} aria-hidden />
                 Add staff
               </Link>

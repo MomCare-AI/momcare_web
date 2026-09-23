@@ -495,8 +495,8 @@ export default function EnrolPatientPage() {
                   style={{ marginTop: 16, marginBottom: 0 }}
                 >
                   <AlertTriangle size={15} strokeWidth={2} aria-hidden />
-                  No clinical staff have joined yet. Invite doctors from Doctors
-                  &amp; Staff, then assign one to this pregnancy.
+                  No clinical staff have joined yet. Invite doctors from System
+                  Governance, then assign one to this pregnancy.
                 </p>
               )}
             </div>
