@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 
 import { API_BASE } from "@/core/api/apiBase";
-import { PulseField } from "../../../../login/PulseField";
 import styles from "../../../../login/login.module.css";
 
 /**
@@ -136,28 +136,48 @@ export function ResetPasswordPageClient({
   return (
     <div className={styles.page}>
       <section className={styles.field}>
-        <PulseField />
+        <Image
+          src="/images/hero-prenatal-checkup.jpg"
+          alt=""
+          fill
+          priority
+          sizes="(max-width: 900px) 100vw, 40vw"
+          className="object-cover"
+        />
+        <div className="absolute inset-0 bg-blue-900/85" />
 
-        <div className={styles.mark}>
-          <span className={styles.markName}>MomCare</span>
-          <span className={styles.markRule} />
-          <span className={styles.markKind}>Remote Patient Monitoring</span>
-        </div>
+        <div className="relative z-10 flex h-full flex-col items-center justify-center gap-10 p-8 text-center md:p-12">
+          <Image
+            src="/avatars/logo.png"
+            alt="MomCare"
+            width={256}
+            height={171}
+            className="h-auto w-40 md:w-48"
+            priority
+          />
 
-        <p className={styles.claim}>
-          A new key, <em>only yours</em>.
-        </p>
+          <div className="flex flex-col items-center gap-8">
+            <h2 className="mb-4 max-w-[15ch] text-balance text-4xl font-bold tracking-tight text-white md:text-5xl">
+              A new key, <span className="text-blue-200">only yours</span>.
+            </h2>
 
-        <div className={styles.readout}>
-          <span>
-            <b>Signed out</b>Everywhere else
-          </span>
-          <span>
-            <b>Single use</b>This link ends here
-          </span>
-          <span>
-            <b>Eight or more</b>Characters, not a word
-          </span>
+            <div className="grid grid-cols-3 gap-4 border-t border-white/15 pt-6">
+              {[
+                { k: "Signed out", v: "Everywhere else" },
+                { k: "Single use", v: "This link ends here" },
+                { k: "Eight or more", v: "Characters, not a word" },
+              ].map((item) => (
+                <div key={item.k} className="flex flex-col gap-1">
+                  <span className="text-[11px] font-bold uppercase tracking-wide text-white">
+                    {item.k}
+                  </span>
+                  <span className="text-[10.5px] leading-tight text-blue-100">
+                    {item.v}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 

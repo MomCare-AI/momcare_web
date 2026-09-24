@@ -25,147 +25,19 @@
 
 /* ── Left: the gradient panel — full height, no floating card ────────────── */
 
+/* The photo + logo + headline inside are plain Tailwind now, matching the
+   sign-in page's own look exactly (that page moved to Tailwind and a real
+   photo when it was restyled; this module used to hold its markup too, but
+   only these two pages still read from it — the gradient-and-canvas look
+   below was never brought along to match, which is what this class fixes).
+   This rule keeps only the structural half: sizing, clipping, and a plain
+   fallback color for the instant before the photo paints. */
 .field {
   position: relative;
   flex: 1.15;
   height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(155deg, #6d85fb 0%, #4361ee 55%, #2d3fa8 100%);
   overflow: hidden;
-}
-
-/* Decorative shapes, echoing the reference without borrowing its palette. */
-.field::before {
-  content: "";
-  position: absolute;
-  top: -60px;
-  right: -60px;
-  width: 220px;
-  height: 220px;
-  border-radius: 50%;
-  background: radial-gradient(
-    circle,
-    rgba(255, 255, 255, 0.16) 0%,
-    transparent 70%
-  );
-}
-
-.field::after {
-  content: "";
-  position: absolute;
-  bottom: -80px;
-  left: -40px;
-  width: 260px;
-  height: 260px;
-  border-radius: 50%;
-  background: radial-gradient(
-    circle,
-    rgba(255, 255, 255, 0.12) 0%,
-    transparent 70%
-  );
-}
-
-.shapeDiamond {
-  position: absolute;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.14);
-}
-
-.shapeDiamond:nth-of-type(1) {
-  top: 64px;
-  left: 48px;
-  width: 30px;
-  height: 30px;
-  transform: rotate(45deg);
-}
-
-.shapeDiamond:nth-of-type(2) {
-  top: 120px;
-  right: 64px;
-  width: 18px;
-  height: 18px;
-  transform: rotate(45deg);
-  background: rgba(255, 255, 255, 0.22);
-}
-
-.shapeStar {
-  position: absolute;
-  color: rgba(255, 255, 255, 0.5);
-}
-
-.mark {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-}
-
-.markLogo {
-  width: 220px;
-  height: auto;
-}
-
-.markKind {
-  font-size: 13px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.8);
-}
-
-.claim {
-  position: relative;
-  z-index: 2;
-  max-width: 22ch;
-  margin: 40px auto 0;
-  padding: 0 44px;
-  font-size: clamp(26px, 2.8vw, 34px);
-  font-weight: 700;
-  line-height: 1.25;
-  text-align: center;
-  text-wrap: balance;
-  color: #fff;
-}
-
-.claim em {
-  font-style: normal;
-  color: #bfe9e2;
-}
-
-.readout {
-  position: absolute;
-  left: 32px;
-  right: 32px;
-  bottom: 36px;
-  z-index: 2;
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  padding-top: 18px;
-  border-top: 1px solid rgba(255, 255, 255, 0.22);
-}
-
-.readout span {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-size: 10.5px;
-  letter-spacing: 0.04em;
-  color: rgba(255, 255, 255, 0.72);
-  text-align: center;
-  flex: 1;
-}
-
-.readout b {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #fff;
+  background: #1e293b;
 }
 
 /* ── Right: the overlapping white card ──────────────────────────────────── */
@@ -358,19 +230,6 @@
     height: auto;
     min-height: 320px;
     padding: 44px 0 40px;
-  }
-
-  .markLogo {
-    width: 140px;
-  }
-
-  .claim {
-    margin-top: 20px;
-    font-size: 22px;
-  }
-
-  .readout {
-    display: none;
   }
 
   .panel {

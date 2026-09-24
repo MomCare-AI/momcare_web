@@ -1,13 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 
 import { API_BASE } from "@/core/api/apiBase";
-// The sign-in page owns this project's authentication look — the monitoring
-// field, the ink-and-paper split, fields drawn as rules rather than boxes.
-// Importing from it keeps one copy rather than a second that drifts.
-import { PulseField } from "../../login/PulseField";
 import styles from "../../login/login.module.css";
 
 export function ForgotPasswordPageClient() {
@@ -63,28 +60,48 @@ export function ForgotPasswordPageClient() {
   return (
     <div className={styles.page}>
       <section className={styles.field}>
-        <PulseField />
+        <Image
+          src="/images/hero-prenatal-checkup.jpg"
+          alt=""
+          fill
+          priority
+          sizes="(max-width: 900px) 100vw, 40vw"
+          className="object-cover"
+        />
+        <div className="absolute inset-0 bg-blue-900/85" />
 
-        <div className={styles.mark}>
-          <span className={styles.markName}>MomCare</span>
-          <span className={styles.markRule} />
-          <span className={styles.markKind}>Remote Patient Monitoring</span>
-        </div>
+        <div className="relative z-10 flex h-full flex-col items-center justify-center gap-10 p-8 text-center md:p-12">
+          <Image
+            src="/avatars/logo.png"
+            alt="MomCare"
+            width={256}
+            height={171}
+            className="h-auto w-40 md:w-48"
+            priority
+          />
 
-        <p className={styles.claim}>
-          Back in, <em>safely</em>.
-        </p>
+          <div className="flex flex-col items-center gap-8">
+            <h2 className="mb-4 max-w-[15ch] text-balance text-4xl font-bold tracking-tight text-white md:text-5xl">
+              Back in, <span className="text-blue-200">safely</span>.
+            </h2>
 
-        <div className={styles.readout}>
-          <span>
-            <b>One hour</b>Before the link expires
-          </span>
-          <span>
-            <b>Once</b>Then it stops working
-          </span>
-          <span>
-            <b>Your inbox</b>And nowhere else
-          </span>
+            <div className="grid grid-cols-3 gap-4 border-t border-white/15 pt-6">
+              {[
+                { k: "One hour", v: "Before the link expires" },
+                { k: "Once", v: "Then it stops working" },
+                { k: "Your inbox", v: "And nowhere else" },
+              ].map((item) => (
+                <div key={item.k} className="flex flex-col gap-1">
+                  <span className="text-[11px] font-bold uppercase tracking-wide text-white">
+                    {item.k}
+                  </span>
+                  <span className="text-[10.5px] leading-tight text-blue-100">
+                    {item.v}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
