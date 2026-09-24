@@ -94,13 +94,6 @@ export default function ReportsPage() {
 
   return (
     <>
-      <div className="mc-head">
-        <div>
-          <h1 className="mc-h1">Executive Dashboard</h1>
-          <p className="mc-sub">Hospital-wide operational overview</p>
-        </div>
-      </div>
-
       <div className="mc-tabs" role="tablist" aria-label="Report section">
         <button
           type="button"

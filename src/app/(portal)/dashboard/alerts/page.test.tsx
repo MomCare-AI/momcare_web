@@ -166,7 +166,10 @@ describe("AlertsPage", () => {
     } as unknown as ReturnType<typeof useAlerts>);
 
     render(<AlertsPage />);
-    screen.getByText("My Alerts");
+    // The role-scoped title is no longer a visible heading (the page-title
+    // bar was removed from every nav page) — it still sets the browser tab
+    // title via usePageTitle, which is what this test actually checks.
+    expect(document.title).toContain("My Alerts");
     screen.getByText(
       "None of your assigned patients currently have an open alert."
     );

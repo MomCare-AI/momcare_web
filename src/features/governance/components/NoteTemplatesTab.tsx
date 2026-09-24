@@ -4,7 +4,7 @@ import { useState } from "react";
 import { motion } from "motion/react";
 import { AlertTriangle, FileText, Pencil, Plus, Trash2, X } from "lucide-react";
 
-import { Card, CardBody, CardHeader } from "@/shared/ui/Card";
+import { Card, CardBody } from "@/shared/ui/Card";
 import { EmptyState } from "@/shared/ui/EmptyState";
 
 interface NoteTemplate {
@@ -66,13 +66,13 @@ export function NoteTemplatesTab() {
       </p>
 
       <Card>
-        <CardHeader>
-          <div>
-            <div className="mc-card-title">Note templates</div>
-            <div className="mc-card-sub">
-              Canned text staff can reuse while logging a contact note
-            </div>
-          </div>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            padding: "14px 20px 0",
+          }}
+        >
           <button className="mc-btn" onClick={() => setShowForm((v) => !v)}>
             {showForm ? (
               <X size={15} strokeWidth={2} />
@@ -81,7 +81,7 @@ export function NoteTemplatesTab() {
             )}
             {showForm ? "Cancel" : "Add template"}
           </button>
-        </CardHeader>
+        </div>
 
         {showForm && (
           <CardBody>

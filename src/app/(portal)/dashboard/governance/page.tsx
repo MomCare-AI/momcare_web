@@ -38,15 +38,6 @@ export default function GovernancePage() {
 
   return (
     <>
-      <div className="mc-head">
-        <div>
-          <h1 className="mc-h1">System Governance</h1>
-          <p className="mc-sub">
-            Your clinical team, hospital record, and sites
-          </p>
-        </div>
-      </div>
-
       <GovernanceStatsHeader />
 
       <div className="mc-tabs" role="tablist" aria-label="Governance section">

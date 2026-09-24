@@ -77,23 +77,11 @@ export default function AlertsPage() {
 
   return (
     <>
-      <div className="mc-head">
-        <div>
-          <h1 className="mc-h1">{title}</h1>
-          <p className="mc-sub">
-            {assignedToMe
-              ? "Raised on patients you're on the care team for, escalated on a schedule until somebody answers."
-              : "Raised when a reading crosses a threshold, and escalated on a schedule until somebody answers."}
-          </p>
-        </div>
-        <div className="mc-head-aside">
-          <div>
-            {unanswered > 0
-              ? `${unanswered} not yet answered`
-              : "Everything raised has been answered"}
-          </div>
-        </div>
-      </div>
+      <p className="mc-hint" style={{ marginBottom: 14 }}>
+        {unanswered > 0
+          ? `${unanswered} not yet answered`
+          : "Everything raised has been answered"}
+      </p>
 
       <div className="mc-tabs" role="tablist" aria-label="Filter alerts">
         {TABS.map((item) => {

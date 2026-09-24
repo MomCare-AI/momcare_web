@@ -446,6 +446,13 @@ body::-webkit-scrollbar-thumb:hover {
   border: 1px solid var(--c-border);
   border-radius: var(--r-card);
   box-shadow: var(--shadow-pop);
+  overflow: hidden;
+  /* text-align is inherited, so a modal opened from inside a
+     text-align: right cell (e.g. a table's trailing Action column)
+     would otherwise leak that alignment into every label/heading here —
+     reset it regardless of where in the DOM this panel happens to be
+     mounted. */
+  text-align: left;
 }
 .mc-modal-head {
   display: flex;
@@ -2551,9 +2558,15 @@ a.mc-kpi:hover,
   font-weight: 700;
   letter-spacing: 0.02em;
   text-transform: uppercase;
-  color: var(--c-faint);
-  background: var(--c-ground);
-  border-bottom: 1px solid var(--c-border);
+  /* Matches the sidebar's own brand-color fill — the same convention the
+     reference platform uses (its black sidebar color repeated on every
+     table header), just with this app's blue instead. --sb-bg/--sb-text
+     are scoped inside .mc-sidebar only (see its own comment), so this
+     references the underlying --c-teal token directly rather than a
+     variable that resolves to nothing out here. */
+  color: rgba(255, 255, 255, 0.94);
+  background: var(--c-teal);
+  border-bottom: 1px solid var(--c-teal);
   white-space: nowrap;
 }
 .mc-dtable-sort {
@@ -2571,16 +2584,16 @@ a.mc-kpi:hover,
   cursor: pointer;
 }
 .mc-dtable-sort:hover {
-  color: var(--c-ink);
+  color: #ffffff;
 }
 .mc-dtable-sort svg {
-  opacity: 0.55;
+  opacity: 0.6;
   flex: none;
 }
 .mc-dtable-sort[aria-sort="ascending"] svg,
 .mc-dtable-sort[aria-sort="descending"] svg {
   opacity: 1;
-  color: var(--c-teal);
+  color: #ffffff;
 }
 .mc-dtable td {
   padding: 12px 16px;

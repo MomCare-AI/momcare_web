@@ -49,23 +49,21 @@ export default function DevicesPage() {
 
   return (
     <>
-      <div className="mc-head">
-        <div>
-          <h1 className="mc-h1">Devices</h1>
-          <p className="mc-sub">
-            The wearable bands this hospital holds, and who is wearing one.
-          </p>
-        </div>
-        <div className="mc-head-aside">
-          <button
-            type="button"
-            className="mc-btn mc-btn-sm"
-            onClick={() => setShowForm((v) => !v)}
-          >
-            <Plus size={14} strokeWidth={2.2} aria-hidden />
-            Register device
-          </button>
-        </div>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "flex-end",
+          marginBottom: 14,
+        }}
+      >
+        <button
+          type="button"
+          className="mc-btn mc-btn-sm"
+          onClick={() => setShowForm((v) => !v)}
+        >
+          <Plus size={14} strokeWidth={2.2} aria-hidden />
+          Register device
+        </button>
       </div>
 
       {showForm && <RegisterForm onDone={() => setShowForm(false)} />}

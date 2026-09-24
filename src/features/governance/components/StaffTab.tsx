@@ -3,16 +3,7 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
-import {
-  AlertCircle,
-  AlertTriangle,
-  ChevronDown,
-  Power,
-  Search,
-  Stethoscope,
-  UserPlus,
-  X,
-} from "lucide-react";
+import { AlertCircle, Search, Stethoscope, UserPlus, X } from "lucide-react";
 import { usePortal } from "@/app/(portal)/dashboard/layout";
 import { SessionExpiredError } from "@/core/api/authFetch";
 import { Card, CardBody, CardHeader } from "@/shared/ui/Card";
@@ -22,15 +13,13 @@ import { RowSkeleton } from "@/shared/ui/RowSkeleton";
 import { SortableHeader, type SortDirection } from "@/shared/ui/SortableHeader";
 import {
   useCreateStaff,
-  useDeactivateStaff,
-  useReactivateStaff,
-  useStaffAssignmentStatus,
   useStaffList,
   type CreateStaffInput,
   type StaffMember,
 } from "@/features/staff/hooks/useStaff";
 import { StaffCredentialsPanel } from "@/features/staff/components/StaffCredentialsPanel";
 import { useLocations } from "@/features/locations/hooks/useLocations";
+import { StaffActionMenu } from "./StaffActionMenu";
 
 const ROLES = [
   { code: "provider", label: "Doctor / Provider" },
@@ -56,7 +45,6 @@ export function StaffTab() {
   const [form, setForm] = useState<CreateStaffInput>(EMPTY_FORM);
   const [formError, setFormError] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [deactivatingId, setDeactivatingId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [sort, setSort] = useState<{
@@ -67,8 +55,6 @@ export function StaffTab() {
   const staffQuery = useStaffList();
   const locationsQuery = useLocations();
   const createStaff = useCreateStaff();
-  const deactivateStaff = useDeactivateStaff();
-  const reactivateStaff = useReactivateStaff();
 
   const staff = staffQuery.data ?? [];
   const locations = locationsQuery.data?.results ?? [];
@@ -186,16 +172,6 @@ export function StaffTab() {
             clinical team
           </p>
         </div>
-        {isHospitalAdmin && (
-          <button className="mc-btn" onClick={() => setShowForm((v) => !v)}>
-            {showForm ? (
-              <X size={15} strokeWidth={2} />
-            ) : (
-              <UserPlus size={15} strokeWidth={2} />
-            )}
-            {showForm ? "Cancel" : "Add staff"}
-          </button>
-        )}
       </div>
 
       {error && (
@@ -357,14 +333,6 @@ export function StaffTab() {
       )}
 
       <Card>
-        <CardHeader>
-          <div>
-            <div className="mc-card-title">Clinical team</div>
-            <div className="mc-card-sub">
-              Everyone with access to this hospital
-            </div>
-          </div>
-        </CardHeader>
         {loadFailed ? (
           <EmptyState
             icon={<AlertCircle size={20} strokeWidth={1.9} aria-hidden />}
@@ -433,6 +401,20 @@ export function StaffTab() {
                   </option>
                 ))}
               </select>
+              {isHospitalAdmin && (
+                <button
+                  className="mc-btn"
+                  style={{ marginLeft: "auto" }}
+                  onClick={() => setShowForm((v) => !v)}
+                >
+                  {showForm ? (
+                    <X size={15} strokeWidth={2} />
+                  ) : (
+                    <UserPlus size={15} strokeWidth={2} />
+                  )}
+                  {showForm ? "Cancel" : "Add staff"}
+                </button>
+              )}
             </div>
 
             <div className="mc-dtable-wrap" style={{ marginTop: 14 }}>
@@ -452,7 +434,8 @@ export function StaffTab() {
                     <th>Email</th>
                     <th>Phone</th>
                     <th>Status</th>
-                    <th />
+                    <th>Patients</th>
+                    <th>Action</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -466,11 +449,6 @@ export function StaffTab() {
                       onToggleExpand={() =>
                         setExpandedId(expandedId === m.id ? null : m.id)
                       }
-                      deactivating={deactivatingId === m.id}
-                      onStartDeactivate={() => setDeactivatingId(m.id)}
-                      onCancelDeactivate={() => setDeactivatingId(null)}
-                      deactivateStaff={deactivateStaff}
-                      reactivateStaff={reactivateStaff}
                     />
                   ))}
                 </tbody>
@@ -489,22 +467,12 @@ function StaffRow({
   isHospitalAdmin,
   expanded,
   onToggleExpand,
-  deactivating,
-  onStartDeactivate,
-  onCancelDeactivate,
-  deactivateStaff,
-  reactivateStaff,
 }: {
   member: StaffMember;
   isSelf: boolean;
   isHospitalAdmin: boolean;
   expanded: boolean;
   onToggleExpand: () => void;
-  deactivating: boolean;
-  onStartDeactivate: () => void;
-  onCancelDeactivate: () => void;
-  deactivateStaff: ReturnType<typeof useDeactivateStaff>;
-  reactivateStaff: ReturnType<typeof useReactivateStaff>;
 }) {
   return (
     <Fragment>
@@ -552,22 +520,20 @@ function StaffRow({
             <span className="mc-badge mc-badge-stable">Active</span>
           )}
         </td>
+        <td
+          className="mc-dtable-sub"
+          title="Not yet available — Staff.max_patients exists on the backend model but isn't exposed via the API yet"
+        >
+          —
+        </td>
         <td>
-          <ChevronDown
-            size={16}
-            strokeWidth={2}
-            aria-hidden
-            style={{
-              transform: expanded ? "rotate(180deg)" : undefined,
-              transition: "transform 0.15s ease",
-            }}
-          />
+          <StaffActionMenu member={m} />
         </td>
       </tr>
       <AnimatePresence initial={false}>
         {expanded && (
           <tr className="mc-dtable-detail">
-            <td colSpan={6}>
+            <td colSpan={7}>
               <motion.div
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: "auto", opacity: 1 }}
@@ -580,18 +546,6 @@ function StaffRow({
                     member={m}
                     canEdit={isHospitalAdmin || isSelf}
                   />
-
-                  {isHospitalAdmin && !isSelf && (
-                    <EmploymentStatus
-                      staffId={m.id}
-                      isActive={m.is_active}
-                      deactivating={deactivating}
-                      onStartDeactivate={onStartDeactivate}
-                      onCancelDeactivate={onCancelDeactivate}
-                      deactivateStaff={deactivateStaff}
-                      reactivateStaff={reactivateStaff}
-                    />
-                  )}
                 </div>
               </motion.div>
             </td>
@@ -599,112 +553,5 @@ function StaffRow({
         )}
       </AnimatePresence>
     </Fragment>
-  );
-}
-
-function EmploymentStatus({
-  staffId,
-  isActive,
-  deactivating,
-  onStartDeactivate,
-  onCancelDeactivate,
-  deactivateStaff,
-  reactivateStaff,
-}: {
-  staffId: string;
-  isActive: boolean;
-  deactivating: boolean;
-  onStartDeactivate: () => void;
-  onCancelDeactivate: () => void;
-  deactivateStaff: ReturnType<typeof useDeactivateStaff>;
-  reactivateStaff: ReturnType<typeof useReactivateStaff>;
-}) {
-  const statusQuery = useStaffAssignmentStatus(deactivating ? staffId : null);
-
-  return (
-    <div
-      className="mc-card"
-      style={{ padding: 14, marginTop: 14, background: "var(--c-ground)" }}
-    >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        <span className="mc-pair-label">Employment status</span>
-        {!isActive ? (
-          <button
-            type="button"
-            className="mc-btn-ghost mc-btn-sm"
-            disabled={reactivateStaff.isPending}
-            onClick={() => reactivateStaff.mutate(staffId)}
-          >
-            <Power size={13} strokeWidth={2.2} aria-hidden />
-            {reactivateStaff.isPending ? "Reactivating…" : "Reactivate"}
-          </button>
-        ) : !deactivating ? (
-          <button
-            type="button"
-            className="mc-btn-ghost mc-btn-sm mc-btn-danger"
-            onClick={onStartDeactivate}
-          >
-            <Power size={13} strokeWidth={2.2} aria-hidden />
-            Deactivate
-          </button>
-        ) : null}
-      </div>
-
-      {deactivating && (
-        <div style={{ marginTop: 10 }}>
-          {statusQuery.isPending && (
-            <p className="mc-hint">Checking their current patients…</p>
-          )}
-          {statusQuery.isSuccess && statusQuery.data.has_active_patients && (
-            <p
-              className="mc-alert mc-alert-notice"
-              style={{ marginBottom: 10 }}
-            >
-              <AlertTriangle size={15} strokeWidth={2} aria-hidden />
-              {statusQuery.data.message}
-            </p>
-          )}
-          {deactivateStaff.isError && (
-            <p className="mc-alert mc-alert-error" style={{ marginBottom: 10 }}>
-              {deactivateStaff.error instanceof Error
-                ? deactivateStaff.error.message
-                : "Could not deactivate this person."}
-            </p>
-          )}
-          <div style={{ display: "flex", gap: 8 }}>
-            <button
-              type="button"
-              className="mc-btn-ghost mc-btn-sm"
-              onClick={onCancelDeactivate}
-              disabled={deactivateStaff.isPending}
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              className="mc-btn mc-btn-sm"
-              style={{ background: "var(--c-high)" }}
-              disabled={deactivateStaff.isPending || statusQuery.isPending}
-              onClick={() =>
-                deactivateStaff.mutate(
-                  { staffId },
-                  { onSuccess: onCancelDeactivate }
-                )
-              }
-            >
-              {deactivateStaff.isPending
-                ? "Deactivating…"
-                : "Confirm deactivate"}
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
   );
 }

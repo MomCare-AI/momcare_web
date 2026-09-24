@@ -15,7 +15,11 @@ export interface StaffMember {
   employee_id: string;
   full_name: string;
   email: string;
-  phone: string;
+  /** Genuinely nullable at runtime — `CharField(default="")` on the
+   *  backend only covers a missing key during deserialization, not a User
+   *  whose `phone` column is actually NULL in the database. Any consumer
+   *  that feeds this into a controlled input must coalesce to `""`. */
+  phone: string | null;
   role_name: string;
   role_code: string;
   is_user_active: boolean;
@@ -59,6 +63,21 @@ export interface CreateStaffInput {
   role_code: string;
   /** Required (non-empty) unless role_code is "hospital_admin". */
   locations: string[];
+}
+
+/** The admin-level counterpart to `StaffProfileInput` — identity, role and
+ *  tenant membership, not self-reported credentialing. Every field optional
+ *  (a PATCH omitting one leaves it untouched). No `max_patients`/capacity
+ *  field here: `StaffUpdateSerializer` doesn't accept one — `Staff.max_patients`
+ *  exists on the backend model but isn't exposed on any serializer yet, read
+ *  or write. */
+export interface StaffUpdateInput {
+  email?: string;
+  first_name?: string;
+  last_name?: string;
+  phone?: string;
+  role_code?: string;
+  locations?: string[];
 }
 
 export interface AssignmentStatus {
@@ -217,6 +236,60 @@ export function useUpdateStaffProfile() {
       const body = await res.json().catch(() => null);
       if (!res.ok) {
         throw new Error(body?.detail ?? "Could not save this profile.");
+      }
+      return body as StaffMember;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: staffKeys.list });
+    },
+  });
+}
+
+/**
+ * Update a staff member's identity, role or locations — the admin-level
+ * PATCH (`can_manage_staff`: hospital_admin, or a manager of a location this
+ * person is assigned to), same endpoint `useUpdateStaffProfile` hits, a
+ * different field set. The server re-validates every rule (email/phone
+ * uniqueness, the hospital_admin-promotion escalation guard, locations
+ * membership) on every request — this hook only sends what was typed and
+ * surfaces whatever field error comes back.
+ */
+export function useUpdateStaff() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      staffId,
+      input,
+    }: {
+      staffId: string;
+      input: StaffUpdateInput;
+    }) => {
+      const form = new FormData();
+      if (input.email !== undefined) form.set("email", input.email);
+      if (input.first_name !== undefined)
+        form.set("first_name", input.first_name);
+      if (input.last_name !== undefined) form.set("last_name", input.last_name);
+      if (input.phone !== undefined) form.set("phone", input.phone);
+      if (input.role_code !== undefined) form.set("role_code", input.role_code);
+      if (input.locations !== undefined) {
+        for (const id of input.locations) form.append("locations", id);
+      }
+
+      const res = await authFetch(`/api/staff/${staffId}/`, {
+        method: "PATCH",
+        body: form,
+      });
+      const body = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(
+          body?.email?.[0] ??
+            body?.phone?.[0] ??
+            body?.role_code?.[0] ??
+            body?.locations?.[0] ??
+            body?.detail ??
+            "Could not save this staff member."
+        );
       }
       return body as StaffMember;
     },

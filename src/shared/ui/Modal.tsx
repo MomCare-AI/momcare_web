@@ -9,6 +9,12 @@ interface Props {
   onClose: () => void;
   title: string;
   subtitle?: string;
+  /** An icon badge shown before the title — optional, so every existing
+   *  caller keeps its current plain header unchanged. */
+  icon?: ReactNode;
+  /** Tints the header with the brand wash color instead of the plain card
+   *  background — optional, defaults to the existing plain look. */
+  tinted?: boolean;
   children: ReactNode;
 }
 
@@ -18,7 +24,15 @@ interface Props {
  * content instead of a side drawer. First use: editing the hospital's own
  * record from the System Governance stats header.
  */
-export function Modal({ open, onClose, title, subtitle, children }: Props) {
+export function Modal({
+  open,
+  onClose,
+  title,
+  subtitle,
+  icon,
+  tinted,
+  children,
+}: Props) {
   const reduceMotion = useReducedMotion();
   const panelRef = useRef<HTMLDivElement>(null);
   const openerRef = useRef<Element | null>(null);
@@ -75,10 +89,38 @@ export function Modal({ open, onClose, title, subtitle, children }: Props) {
                   : { duration: 0.2, ease: [0.16, 1, 0.3, 1] }
               }
             >
-              <div className="mc-modal-head">
-                <div>
-                  <div className="mc-card-title">{title}</div>
-                  {subtitle && <div className="mc-card-sub">{subtitle}</div>}
+              <div
+                className="mc-modal-head"
+                style={
+                  tinted ? { background: "var(--c-teal-wash)" } : undefined
+                }
+              >
+                <div
+                  style={{ display: "flex", gap: 12, alignItems: "flex-start" }}
+                >
+                  {icon && (
+                    <span
+                      aria-hidden
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        width: 38,
+                        height: 38,
+                        flexShrink: 0,
+                        borderRadius: 10,
+                        border: "1.5px solid var(--c-teal-soft)",
+                        color: "var(--c-teal)",
+                        background: "var(--c-teal-wash)",
+                      }}
+                    >
+                      {icon}
+                    </span>
+                  )}
+                  <div>
+                    <div className="mc-card-title">{title}</div>
+                    {subtitle && <div className="mc-card-sub">{subtitle}</div>}
+                  </div>
                 </div>
                 <button
                   type="button"
