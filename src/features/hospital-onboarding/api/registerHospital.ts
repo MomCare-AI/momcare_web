@@ -49,11 +49,10 @@ export async function registerHospital(
     state: form.stateProvince,
     postal_code: form.postalCode,
     country: form.country,
-    license_no: form.licenseNo ?? "",
-    license_authority: form.licenseAuthority ?? "",
+    license_number: form.licenseNo ?? "",
   };
 
-  const res = await fetch(`${API_BASE}/api/auth/register/`, {
+  const res = await fetch(`${API_BASE}/api/organization/onboard/`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),

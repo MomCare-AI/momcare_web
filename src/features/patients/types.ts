@@ -27,16 +27,11 @@ export const RISK_FACTORS = [
 
 export type RiskFactorField = (typeof RISK_FACTORS)[number]["field"];
 
-export interface PregnancyRiskFactors extends Record<
-  RiskFactorField,
-  RiskAnswer
-> {
-  id: string;
-  present_factors: RiskFactorField[];
-  unanswered_factors: RiskFactorField[];
-}
+/** The 7 obstetric-history factor fields, flat on `Pregnancy` itself as of
+ *  the Sep 2026 backend rebuild — no longer a nested sub-object. */
+export type RiskFactors = Record<RiskFactorField, RiskAnswer>;
 
-export interface Pregnancy {
+export interface Pregnancy extends RiskFactors {
   id: string;
   lmp: string | null;
   edd: string | null;
@@ -49,54 +44,45 @@ export interface Pregnancy {
   gestational_age_display: string;
   gravida: number | null;
   para: number | null;
-  assigned_staff: string | null;
-  assigned_staff_name: string;
-  assigned_staff_is_active: boolean;
-  /** False when nobody is assigned OR the assigned clinician has left. Both are
+  /** The accountable lead — what alert escalation actually routes to. */
+  provider: string | null;
+  provider_name: string;
+  provider_is_active: boolean;
+  nurse: string | null;
+  nurse_name: string;
+  care_manager: string | null;
+  care_manager_name: string;
+  /** False when nobody is assigned as provider OR they've since left. Both are
    *  the same silent failure once alerts start routing to a named person. */
   has_responsible_clinician: boolean;
   status: PregnancyStatus;
   status_display: string;
   outcome_date: string | null;
   notes: string;
-  risk_factors: PregnancyRiskFactors | null;
+  present_factors: RiskFactorField[];
+  unanswered_factors: RiskFactorField[];
   created_at: string;
+  updated_at: string;
 }
 
-export type CareTeamRole = "nurse" | "provider" | "care_manager";
-
-/** Mirrors CareTeamMembershipSerializer. Additive to Pregnancy.assigned_staff
- *  (the lead clinician) - never a replacement for it. */
-export interface CareTeamMembership {
-  id: string;
-  staff: string;
-  staff_name: string;
-  role: CareTeamRole;
-  role_display: string;
-  is_active: boolean;
-  started_at: string;
-  ended_at: string | null;
-}
-
-export interface ClinicalNote {
-  id: string;
-  body: string;
-  author_name: string;
-  author_role: string;
-  created_at: string;
-}
-
-export interface Consent {
-  id: string;
-  status: "granted" | "withdrawn";
-  status_display: string;
-  recorded_at: string;
-  version: string;
-  method: string;
-  method_display: string;
-  recorded_by_name: string;
-  note: string;
-}
+/** What `PATCH .../pregnancies/{id}/` accepts — every field optional. */
+export type PregnancyUpdateInput = Partial<
+  Pick<
+    Pregnancy,
+    | "lmp"
+    | "edd"
+    | "edd_source"
+    | "gravida"
+    | "para"
+    | "provider"
+    | "nurse"
+    | "care_manager"
+    | "status"
+    | "outcome_date"
+    | "notes"
+  > &
+    RiskFactors
+>;
 
 export interface PatientListItem {
   id: string;
@@ -115,6 +101,14 @@ export interface PatientListItem {
   created_at: string;
 }
 
+export interface SecondaryProviderBrief {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  affiliation: string;
+}
+
 export interface PatientDetail {
   id: string;
   mrn: string | null;
@@ -129,12 +123,18 @@ export interface PatientDetail {
   emergency_contact_name: string;
   emergency_contact_phone: string;
   emergency_contact_relation: string;
+  emergency_contact_email: string;
   has_app_account: boolean;
   location_name: string;
   current_pregnancy: Pregnancy | null;
-  consents: Consent[];
+  /** A single date, no longer an append-only log of consent events — see
+   *  patients/migrations/0012 on the backend. Optional at onboarding now. */
+  consent_date: string | null;
+  secondary_provider: string | null;
+  secondary_provider_detail: SecondaryProviderBrief | null;
   is_active: boolean;
   created_at: string;
+  updated_at: string;
 }
 
 export interface Paginated<T> {

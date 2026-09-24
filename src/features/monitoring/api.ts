@@ -1,7 +1,6 @@
 import { authFetch, authJson } from "@/core/api/authFetch";
 
 import type {
-  AttentionPatient,
   Device,
   LatestReadings,
   NumericVital,
@@ -203,10 +202,4 @@ export async function verifyRisk(
     }
   );
   return readOrThrow<RiskAssessment>(res, "Could not record this review.");
-}
-
-export function getAttentionQueue() {
-  return authJson<{ count: number; results: AttentionPatient[] }>(
-    "/api/attention/"
-  );
 }

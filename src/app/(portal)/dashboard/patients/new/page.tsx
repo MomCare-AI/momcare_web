@@ -3,12 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import {
-  AlertCircle,
-  AlertTriangle,
-  ShieldCheck,
-  UserPlus,
-} from "lucide-react";
+import { AlertCircle, AlertTriangle, UserPlus } from "lucide-react";
 
 import { SessionExpiredError } from "@/core/api/authFetch";
 import type { EnrolmentInput } from "@/features/patients/api";
@@ -25,8 +20,6 @@ import {
 import { usePortal } from "../../layout";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { Breadcrumbs } from "@/features/portal/components/Breadcrumbs";
-
-const CONSENT_VERSION = "v1.0";
 
 /** LMP + 280 days — mirrors the backend so the nurse sees the due date as she
  *  types, rather than after saving. The server remains authoritative. */
@@ -48,6 +41,10 @@ function gestationalAge(edd: string): string | null {
   return `${Math.floor(daysElapsed / 7)}w ${daysElapsed % 7}d`;
 }
 
+function todayIso(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
 export default function EnrolPatientPage() {
   usePageTitle("Enrol Patient");
   const router = useRouter();
@@ -63,6 +60,7 @@ export default function EnrolPatientPage() {
     emergency_contact_name: "",
     emergency_contact_phone: "",
     emergency_contact_relation: "",
+    emergency_contact_email: "",
   });
   const [recordPregnancy, setRecordPregnancy] = useState(true);
   const [pregnancy, setPregnancy] = useState({
@@ -79,13 +77,26 @@ export default function EnrolPatientPage() {
         RISK_FACTORS.map((f) => [f.field, "unknown"])
       ) as Record<RiskFactorField, RiskAnswer>
   );
-  const [assignedStaff, setAssignedStaff] = useState("");
+  const [provider, setProvider] = useState("");
+  const [nurse, setNurse] = useState("");
+  const [careManager, setCareManager] = useState("");
   const [consentGiven, setConsentGiven] = useState(false);
-  const [consentMethod, setConsentMethod] = useState("in_person");
 
   // Convenience only — the API scopes this list to the hospital and
   // re-validates the choice on save, so a tampered value cannot get through.
   const { data: clinicians = [] } = useClinicians();
+  const providers = useMemo(
+    () => clinicians.filter((c) => c.role_code === "provider"),
+    [clinicians]
+  );
+  const nurses = useMemo(
+    () => clinicians.filter((c) => c.role_code === "nurse"),
+    [clinicians]
+  );
+  const careManagers = useMemo(
+    () => clinicians.filter((c) => c.role_code === "care_manager"),
+    [clinicians]
+  );
   const enrol = useEnrolPatient();
 
   // Pending state comes from the mutation rather than a parallel boolean, so
@@ -108,10 +119,6 @@ export default function EnrolPatientPage() {
     e.preventDefault();
     setError(null);
 
-    if (!consentGiven) {
-      setError("Consent must be recorded before a patient can be enrolled.");
-      return;
-    }
     if (recordPregnancy && !pregnancy.lmp && !pregnancy.edd) {
       setError(
         "Enter either the last menstrual period or an estimated delivery date — " +
@@ -123,11 +130,7 @@ export default function EnrolPatientPage() {
     const payload: EnrolmentInput = {
       ...form,
       date_of_birth: form.date_of_birth || null,
-      consent: {
-        status: "granted",
-        version: CONSENT_VERSION,
-        method: consentMethod,
-      },
+      consent_date: consentGiven ? todayIso() : null,
     };
 
     if (recordPregnancy) {
@@ -139,9 +142,11 @@ export default function EnrolPatientPage() {
         edd_source: pregnancy.edd ? pregnancy.edd_source : "lmp",
         gravida: pregnancy.gravida ? Number(pregnancy.gravida) : null,
         para: pregnancy.para ? Number(pregnancy.para) : null,
-        assigned_staff: assignedStaff || null,
+        provider: provider || null,
+        nurse: nurse || null,
+        care_manager: careManager || null,
         notes: pregnancy.notes,
-        risk_factors: risk,
+        ...risk,
       };
     }
 
@@ -272,6 +277,16 @@ export default function EnrolPatientPage() {
                     set("emergency_contact_relation", e.target.value)
                   }
                   placeholder="Husband, mother, sister…"
+                />
+              </Field>
+              <Field label="Their email" hint="Optional">
+                <input
+                  className="mc-input"
+                  type="email"
+                  value={form.emergency_contact_email}
+                  onChange={(e) =>
+                    set("emergency_contact_email", e.target.value)
+                  }
                 />
               </Field>
             </div>
@@ -424,7 +439,7 @@ export default function EnrolPatientPage() {
 
               <div style={{ marginTop: 18 }}>
                 <label className="mc-label" htmlFor="preg-notes">
-                  Clinical notes
+                  Notes
                 </label>
                 <textarea
                   id="preg-notes"
@@ -445,47 +460,84 @@ export default function EnrolPatientPage() {
           <section className="mc-card">
             <div className="mc-card-head">
               <div>
-                <div className="mc-card-title">Care assignment</div>
+                <div className="mc-card-title">Care team</div>
                 <div className="mc-card-sub">
-                  Who is clinically responsible for this pregnancy. Assigned per
-                  pregnancy, not per patient — the same woman may be under a
-                  different clinician next time.
+                  Assigned per pregnancy, not per patient — the same woman may
+                  be under a different team next time.
                 </div>
               </div>
             </div>
             <div className="mc-card-body">
-              <div style={{ maxWidth: 380 }}>
-                <label className="mc-label" htmlFor="assigned-staff">
-                  Lead clinician
-                </label>
-                <select
-                  id="assigned-staff"
-                  className="mc-input"
-                  value={assignedStaff}
-                  onChange={(e) => setAssignedStaff(e.target.value)}
-                >
-                  <option value="">Not assigned yet</option>
-                  {clinicians.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.full_name} — {c.role_name}
-                    </option>
-                  ))}
-                </select>
-                <span className="mc-hint">
-                  Only staff at {org.name} appear here.
-                </span>
+              <div className="mc-formgrid">
+                <div>
+                  <label className="mc-label" htmlFor="enrol-provider">
+                    Provider
+                  </label>
+                  <select
+                    id="enrol-provider"
+                    className="mc-input"
+                    value={provider}
+                    onChange={(e) => setProvider(e.target.value)}
+                  >
+                    <option value="">Not assigned yet</option>
+                    {providers.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.full_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="mc-label" htmlFor="enrol-nurse">
+                    Nurse
+                  </label>
+                  <select
+                    id="enrol-nurse"
+                    className="mc-input"
+                    value={nurse}
+                    onChange={(e) => setNurse(e.target.value)}
+                  >
+                    <option value="">Not assigned yet</option>
+                    {nurses.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.full_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="mc-label" htmlFor="enrol-care-manager">
+                    Care manager
+                  </label>
+                  <select
+                    id="enrol-care-manager"
+                    className="mc-input"
+                    value={careManager}
+                    onChange={(e) => setCareManager(e.target.value)}
+                  >
+                    <option value="">Not assigned yet</option>
+                    {careManagers.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.full_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
+              <span className="mc-hint">
+                Only staff at {org.name} appear here.
+              </span>
 
-              {!assignedStaff && (
+              {!provider && (
                 <p
                   className="mc-alert mc-alert-notice"
                   style={{ marginTop: 16, marginBottom: 0 }}
                 >
                   <AlertTriangle size={15} strokeWidth={2} aria-hidden />
-                  Without a lead clinician, nobody is accountable for this
+                  Without a provider, nobody is the accountable lead for this
                   pregnancy — and once monitoring is live, her alerts would have
-                  no one to reach. You can assign someone later, but it is worth
-                  doing now.
+                  no one to reach first. You can assign one later, but it is
+                  worth doing now.
                 </p>
               )}
 
@@ -495,7 +547,7 @@ export default function EnrolPatientPage() {
                   style={{ marginTop: 16, marginBottom: 0 }}
                 >
                   <AlertTriangle size={15} strokeWidth={2} aria-hidden />
-                  No clinical staff have joined yet. Invite doctors from System
+                  No clinical staff have joined yet. Add doctors from System
                   Governance, then assign one to this pregnancy.
                 </p>
               )}
@@ -508,7 +560,8 @@ export default function EnrolPatientPage() {
             <div>
               <div className="mc-card-title">Consent</div>
               <div className="mc-card-sub">
-                Recorded with your name and the time, and kept permanently.
+                Recorded as a date, kept permanently. Not required to enrol —
+                but worth confirming before monitoring begins.
               </div>
             </div>
           </div>
@@ -520,27 +573,10 @@ export default function EnrolPatientPage() {
                 onChange={(e) => setConsentGiven(e.target.checked)}
               />
               <span>
-                I confirm the patient has consented to MomCare collecting and
-                processing her maternal health information, under consent policy{" "}
-                <strong>{CONSENT_VERSION}</strong>.
+                The patient has consented to MomCare collecting and processing
+                her maternal health information, as of today.
               </span>
             </label>
-
-            <div style={{ maxWidth: 320, marginTop: 14 }}>
-              <label className="mc-label" htmlFor="consent-method">
-                How was consent obtained?
-              </label>
-              <select
-                id="consent-method"
-                className="mc-input"
-                value={consentMethod}
-                onChange={(e) => setConsentMethod(e.target.value)}
-              >
-                <option value="in_person">In person, signed</option>
-                <option value="verbal">Verbal, witnessed</option>
-                <option value="digital">Digital</option>
-              </select>
-            </div>
           </div>
         </section>
 
@@ -552,16 +588,8 @@ export default function EnrolPatientPage() {
         )}
 
         <div className="mc-actions">
-          <button
-            type="submit"
-            className="mc-btn"
-            disabled={submitting || !consentGiven}
-          >
-            {consentGiven ? (
-              <UserPlus size={15} strokeWidth={2} aria-hidden />
-            ) : (
-              <ShieldCheck size={15} strokeWidth={2} aria-hidden />
-            )}
+          <button type="submit" className="mc-btn" disabled={submitting}>
+            <UserPlus size={15} strokeWidth={2} aria-hidden />
             {submitting ? "Enrolling…" : "Enrol patient"}
           </button>
           <Link href="/dashboard/patients" className="mc-btn-ghost">

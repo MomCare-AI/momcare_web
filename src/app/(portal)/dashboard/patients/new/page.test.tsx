@@ -2,8 +2,9 @@
  * Enrolment: the one screen where a wrong default can quietly hide risk.
  * "Unknown if it wasn't asked" is a named rule on the form itself — a
  * checkbox that turns "nobody asked" into "no" is exactly the failure
- * mode this project's own conventions call out. Consent is a hard gate,
- * not a courtesy: the form must refuse to enrol without it.
+ * mode this project's own conventions call out. Consent is recorded as a
+ * date but is no longer a hard gate on submission — the backend made it
+ * optional at onboarding (patients/migrations/0012).
  */
 
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
@@ -40,11 +41,11 @@ afterEach(() => {
 
 function setup({
   clinicians = [
-    { id: "c1", full_name: "Dr. Sana Iqbal", role_name: "Provider" },
+    { id: "c1", full_name: "Dr. Sana Iqbal", role_code: "provider" },
   ],
   mutateAsync = vi.fn().mockResolvedValue({ id: "p1" }),
 }: {
-  clinicians?: { id: string; full_name: string; role_name: string }[];
+  clinicians?: { id: string; full_name: string; role_code: string }[];
   mutateAsync?: ReturnType<typeof vi.fn>;
 } = {}) {
   mockedUsePortal.mockReturnValue({
@@ -81,7 +82,7 @@ function fillRequired() {
 }
 
 function checkConsent() {
-  fireEvent.click(screen.getByLabelText(/I confirm the patient has consented/));
+  fireEvent.click(screen.getByLabelText(/has consented to MomCare/));
 }
 
 describe("EnrolPatientPage", () => {
@@ -96,17 +97,35 @@ describe("EnrolPatientPage", () => {
     expect(unknownButtons.length).toBe(7);
   });
 
-  it("disables submission until consent is actually given", () => {
-    setup();
+  it("submits without consent being checked — it's optional, not a gate, since the backend rebuild", async () => {
+    const { mutateAsync } = setup();
     render(<EnrolPatientPage />);
 
+    fillRequired();
+    fireEvent.click(screen.getByLabelText("Record a pregnancy now"));
     const submit = screen.getByRole("button", {
       name: /Enrol patient/,
     }) as HTMLButtonElement;
-    expect(submit.disabled).toBe(true);
-
-    checkConsent();
     expect(submit.disabled).toBe(false);
+
+    fireEvent.click(submit);
+
+    await vi.waitFor(() => expect(mutateAsync).toHaveBeenCalled());
+    expect(mutateAsync.mock.calls[0][0].consent_date).toBeNull();
+  });
+
+  it("sends today's date when consent is checked", async () => {
+    const { mutateAsync } = setup();
+    render(<EnrolPatientPage />);
+
+    fillRequired();
+    checkConsent();
+    fireEvent.click(screen.getByLabelText("Record a pregnancy now"));
+    fireEvent.click(screen.getByRole("button", { name: /Enrol patient/ }));
+
+    await vi.waitFor(() => expect(mutateAsync).toHaveBeenCalled());
+    const today = new Date().toISOString().slice(0, 10);
+    expect(mutateAsync.mock.calls[0][0].consent_date).toBe(today);
   });
 
   it("refuses to submit without a dating source when recording a pregnancy", async () => {
@@ -114,7 +133,6 @@ describe("EnrolPatientPage", () => {
     render(<EnrolPatientPage />);
 
     fillRequired();
-    checkConsent();
     fireEvent.click(screen.getByRole("button", { name: /Enrol patient/ }));
 
     await screen.findByText(
@@ -128,7 +146,6 @@ describe("EnrolPatientPage", () => {
     render(<EnrolPatientPage />);
 
     fillRequired();
-    checkConsent();
     fireEvent.click(screen.getByLabelText("Record a pregnancy now"));
     fireEvent.click(screen.getByRole("button", { name: /Enrol patient/ }));
 
@@ -142,7 +159,6 @@ describe("EnrolPatientPage", () => {
     render(<EnrolPatientPage />);
 
     fillRequired();
-    checkConsent();
     fireEvent.change(fieldInput(/^Last menstrual period/), {
       target: { value: "2026-06-01" },
     });
@@ -154,12 +170,11 @@ describe("EnrolPatientPage", () => {
     expect(payload.pregnancy.edd).toBeNull();
   });
 
-  it("sends the risk factors exactly as answered, unknown included", async () => {
+  it("sends the risk factors flat on the pregnancy object, unknown included", async () => {
     const { mutateAsync } = setup();
     render(<EnrolPatientPage />);
 
     fillRequired();
-    checkConsent();
     fireEvent.change(fieldInput(/^Last menstrual period/), {
       target: { value: "2026-06-01" },
     });
@@ -174,29 +189,53 @@ describe("EnrolPatientPage", () => {
 
     await vi.waitFor(() => expect(mutateAsync).toHaveBeenCalled());
     const payload = mutateAsync.mock.calls[0][0];
-    expect(payload.pregnancy.risk_factors.chronic_hypertension).toBe("yes");
-    expect(payload.pregnancy.risk_factors.diabetes).toBe("unknown");
+    // Flat on `pregnancy` itself — no nested `risk_factors` object any more.
+    expect(payload.pregnancy.risk_factors).toBeUndefined();
+    expect(payload.pregnancy.chronic_hypertension).toBe("yes");
+    expect(payload.pregnancy.diabetes).toBe("unknown");
   });
 
-  it("warns when no lead clinician is assigned, since nobody would be accountable", () => {
+  it("warns when no provider is assigned, since nobody would be the accountable lead", () => {
     setup();
     render(<EnrolPatientPage />);
-    screen.getByText(/Without a lead clinician, nobody is accountable/);
+    screen.getByText(/Without a provider, nobody is the accountable lead/);
   });
 
-  it("clears the no-clinician warning once one is selected", () => {
+  it("clears the no-provider warning once one is selected", () => {
     setup();
     render(<EnrolPatientPage />);
 
-    fireEvent.change(screen.getByLabelText("Lead clinician"), {
+    fireEvent.change(screen.getByLabelText("Provider"), {
       target: { value: "c1" },
     });
     expect(
-      screen.queryByText(/Without a lead clinician, nobody is accountable/)
+      screen.queryByText(/Without a provider, nobody is the accountable lead/)
     ).toBeNull();
   });
 
-  it("tells the hospital to invite staff first when none exist yet", () => {
+  it("only lists staff whose role matches each care-team slot", () => {
+    setup({
+      clinicians: [
+        { id: "c1", full_name: "Dr. Sana Iqbal", role_code: "provider" },
+        { id: "c2", full_name: "Nurse Bilal", role_code: "nurse" },
+      ],
+    });
+    render(<EnrolPatientPage />);
+
+    const providerSelect = screen.getByLabelText(
+      "Provider"
+    ) as HTMLSelectElement;
+    const nurseSelect = screen.getByLabelText("Nurse") as HTMLSelectElement;
+    expect(
+      Array.from(providerSelect.options).map((o) => o.textContent)
+    ).toEqual(["Not assigned yet", "Dr. Sana Iqbal"]);
+    expect(Array.from(nurseSelect.options).map((o) => o.textContent)).toEqual([
+      "Not assigned yet",
+      "Nurse Bilal",
+    ]);
+  });
+
+  it("tells the hospital to add staff first when none exist yet", () => {
     setup({ clinicians: [] });
     render(<EnrolPatientPage />);
     screen.getByText(/No clinical staff have joined yet/);
@@ -207,7 +246,6 @@ describe("EnrolPatientPage", () => {
     render(<EnrolPatientPage />);
 
     fillRequired();
-    checkConsent();
     fireEvent.click(screen.getByLabelText("Record a pregnancy now"));
     fireEvent.click(screen.getByRole("button", { name: /Enrol patient/ }));
 
@@ -222,7 +260,6 @@ describe("EnrolPatientPage", () => {
     render(<EnrolPatientPage />);
 
     fillRequired();
-    checkConsent();
     fireEvent.click(screen.getByLabelText("Record a pregnancy now"));
     fireEvent.click(screen.getByRole("button", { name: /Enrol patient/ }));
 

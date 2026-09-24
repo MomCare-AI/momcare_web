@@ -10,7 +10,6 @@ import {
 import { useRouter } from "next/navigation";
 import { usePathname } from "next/navigation";
 import {
-  Activity,
   BarChart3,
   BellRing,
   LayoutDashboard,
@@ -24,10 +23,11 @@ import {
   SessionExpiredError,
 } from "@/core/api/authFetch";
 import { clearQueryCache } from "@/core/query/queryClient";
-import { useAttentionQueue } from "@/features/monitoring/hooks/useMonitoring";
+import { useAlerts } from "@/features/alerts/hooks/useAlerts";
+import { useAllPatients } from "@/features/reports/hooks/useReports";
 import {
+  useAuditLog,
   useCurrentUser,
-  useDashboardSummary,
   useOrganization,
   useRefreshPortal,
   type CurrentUser,
@@ -95,12 +95,6 @@ export function usePortal(): PortalValue {
 
 const NAV: NavItem[] = [
   { href: "/dashboard", label: "Overview", Icon: LayoutDashboard },
-  {
-    href: "/dashboard/attention",
-    label: "Needs attention",
-    Icon: Activity,
-    clinicalOnly: true,
-  },
   { href: "/dashboard/alerts", label: "Alerts", Icon: BellRing },
   { href: "/dashboard/devices", label: "Devices", Icon: Watch },
   {
@@ -174,8 +168,9 @@ function readStoredCollapsed(): boolean {
  * for data they never use.
  */
 function OverviewPrefetch() {
-  useAttentionQueue();
-  useDashboardSummary();
+  useAlerts("live", false);
+  useAllPatients();
+  useAuditLog();
   return null;
 }
 

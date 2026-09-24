@@ -9,18 +9,20 @@ import {
   AlertTriangle,
   ArrowLeft,
   CheckCircle2,
-  ShieldCheck,
 } from "lucide-react";
 
 import { SessionExpiredError } from "@/core/api/authFetch";
 import {
-  useCareTeam,
+  useClinicians,
   usePatient,
   usePregnancies,
+  useUpdatePregnancy,
 } from "@/features/patients/hooks/usePatients";
-import { RISK_FACTORS, pregnancyTone } from "@/features/patients/types";
-import { ClinicalNotesPanel } from "@/features/patients/components/ClinicalNotesPanel";
-import { CareTeamPanel } from "@/features/patients/components/CareTeamPanel";
+import {
+  RISK_FACTORS,
+  pregnancyTone,
+  type Pregnancy,
+} from "@/features/patients/types";
 import { RiskPanel } from "@/features/monitoring/components/RiskPanel";
 import { RiskAssessmentInput } from "@/features/monitoring/components/RiskAssessmentInput";
 import { VitalsPanel } from "@/features/monitoring/components/VitalsPanel";
@@ -47,17 +49,12 @@ export default function PatientProfilePage({
   const { id } = use(params);
   const router = useRouter();
   const justEnrolled = useSearchParams().get("enrolled") === "1";
-  const { isClinician, isHospitalAdmin, user } = usePortal();
+  const { isClinician, isHospitalAdmin } = usePortal();
 
   const [tab, setTab] = useState<Tab>("overview");
 
   const patientQuery = usePatient(id);
   const pregnancyQuery = usePregnancies(id);
-  const currentPregnancyId = patientQuery.data?.current_pregnancy?.id ?? "";
-  // Called here (not just inside CareTeamPanel) because canWrite needs this
-  // same data - TanStack Query dedupes the identical query key, so this
-  // isn't a second network request, just a second reader of one cache entry.
-  const careTeamQuery = useCareTeam(id, currentPregnancyId);
 
   const patient = patientQuery.data;
   const pregnancies = pregnancyQuery.data ?? [];
@@ -87,19 +84,10 @@ export default function PatientProfilePage({
   }
 
   const current = patient.current_pregnancy;
-
-  // Mirrors the server's _can_manage_care_team exactly (core/patients/api/
-  // views.py) so the button only appears where the API would actually
-  // accept the write - but the server re-checks this on every request
-  // regardless; this is a convenience, never the authorization boundary.
-  const canManageCareTeam =
-    isHospitalAdmin ||
-    (user.role_code === "care_manager" &&
-      Boolean(user.staff_id) &&
-      (careTeamQuery.data ?? []).some(
-        (m) =>
-          m.staff === user.staff_id && m.role === "care_manager" && m.is_active
-      ));
+  // A convenience for showing/hiding the edit form — the server re-checks
+  // whoever actually submits the PATCH, this only decides what's worth
+  // putting on screen. Matches who can set these fields at enrollment.
+  const canManageCareTeam = isHospitalAdmin || isClinician;
 
   return (
     <>
@@ -111,15 +99,15 @@ export default function PatientProfilePage({
         </p>
       )}
 
-      {/* An unassigned — or departed — clinician is a silent failure: the record
+      {/* An unassigned — or departed — provider is a silent failure: the record
           looks complete, but nobody is accountable and her alerts would have
           nowhere to go. It has to be visible on the patient's own screen. */}
       {current && !current.has_responsible_clinician && (
         <p className="mc-alert mc-alert-notice">
           <AlertTriangle size={15} strokeWidth={2} aria-hidden />
-          {current.assigned_staff
-            ? `${current.assigned_staff_name || "The assigned clinician"} is no longer active at this hospital, so nobody is currently responsible for this pregnancy. Assign a replacement.`
-            : "No clinician is responsible for this pregnancy. Assign one so alerts have somewhere to go."}
+          {current.provider
+            ? `${current.provider_name || "The assigned provider"} is no longer active at this hospital, so nobody is currently responsible for this pregnancy. Assign a replacement.`
+            : "No provider is responsible for this pregnancy. Assign one so alerts have somewhere to go."}
         </p>
       )}
 
@@ -267,54 +255,42 @@ export default function PatientProfilePage({
                       : ""
                   }
                 />
-                <Pair
-                  label="Lead clinician"
-                  value={
-                    current.assigned_staff_name
-                      ? current.assigned_staff_is_active
-                        ? current.assigned_staff_name
-                        : `${current.assigned_staff_name} (no longer active)`
-                      : ""
-                  }
-                />
               </div>
 
-              {current.risk_factors && (
-                <div style={{ marginTop: 22 }}>
-                  <div className="mc-card-title" style={{ marginBottom: 10 }}>
-                    Obstetric history
-                  </div>
-                  <div className="mc-risklist">
-                    {RISK_FACTORS.map(({ field, label }) => {
-                      const answer = current.risk_factors![field];
-                      return (
-                        <div key={field} className="mc-riskrow">
-                          <span className="mc-riskrow-label">{label}</span>
-                          <span
-                            className={`mc-badge mc-badge-${
-                              answer === "yes"
-                                ? "high"
-                                : answer === "no"
-                                  ? "stable"
-                                  : "neutral"
-                            }`}
-                          >
-                            {answer === "yes"
-                              ? "Yes"
-                              : answer === "no"
-                                ? "No"
-                                : "Not asked"}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
+              <div style={{ marginTop: 22 }}>
+                <div className="mc-card-title" style={{ marginBottom: 10 }}>
+                  Obstetric history
                 </div>
-              )}
+                <div className="mc-risklist">
+                  {RISK_FACTORS.map(({ field, label }) => {
+                    const answer = current[field];
+                    return (
+                      <div key={field} className="mc-riskrow">
+                        <span className="mc-riskrow-label">{label}</span>
+                        <span
+                          className={`mc-badge mc-badge-${
+                            answer === "yes"
+                              ? "high"
+                              : answer === "no"
+                                ? "stable"
+                                : "neutral"
+                          }`}
+                        >
+                          {answer === "yes"
+                            ? "Yes"
+                            : answer === "no"
+                              ? "No"
+                              : "Not asked"}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
 
               {current.notes && (
                 <div style={{ marginTop: 20 }}>
-                  <div className="mc-pair-label">Enrolment note</div>
+                  <div className="mc-pair-label">Notes</div>
                   <p className="mc-pair-value">{current.notes}</p>
                 </div>
               )}
@@ -330,20 +306,11 @@ export default function PatientProfilePage({
       )}
 
       {tab === "pregnancy" && current && (
-        <>
-          <CareTeamPanel
-            patientId={patient.id}
-            pregnancyId={current.id}
-            leadProviderName={current.assigned_staff_name}
-            leadProviderActive={current.assigned_staff_is_active}
-            canWrite={canManageCareTeam}
-          />
-          <ClinicalNotesPanel
-            patientId={patient.id}
-            pregnancyId={current.id}
-            canWrite={isClinician}
-          />
-        </>
+        <CareTeamEditor
+          patientId={patient.id}
+          pregnancy={current}
+          canWrite={canManageCareTeam}
+        />
       )}
 
       {tab === "history" && (
@@ -373,8 +340,8 @@ export default function PatientProfilePage({
                         p.edd && `EDD ${formatDate(p.edd)}`,
                         p.gravida !== null && `G${p.gravida}`,
                         p.para !== null && `P${p.para}`,
-                        p.risk_factors?.present_factors.length
-                          ? `${p.risk_factors.present_factors.length} risk factor(s)`
+                        p.present_factors.length
+                          ? `${p.present_factors.length} risk factor(s)`
                           : null,
                       ]
                         .filter(Boolean)
@@ -400,46 +367,171 @@ export default function PatientProfilePage({
         <section className="mc-card">
           <div className="mc-card-head">
             <div>
-              <div className="mc-card-title">Consent record</div>
+              <div className="mc-card-title">Consent</div>
               <div className="mc-card-sub">
-                Append-only — a change of mind adds an entry, it never
-                overwrites one.
+                A single date, not an event log — recorded once, not mandatory
+                to enrol.
               </div>
             </div>
           </div>
-          {patient.consents.length === 0 ? (
-            <EmptyState title="No consent recorded" />
-          ) : (
-            <div className="mc-rows">
-              {patient.consents.map((c) => (
-                <div key={c.id} className="mc-row">
-                  <div className="mc-row-main">
-                    <div className="mc-row-title">
-                      {c.status_display} · policy {c.version}
-                    </div>
-                    <div className="mc-row-meta">
-                      {c.method_display}
-                      {c.recorded_by_name &&
-                        ` · recorded by ${c.recorded_by_name}`}
-                      {` · ${new Date(c.recorded_at).toLocaleString()}`}
-                      {c.note && ` · ${c.note}`}
-                    </div>
-                  </div>
-                  <span
-                    className={`mc-badge mc-badge-${
-                      c.status === "granted" ? "stable" : "neutral"
-                    }`}
-                  >
-                    <ShieldCheck size={12} strokeWidth={2.2} aria-hidden />
-                    {c.status_display}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
+          <div className="mc-card-body">
+            {patient.consent_date ? (
+              <Pair
+                label="Consent recorded"
+                value={formatDate(patient.consent_date)}
+              />
+            ) : (
+              <EmptyState title="No consent recorded yet" />
+            )}
+          </div>
         </section>
       )}
     </>
+  );
+}
+
+/**
+ * Provider/nurse/care_manager, editable directly on the pregnancy — there is
+ * no separate care-team resource any more. Same role-filtered select pattern
+ * as enrollment, so assigning someone here can't produce a value the server
+ * would reject for a role mismatch.
+ */
+function CareTeamEditor({
+  patientId,
+  pregnancy,
+  canWrite,
+}: {
+  patientId: string;
+  pregnancy: Pregnancy;
+  canWrite: boolean;
+}) {
+  const { data: clinicians = [] } = useClinicians();
+  const providers = clinicians.filter((c) => c.role_code === "provider");
+  const nurses = clinicians.filter((c) => c.role_code === "nurse");
+  const careManagers = clinicians.filter((c) => c.role_code === "care_manager");
+
+  const [provider, setProvider] = useState(pregnancy.provider ?? "");
+  const [nurse, setNurse] = useState(pregnancy.nurse ?? "");
+  const [careManager, setCareManager] = useState(pregnancy.care_manager ?? "");
+  const [saved, setSaved] = useState(false);
+
+  const update = useUpdatePregnancy(patientId, pregnancy.id);
+
+  const dirty =
+    provider !== (pregnancy.provider ?? "") ||
+    nurse !== (pregnancy.nurse ?? "") ||
+    careManager !== (pregnancy.care_manager ?? "");
+
+  const save = () => {
+    setSaved(false);
+    update.mutate(
+      {
+        provider: provider || null,
+        nurse: nurse || null,
+        care_manager: careManager || null,
+      },
+      { onSuccess: () => setSaved(true) }
+    );
+  };
+
+  return (
+    <section className="mc-card" style={{ marginTop: 18 }}>
+      <div className="mc-card-head">
+        <div>
+          <div className="mc-card-title">Care team</div>
+          <div className="mc-card-sub">
+            The provider is the accountable lead — what alert escalation routes
+            to.
+          </div>
+        </div>
+      </div>
+      <div className="mc-card-body">
+        <div className="mc-formgrid">
+          <div>
+            <label className="mc-label" htmlFor="ct-provider">
+              Provider
+            </label>
+            <select
+              id="ct-provider"
+              className="mc-input"
+              value={provider}
+              disabled={!canWrite}
+              onChange={(e) => setProvider(e.target.value)}
+            >
+              <option value="">Not assigned</option>
+              {providers.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.full_name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="mc-label" htmlFor="ct-nurse">
+              Nurse
+            </label>
+            <select
+              id="ct-nurse"
+              className="mc-input"
+              value={nurse}
+              disabled={!canWrite}
+              onChange={(e) => setNurse(e.target.value)}
+            >
+              <option value="">Not assigned</option>
+              {nurses.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.full_name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="mc-label" htmlFor="ct-care-manager">
+              Care manager
+            </label>
+            <select
+              id="ct-care-manager"
+              className="mc-input"
+              value={careManager}
+              disabled={!canWrite}
+              onChange={(e) => setCareManager(e.target.value)}
+            >
+              <option value="">Not assigned</option>
+              {careManagers.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.full_name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {update.isError && (
+          <p className="mc-alert mc-alert-error" style={{ marginTop: 12 }}>
+            {update.error instanceof Error
+              ? update.error.message
+              : "Could not save the care team."}
+          </p>
+        )}
+        {saved && !update.isPending && !dirty && (
+          <p className="mc-alert mc-alert-success" style={{ marginTop: 12 }}>
+            Saved.
+          </p>
+        )}
+
+        {canWrite && (
+          <button
+            type="button"
+            className="mc-btn mc-btn-sm"
+            style={{ marginTop: 14 }}
+            disabled={!dirty || update.isPending}
+            onClick={save}
+          >
+            {update.isPending ? "Saving…" : "Save care team"}
+          </button>
+        )}
+      </div>
+    </section>
   );
 }
 

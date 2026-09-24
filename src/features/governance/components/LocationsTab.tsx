@@ -9,17 +9,10 @@ import { Card, CardBody, CardHeader } from "@/shared/ui/Card";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { RowSkeleton } from "@/shared/ui/RowSkeleton";
 
-/**
- * The list/table UI is real and ready to go — `LocationsTable` renders
- * actual `Location` rows the moment `GET /api/locations/` exists. It
- * doesn't exist yet (`core/locations/api/views.py` is an unimplemented
- * placeholder), so today this always hits the error branch below. That's
- * the honest, correct behavior for a call to a route that isn't there —
- * not a bug, and not a reason to fake rows in the meantime.
- */
 export function LocationsTab() {
   const { org } = usePortal();
   const locationsQuery = useLocations();
+  const locations = locationsQuery.data?.results ?? [];
 
   return (
     <>
@@ -56,14 +49,14 @@ export function LocationsTab() {
           <CardBody>
             <EmptyState
               icon={<MapPin size={20} strokeWidth={1.9} aria-hidden />}
-              title="Location management isn't available yet"
-              text={`The location data model exists on the backend, but there's no API to list or edit sites yet — that's a real gap, not a connection problem. The count above (${org.location_count}) is the one real figure available today.`}
+              title="Couldn't load locations"
+              text="This is a problem reaching the server, not an empty hospital. Refresh to try again."
             />
           </CardBody>
         )}
 
         {locationsQuery.isSuccess &&
-          (locationsQuery.data.length === 0 ? (
+          (locations.length === 0 ? (
             <CardBody>
               <EmptyState
                 icon={<MapPin size={20} strokeWidth={1.9} aria-hidden />}
@@ -72,7 +65,7 @@ export function LocationsTab() {
               />
             </CardBody>
           ) : (
-            <LocationsTable locations={locationsQuery.data} />
+            <LocationsTable locations={locations} />
           ))}
       </Card>
     </>

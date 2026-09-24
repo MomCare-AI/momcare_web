@@ -12,6 +12,7 @@ import {
   aggregateDeviceStatus,
   aggregateEnrollmentTrend,
   aggregatePregnancyStatus,
+  aggregateRiskLevels,
   aggregateStaffByRole,
   aggregateWorklistGaps,
 } from "./aggregate";
@@ -65,6 +66,52 @@ describe("aggregateEnrollmentTrend", () => {
     const trend = aggregateEnrollmentTrend([], 6);
     expect(trend).toHaveLength(6);
     expect(trend.every((t) => t.count === 0)).toBe(true);
+  });
+});
+
+describe("aggregateRiskLevels", () => {
+  it("counts only active pregnancies, never a delivered or miscarried one", () => {
+    const dist = aggregateRiskLevels([
+      patient({ pregnancy_status: "active", risk_level: "high" }),
+      patient({ pregnancy_status: "active", risk_level: "low" }),
+      // Her pregnancy ended — must not count toward "active" totals even
+      // though her last risk_level was high.
+      patient({ pregnancy_status: "delivered", risk_level: "high" }),
+      patient({ pregnancy_status: null, risk_level: null }),
+    ]);
+    expect(dist.total).toBe(2);
+    expect(dist.high).toBe(1);
+    expect(dist.low).toBe(1);
+  });
+
+  it("keeps 'not assessed' separate from 'low', never folding one into the other", () => {
+    const dist = aggregateRiskLevels([
+      patient({ pregnancy_status: "active", risk_level: null }),
+      patient({ pregnancy_status: "active", risk_level: "low" }),
+    ]);
+    expect(dist.not_assessed).toBe(1);
+    expect(dist.low).toBe(1);
+  });
+
+  it("computes needing_attention as high + medium, matching the old server logic", () => {
+    const dist = aggregateRiskLevels([
+      patient({ pregnancy_status: "active", risk_level: "high" }),
+      patient({ pregnancy_status: "active", risk_level: "medium" }),
+      patient({ pregnancy_status: "active", risk_level: "low" }),
+    ]);
+    expect(dist.needing_attention).toBe(2);
+  });
+
+  it("returns all zeros, not an error, for a hospital with no active pregnancies", () => {
+    const dist = aggregateRiskLevels([]);
+    expect(dist).toEqual({
+      high: 0,
+      medium: 0,
+      low: 0,
+      not_assessed: 0,
+      total: 0,
+      needing_attention: 0,
+    });
   });
 });
 
@@ -156,7 +203,9 @@ function staffMember(role_code: string): StaffMember {
     email: "s@example.com",
     role_name: role_code,
     role_code,
+    phone: "",
     is_user_active: true,
+    has_activated: true,
     is_active: true,
     photo: null,
     qualifications: "",
@@ -165,6 +214,8 @@ function staffMember(role_code: string): StaffMember {
     registration_authority: "",
     practicing_since: null,
     years_of_experience: null,
+    location_ids: [],
+    created_at: "2026-01-01T00:00:00Z",
   };
 }
 

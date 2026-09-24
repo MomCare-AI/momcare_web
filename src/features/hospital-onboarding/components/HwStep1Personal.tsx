@@ -149,6 +149,9 @@ export default function HwStep1Personal({ defaultValues, onSubmit }: Props) {
               <option value="other">Other</option>
               <option value="unknown">Unknown</option>
             </select>
+            {errors.gender && (
+              <span className="hw-err-msg">{errors.gender.message}</span>
+            )}
           </div>
         </div>
       </form>

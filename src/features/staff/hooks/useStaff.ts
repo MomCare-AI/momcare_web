@@ -10,9 +10,12 @@ export interface StaffMember {
   employee_id: string;
   full_name: string;
   email: string;
+  phone: string;
   role_name: string;
   role_code: string;
   is_user_active: boolean;
+  /** False until they've set their own password from the emailed link. */
+  has_activated: boolean;
   is_active: boolean;
   photo: string | null;
   qualifications: string;
@@ -23,6 +26,10 @@ export interface StaffMember {
   /** Derived from practicing_since on every read, never stored - null when
    *  practicing_since hasn't been set. */
   years_of_experience: number | null;
+  /** The site(s) this person works at. Required on creation unless
+   *  role_code is hospital_admin. */
+  location_ids: string[];
+  created_at: string;
 }
 
 /** What a person may change about their own (or, for an admin, anyone's)
@@ -37,28 +44,28 @@ export interface StaffProfileInput {
   practicing_since?: string;
 }
 
-export interface Invite {
-  id: string;
+/** Creates the account directly — passwordless, with a one-time set-password
+ *  link emailed to them. There is no separate invite/accept step any more. */
+export interface CreateStaffInput {
   email: string;
   first_name: string;
   last_name: string;
-  role_name: string;
-  token: string;
-  status: "pending" | "accepted" | "revoked" | "expired";
-  expires_at: string;
+  phone?: string;
+  role_code: string;
+  /** Required (non-empty) unless role_code is "hospital_admin". */
+  locations: string[];
 }
 
-export interface InviteInput {
-  email: string;
-  first_name: string;
-  last_name: string;
-  role_code: string;
+export interface AssignmentStatus {
+  has_active_patients: boolean;
+  active_patient_count: number;
+  message: string;
 }
 
 export const staffKeys = {
   all: ["staff"] as const,
   list: ["staff", "list"] as const,
-  invites: ["staff", "invites"] as const,
+  assignmentStatus: (id: string) => ["staff", "assignment-status", id] as const,
 };
 
 function retryUnlessSessionExpired(failureCount: number, error: unknown) {
@@ -74,33 +81,12 @@ export function useStaffList() {
   });
 }
 
-/**
- * Pending invitations — hospital admins only.
- *
- * Clinical staff get a 403 here by design: they may see the team but not
- * manage who joins it. That is an expected answer rather than a failure, so
- * it resolves to an empty list instead of surfacing an error.
- */
-export function useInvites(enabled: boolean) {
-  return useQuery({
-    queryKey: staffKeys.invites,
-    queryFn: async () => {
-      const res = await authFetch("/api/staff/invites/");
-      if (res.status === 403) return [] as Invite[];
-      if (!res.ok) throw new Error("Could not load invitations.");
-      return (await res.json()) as Invite[];
-    },
-    enabled,
-    retry: retryUnlessSessionExpired,
-  });
-}
-
-export function useCreateInvite() {
+export function useCreateStaff() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (input: InviteInput) => {
-      const res = await authFetch("/api/staff/invites/", {
+    mutationFn: async (input: CreateStaffInput) => {
+      const res = await authFetch("/api/staff/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(input),
@@ -108,25 +94,77 @@ export function useCreateInvite() {
       const body = await res.json().catch(() => null);
       if (!res.ok) {
         throw new Error(
-          body?.email?.[0] ?? body?.detail ?? "Could not create the invitation."
+          body?.email?.[0] ??
+            body?.locations?.[0] ??
+            body?.detail ??
+            "Could not create this staff member."
         );
       }
-      return body as Invite;
+      return body as StaffMember;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: staffKeys.all });
+      queryClient.invalidateQueries({ queryKey: portalKeys.organization });
     },
   });
 }
 
-export function useRevokeInvite() {
+/** Checked before deactivating someone, so an admin sees "she still has 4
+ *  active patients" before confirming rather than after. */
+export function useStaffAssignmentStatus(staffId: string | null) {
+  return useQuery({
+    queryKey: staffKeys.assignmentStatus(staffId ?? ""),
+    queryFn: () =>
+      authJson<AssignmentStatus>(`/api/staff/${staffId}/assignment-status/`),
+    enabled: staffId !== null,
+    retry: retryUnlessSessionExpired,
+  });
+}
+
+export function useDeactivateStaff() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) =>
-      authFetch(`/api/staff/invites/${id}/revoke/`, { method: "POST" }),
+    mutationFn: async ({
+      staffId,
+      reason,
+    }: {
+      staffId: string;
+      reason?: string;
+    }) => {
+      const res = await authFetch(`/api/staff/${staffId}/deactivate/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason: reason ?? "" }),
+      });
+      const body = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(body?.detail ?? "Could not deactivate this person.");
+      }
+      return body as StaffMember;
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: staffKeys.invites });
+      queryClient.invalidateQueries({ queryKey: staffKeys.list });
+    },
+  });
+}
+
+export function useReactivateStaff() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (staffId: string) => {
+      const res = await authFetch(`/api/staff/${staffId}/reactivate/`, {
+        method: "POST",
+      });
+      const body = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(body?.detail ?? "Could not reactivate this person.");
+      }
+      return body as StaffMember;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: staffKeys.list });
     },
   });
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 
 import { API_BASE } from "@/core/api/apiBase";
@@ -13,10 +13,11 @@ import styles from "../../../../login/login.module.css";
  * The uid and token come from the URL and are never shown — they are a
  * credential, and a credential on screen is one somebody can photograph.
  *
- * The server is the authority on whether the link is still good. It is checked
- * on submit rather than on load, because a link is single-use: verifying it up
- * front would consume nothing but would tell an attacker, without any password
- * being set, whether a token they hold is live.
+ * The backend now exposes a dedicated verify-reset-token check, meant to be
+ * called before the set-password form is shown — a deliberate change from an
+ * earlier "never check on load" design, now that there's a real endpoint for
+ * exactly this. So a dead link is caught immediately on page load, not only
+ * after someone has typed a new password and submitted it.
  */
 /**
  * DRF wraps validation messages in lists, even when a serializer raised a
@@ -37,11 +38,43 @@ export function ResetPasswordPageClient({
   uid: string;
   token: string;
 }) {
+  const [checking, setChecking] = useState(true);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Holds the server's own wording for a link that cannot be retried.
   const [dead, setDead] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/auth/verify-reset-token/`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ uid, token }),
+        });
+        if (cancelled) return;
+        if (!res.ok) {
+          const data = await res.json().catch(() => null);
+          setDead(
+            firstMessage(data?.detail) ?? "This link is no longer valid."
+          );
+        }
+      } catch {
+        if (!cancelled) {
+          setDead("Could not connect to the server. Check your connection.");
+        }
+      } finally {
+        if (!cancelled) setChecking(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [uid, token]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -62,7 +95,7 @@ export function ResetPasswordPageClient({
 
     setSubmitting(true);
     try {
-      const res = await fetch(`${API_BASE}/api/auth/password/reset/confirm/`, {
+      const res = await fetch(`${API_BASE}/api/auth/reset-password/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ uid, token, new_password: password }),
@@ -74,8 +107,13 @@ export function ResetPasswordPageClient({
         // The server returns the password validator's own words — "too short",
         // "too common", "too similar to your email". They are more useful than
         // anything this page could invent, so they are shown as written.
+        // validate_password() is called from the serializer's whole-object
+        // validate(), not a per-field validate_new_password() — DRF nests
+        // that under non_field_errors, not new_password.
         const detail =
-          firstMessage(data?.detail) ?? firstMessage(data?.new_password);
+          firstMessage(data?.detail) ??
+          firstMessage(data?.new_password) ??
+          firstMessage(data?.non_field_errors);
 
         // A link that is expired or already used cannot be retried, so the form
         // is replaced rather than left there inviting another attempt.
@@ -124,7 +162,12 @@ export function ResetPasswordPageClient({
       </section>
 
       <section className={styles.panel}>
-        {done ? (
+        {checking ? (
+          <div className={styles.form}>
+            <span className={styles.eyebrow}>Account recovery</span>
+            <h1 className={styles.heading}>Checking your link…</h1>
+          </div>
+        ) : done ? (
           <div className={styles.form}>
             <span className={styles.eyebrow}>All set</span>
             <h1 className={styles.heading}>Password changed</h1>

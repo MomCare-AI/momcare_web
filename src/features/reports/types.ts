@@ -39,3 +39,18 @@ export interface AlertMetrics {
   byTier: DistributionSlice[];
   byResolution: DistributionSlice[];
 }
+
+/** The Overview page's risk donut — same shape the now-dead
+ *  `/api/dashboard/summary/` endpoint used to return, computed client-side
+ *  from the bulk patient list instead (see aggregateRiskLevels). */
+export interface RiskDistribution {
+  high: number;
+  medium: number;
+  low: number;
+  /** Enrolled, but no assessment has ever been written for this pregnancy —
+   *  kept apart from "low": a patient nobody has measured is not a patient
+   *  who is well. */
+  not_assessed: number;
+  total: number;
+  needing_attention: number;
+}

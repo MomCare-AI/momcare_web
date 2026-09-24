@@ -172,5 +172,17 @@ export function PulseField() {
     };
   }, []);
 
-  return <canvas ref={ref} aria-hidden="true" />;
+  // CSS-sized independently of the width/height attributes measure() writes.
+  // Without this, an unstyled canvas's layout size IS those attributes, so on
+  // any devicePixelRatio != 1 each frame's getBoundingClientRect() reads back
+  // the size the previous frame just wrote * dpr — a runaway feedback loop
+  // that blows the canvas (and the whole page) out to millions of pixels
+  // within seconds.
+  return (
+    <canvas
+      ref={ref}
+      aria-hidden="true"
+      style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
+    />
+  );
 }

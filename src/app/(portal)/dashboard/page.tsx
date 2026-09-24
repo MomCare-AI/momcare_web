@@ -1,9 +1,11 @@
 "use client";
 
+import { useMemo } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
 import {
   AlertTriangle,
+  BellRing,
   Brain,
   Building2,
   ChevronRight,
@@ -15,12 +17,14 @@ import {
   UserPlus,
   Users,
 } from "lucide-react";
-import { AttentionQueue } from "@/features/monitoring/components/AttentionQueue";
-import { useAttentionQueue } from "@/features/monitoring/hooks/useMonitoring";
+import { useAlerts } from "@/features/alerts/hooks/useAlerts";
+import { RecentAlertsList } from "@/features/reports/components/AlertMetricsPanel";
+import { useAllPatients } from "@/features/reports/hooks/useReports";
+import { aggregateRiskLevels } from "@/features/reports/lib/aggregate";
+import type { RiskDistribution } from "@/features/reports/types";
 import {
-  useDashboardSummary,
-  type DashboardActivity,
-  type DashboardRisk,
+  useAuditLog,
+  type AuditLogEntry,
 } from "@/features/portal/hooks/usePortalData";
 import { Card, CardBody, CardHeader } from "@/shared/ui/Card";
 import { EmptyState } from "@/shared/ui/EmptyState";
@@ -29,7 +33,7 @@ import { usePortal } from "./layout";
 import { usePageTitle } from "@/hooks/usePageTitle";
 
 const RISK_LEVELS: {
-  key: keyof Pick<DashboardRisk, "high" | "medium" | "low" | "not_assessed">;
+  key: keyof Pick<RiskDistribution, "high" | "medium" | "low" | "not_assessed">;
   label: string;
   badge: string;
   color: string;
@@ -67,7 +71,7 @@ const MotionLink = motion.create(Link);
 
 /** CSS conic-gradient stops for the risk donut — no charting library needed
  *  for five static segments, and it stays crisp at any size. */
-function donutGradient(risk: DashboardRisk): string {
+function donutGradient(risk: RiskDistribution): string {
   const total = risk.total || 1;
   let cursor = 0;
   const stops = RISK_LEVELS.map(({ key, color }) => {
@@ -82,8 +86,10 @@ function donutGradient(risk: DashboardRisk): string {
 /** "READ patients" -> "Read patients". Kept close to the raw log on purpose —
  *  this is an audit trail, not a marketing feed, and paraphrasing it risks
  *  saying something the log itself did not. */
-function describeActivity(entry: DashboardActivity): string {
-  const verb = entry.action.charAt(0) + entry.action.slice(1).toLowerCase();
+function describeActivity(entry: AuditLogEntry): string {
+  const verb =
+    entry.action_display ||
+    entry.action.charAt(0) + entry.action.slice(1).toLowerCase();
   return entry.resource ? `${verb} ${entry.resource}` : verb;
 }
 
@@ -92,7 +98,7 @@ function describeActivity(entry: DashboardActivity): string {
  *  because it's news. Without this, a shift of normal clicking around
  *  buries the handful of entries (enrolled a patient, resolved an alert)
  *  that are actually worth seeing. */
-function isNoteworthy(entry: DashboardActivity): boolean {
+function isNoteworthy(entry: AuditLogEntry): boolean {
   return entry.action !== "READ";
 }
 
@@ -116,20 +122,27 @@ export default function OverviewPage() {
   usePageTitle("Overview");
   const { org, user, isHospitalAdmin } = usePortal();
   const now = new Date();
-  const queue = useAttentionQueue();
-  const summary = useDashboardSummary();
+  const patientsQuery = useAllPatients();
+  const liveAlertsQuery = useAlerts("live", false);
+  const auditLogQuery = useAuditLog();
 
+  const patients = patientsQuery.data ?? [];
+  const liveAlerts = liveAlertsQuery.data?.results ?? [];
   // Undefined while loading or on error — rendered as "—" rather than 0,
   // because a confident zero we cannot vouch for is the wrong thing to show
   // on a monitoring dashboard.
-  const attentionCount = queue.isSuccess ? queue.data.count : undefined;
+  const unacknowledged = liveAlertsQuery.isSuccess
+    ? liveAlertsQuery.data.unacknowledged
+    : undefined;
 
   const hasStaff = org.staff_count > 0;
   const hasPatients = org.patient_count > 0;
 
+  const risk = useMemo(() => aggregateRiskLevels(patients), [patients]);
+
   // The server returns every audit-logged action, reads included; the
   // activity feed only wants the ones that changed something.
-  const meaningfulActivity = (summary.data?.activity ?? []).filter(
+  const meaningfulActivity = (auditLogQuery.data?.results ?? []).filter(
     isNoteworthy
   );
 
@@ -166,8 +179,8 @@ export default function OverviewPage() {
           clinician's attention leads, ahead of the administrative counts. */}
       <section className="mc-kpis">
         <MotionLink
-          href="/dashboard/attention"
-          className={`mc-kpi ${attentionCount ? "mc-kpi-fill-alert" : "mc-kpi-fill-attn"}`}
+          href="/dashboard/alerts"
+          className={`mc-kpi ${unacknowledged ? "mc-kpi-fill-alert" : "mc-kpi-fill-attn"}`}
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.22, delay: 0 }}
@@ -176,21 +189,21 @@ export default function OverviewPage() {
             <span className="mc-kpi-label">Needing attention</span>
             <span
               className={`mc-kpi-icon mc-kpi-icon-attn${
-                attentionCount ? " mc-kpi-icon-alert" : ""
+                unacknowledged ? " mc-kpi-icon-alert" : ""
               }`}
             >
               <AlertTriangle size={17} strokeWidth={1.9} aria-hidden />
             </span>
           </div>
-          <span className="mc-kpi-value">{attentionCount ?? "—"}</span>
+          <span className="mc-kpi-value">{unacknowledged ?? "—"}</span>
           <span className="mc-kpi-foot">
-            {attentionCount === undefined
-              ? queue.isError
-                ? "Queue unavailable"
+            {unacknowledged === undefined
+              ? liveAlertsQuery.isError
+                ? "Alerts unavailable"
                 : "Checking…"
-              : attentionCount === 0
-                ? "No patient outside range"
-                : "Patients outside clinical range"}
+              : unacknowledged === 0
+                ? "Nothing unanswered"
+                : "Alerts awaiting a response"}
           </span>
         </MotionLink>
 
@@ -242,7 +255,7 @@ export default function OverviewPage() {
             Enrol patient
           </Link>
           <Link href="/dashboard/governance" className="mc-btn-ghost">
-            Invite staff
+            Add staff
           </Link>
           <span className="mc-badge mc-badge-neutral">
             <Info size={12} strokeWidth={2.2} aria-hidden />
@@ -260,27 +273,38 @@ export default function OverviewPage() {
             <div className="mc-section-head">
               <span
                 className={`mc-section-icon mc-kpi-icon-attn${
-                  attentionCount ? " mc-kpi-icon-alert" : ""
+                  unacknowledged ? " mc-kpi-icon-alert" : ""
                 }`}
               >
-                <AlertTriangle size={17} strokeWidth={1.9} aria-hidden />
+                <BellRing size={17} strokeWidth={1.9} aria-hidden />
               </span>
               <div>
-                <div className="mc-card-title">
-                  Patients requiring attention
-                </div>
+                <div className="mc-card-title">Recent live alerts</div>
                 <div className="mc-card-sub">
-                  Most severe first, unreviewed above reviewed
+                  Most severe first, unanswered above answered
                 </div>
               </div>
             </div>
-            {attentionCount ? (
+            {liveAlerts.length > 0 ? (
               <span className="mc-badge mc-badge-neutral">
-                {attentionCount}
+                {liveAlerts.length}
               </span>
             ) : null}
           </CardHeader>
-          <AttentionQueue limit={5} />
+          {liveAlertsQuery.isError ? (
+            <EmptyState
+              title="Alerts unavailable"
+              text="This is not a statement that nothing is wrong — the list could not be loaded. Refresh to try again."
+            />
+          ) : liveAlertsQuery.isSuccess && liveAlerts.length === 0 ? (
+            <EmptyState
+              icon={<BellRing size={20} strokeWidth={1.9} aria-hidden />}
+              title="Nothing to review"
+              text="No live alerts right now. They appear here the moment a reading crosses a clinical threshold."
+            />
+          ) : (
+            <RecentAlertsList alerts={liveAlerts} />
+          )}
         </Card>
 
         <Card>
@@ -298,14 +322,14 @@ export default function OverviewPage() {
             </div>
           </CardHeader>
 
-          {summary.isError && (
+          {patientsQuery.isError && (
             <EmptyState
               title="Overview unavailable"
-              text="This is not a statement that no patient needs review — the summary could not be loaded. Refresh to try again."
+              text="This is not a statement that no patient needs review — the list could not be loaded. Refresh to try again."
             />
           )}
 
-          {summary.isSuccess && summary.data.risk.total === 0 && (
+          {patientsQuery.isSuccess && risk.total === 0 && (
             <EmptyState
               icon={<HeartPulse size={20} strokeWidth={1.9} aria-hidden />}
               title="No health data yet"
@@ -313,31 +337,29 @@ export default function OverviewPage() {
             />
           )}
 
-          {summary.isSuccess && summary.data.risk.total > 0 && (
+          {patientsQuery.isSuccess && risk.total > 0 && (
             <CardBody>
               <div className="mc-donut-wrap">
                 <motion.div
                   className="mc-donut"
-                  style={{ background: donutGradient(summary.data.risk) }}
+                  style={{ background: donutGradient(risk) }}
                   role="img"
-                  aria-label={`${summary.data.risk.total} active pregnancies, ${summary.data.risk.needing_attention} needing review`}
+                  aria-label={`${risk.total} active pregnancies, ${risk.needing_attention} needing review`}
                   initial={{ opacity: 0, scale: 0.85 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
                 >
                   <div className="mc-donut-hole">
-                    <span className="mc-donut-value">
-                      {summary.data.risk.total}
-                    </span>
+                    <span className="mc-donut-value">{risk.total}</span>
                     <span className="mc-donut-label">active pregnancies</span>
                   </div>
                 </motion.div>
                 <div className="mc-riskbars">
                   {RISK_LEVELS.map(({ key, label, color }, index) => {
-                    const count = summary.data.risk[key];
+                    const count = risk[key];
                     const pct =
-                      summary.data.risk.total > 0
-                        ? Math.round((count / summary.data.risk.total) * 100)
+                      risk.total > 0
+                        ? Math.round((count / risk.total) * 100)
                         : 0;
                     return (
                       <div key={key} className="mc-riskbar-row">
@@ -369,21 +391,18 @@ export default function OverviewPage() {
                 </div>
               </div>
               <div className="mc-hint" style={{ marginTop: 14 }}>
-                {summary.data.risk.needing_attention} of{" "}
-                {summary.data.risk.total} active{" "}
-                {summary.data.risk.total === 1
-                  ? "pregnancy needs"
-                  : "pregnancies need"}{" "}
+                {risk.needing_attention} of {risk.total} active{" "}
+                {risk.total === 1 ? "pregnancy needs" : "pregnancies need"}{" "}
                 review right now.
               </div>
 
-              {summary.data.risk.needing_attention > 0 && (
+              {risk.needing_attention > 0 && (
                 <Link
-                  href="/dashboard/attention"
+                  href="/dashboard/alerts"
                   className="mc-link"
                   style={{ marginTop: 12 }}
                 >
-                  View queue
+                  View alerts
                   <ChevronRight size={14} strokeWidth={2.2} aria-hidden />
                 </Link>
               )}
@@ -408,7 +427,7 @@ export default function OverviewPage() {
             The maternal risk model is live and scores every reading as it
             arrives. Each judgement, its confidence and the vitals behind it are
             on the patient&rsquo;s own record; the ones needing a clinician are
-            listed under Needs attention.
+            listed under Alerts.
           </div>
           <p className="mc-ai-note">
             AI output is decision support only and is never a diagnosis. A
@@ -432,13 +451,13 @@ export default function OverviewPage() {
               </div>
             </CardHeader>
             <CardBody>
-              {summary.isSuccess && meaningfulActivity.length === 0 && (
+              {auditLogQuery.isSuccess && meaningfulActivity.length === 0 && (
                 <div className="mc-hint">No changes recorded yet.</div>
               )}
-              {summary.isSuccess && meaningfulActivity.length > 0 && (
+              {auditLogQuery.isSuccess && meaningfulActivity.length > 0 && (
                 <ol className="mc-trail">
-                  {meaningfulActivity.map((entry, index) => (
-                    <li key={`${entry.at}-${index}`} className="mc-trail-item">
+                  {meaningfulActivity.map((entry) => (
+                    <li key={entry.id} className="mc-trail-item">
                       <span className="mc-trail-dot" aria-hidden />
                       <div>
                         <div className="mc-trail-what">
@@ -446,8 +465,8 @@ export default function OverviewPage() {
                         </div>
                         <div className="mc-trail-when">
                           <Clock size={11} strokeWidth={2.2} aria-hidden />{" "}
-                          {timeAgo(entry.at)}
-                          {entry.actor ? ` · ${entry.actor}` : ""}
+                          {timeAgo(entry.timestamp)}
+                          {entry.user_name ? ` · ${entry.user_name}` : ""}
                         </div>
                       </div>
                     </li>
@@ -464,7 +483,7 @@ export default function OverviewPage() {
           <EmptyState
             icon={<Stethoscope size={20} strokeWidth={1.9} aria-hidden />}
             title="No doctors yet"
-            text="Your clinical team hasn't been added. Invite doctors, nurses and care managers to start running your hospital on MomCare."
+            text="Your clinical team hasn't been added. Add doctors, nurses and care managers to start running your hospital on MomCare."
             actions={
               <Link href="/dashboard/governance" className="mc-btn">
                 <UserPlus size={15} strokeWidth={2} aria-hidden />
@@ -490,14 +509,14 @@ export default function OverviewPage() {
           </div>
           <span className="mc-badge mc-badge-neutral">
             <Building2 size={12} strokeWidth={2.2} aria-hidden />
-            {org.license_authority_display || "Authority not recorded"}
+            {org.status_display}
           </span>
         </CardHeader>
         <CardBody>
           <div className="mc-pairs">
             <Pair label="Hospital" value={org.name} />
             <Pair label="Administrator" value={org.owner_name} />
-            <Pair label="Licence no." value={org.license_no} />
+            <Pair label="Licence no." value={org.license_number} />
             <Pair label="Contact email" value={org.email} />
             <Pair label="Phone" value={org.phone} />
             <Pair
@@ -521,10 +540,10 @@ export default function OverviewPage() {
         </CardBody>
         {hasPatients && (
           <div className="mc-card-foot">
-            <span className="mc-link">
+            <Link href="/dashboard/governance" className="mc-link">
               <MapPin size={13} strokeWidth={2} aria-hidden /> View organization
               settings
-            </span>
+            </Link>
           </div>
         )}
       </Card>

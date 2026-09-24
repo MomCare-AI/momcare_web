@@ -1,18 +1,17 @@
 import { authFetch, authJson } from "@/core/api/authFetch";
 
 import type {
-  CareTeamMembership,
-  CareTeamRole,
-  ClinicalNote,
   Paginated,
   PatientDetail,
   PatientListItem,
   Pregnancy,
-  RiskAnswer,
+  PregnancyUpdateInput,
+  RiskFactors,
   WorklistResponse,
 } from "./types";
 
 export interface EnrolmentInput {
+  mrn?: string | null;
   first_name: string;
   last_name?: string;
   date_of_birth?: string | null;
@@ -23,21 +22,19 @@ export interface EnrolmentInput {
   emergency_contact_name?: string;
   emergency_contact_phone?: string;
   emergency_contact_relation?: string;
-  pregnancy?: {
+  emergency_contact_email?: string;
+  /** Optional now — consent is no longer mandatory at onboarding. */
+  consent_date?: string | null;
+  pregnancy?: Partial<RiskFactors> & {
     lmp?: string | null;
     edd?: string | null;
     edd_source?: string;
     gravida?: number | null;
     para?: number | null;
-    assigned_staff?: string | null;
+    provider?: string | null;
+    nurse?: string | null;
+    care_manager?: string | null;
     notes?: string;
-    risk_factors?: Record<string, RiskAnswer>;
-  };
-  consent: {
-    status: "granted";
-    version: string;
-    method: string;
-    note?: string;
   };
 }
 
@@ -81,83 +78,26 @@ export function listPregnancies(patientId: string) {
   return authJson<Pregnancy[]>(`/api/patients/${patientId}/pregnancies/`);
 }
 
-export function listClinicalNotes(patientId: string, pregnancyId: string) {
-  return authJson<ClinicalNote[]>(
-    `/api/patients/${patientId}/pregnancies/${pregnancyId}/notes/`
-  );
-}
-
-/**
- * Write a clinical note. The API rejects this for a hospital admin (403) —
- * writing a clinical judgement is a clinician's call, not an admin task, the
- * same split drawn for acknowledging an alert.
- */
-export async function addClinicalNote(
+/** Care team (provider/nurse/care_manager) lives directly on the pregnancy
+ *  now — there is no separate care-team endpoint any more. */
+export async function updatePregnancy(
   patientId: string,
   pregnancyId: string,
-  body: string
-): Promise<ClinicalNote> {
+  input: PregnancyUpdateInput
+): Promise<Pregnancy> {
   const res = await authFetch(
-    `/api/patients/${patientId}/pregnancies/${pregnancyId}/notes/`,
+    `/api/patients/${patientId}/pregnancies/${pregnancyId}/`,
     {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ body }),
-    }
-  );
-  const data = await res.json().catch(() => null);
-  if (!res.ok) {
-    throw new Error(firstError(data) ?? "Could not save this note.");
-  }
-  return data as ClinicalNote;
-}
-
-/** Read is open to any hospital staff; who *may* write is decided by the
- *  server on every call (hospital_admin, or a care_manager with an active
- *  membership on this pregnancy) - see core/patients/api/views.py's
- *  `_can_manage_care_team`. The frontend's own write-control visibility is
- *  a convenience, never the authorization boundary. */
-export function listCareTeam(patientId: string, pregnancyId: string) {
-  return authJson<CareTeamMembership[]>(
-    `/api/patients/${patientId}/pregnancies/${pregnancyId}/care-team/`
-  );
-}
-
-export async function addCareTeamMember(
-  patientId: string,
-  pregnancyId: string,
-  input: { staff: string; role: CareTeamRole }
-): Promise<CareTeamMembership> {
-  const res = await authFetch(
-    `/api/patients/${patientId}/pregnancies/${pregnancyId}/care-team/`,
-    {
-      method: "POST",
+      method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(input),
     }
   );
   const data = await res.json().catch(() => null);
   if (!res.ok) {
-    throw new Error(firstError(data) ?? "Could not add this care team member.");
+    throw new Error(firstError(data) ?? "Could not save this pregnancy.");
   }
-  return data as CareTeamMembership;
-}
-
-/** Never a delete - the membership row stays, `is_active` turns false. */
-export async function endCareTeamMembership(
-  patientId: string,
-  pregnancyId: string,
-  membershipId: string
-): Promise<CareTeamMembership> {
-  const res = await authFetch(
-    `/api/patients/${patientId}/pregnancies/${pregnancyId}/care-team/${membershipId}/end/`,
-    { method: "POST" }
-  );
-  const data = await res.json().catch(() => null);
-  if (!res.ok) {
-    throw new Error(firstError(data) ?? "Could not end this membership.");
-  }
-  return data as CareTeamMembership;
+  return data as Pregnancy;
 }
 
 export interface StaffOption {

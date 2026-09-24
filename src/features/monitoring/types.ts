@@ -302,21 +302,6 @@ export interface RiskHistory {
   history: RiskAssessment[];
 }
 
-/** One row of the queue a clinician works from — flat, because it is scanned. */
-export interface AttentionPatient {
-  patient_id: string;
-  pregnancy_id: string;
-  full_name: string;
-  mrn: string | null;
-  gestational_age: string;
-  risk_level: RiskLevel;
-  risk_level_display: string;
-  assessed_at: string;
-  needs_review: boolean;
-  assigned_staff_name: string;
-  has_responsible_clinician: boolean;
-}
-
 const RISK_RANK: Record<RiskLevel, number> = {
   low: 0,
   medium: 1,

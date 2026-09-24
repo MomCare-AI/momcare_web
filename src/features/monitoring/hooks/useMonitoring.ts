@@ -5,7 +5,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { SessionExpiredError } from "@/core/api/authFetch";
 import {
   assignDevice,
-  getAttentionQueue,
   getLatestReadings,
   getRiskHistory,
   listDevices,
@@ -32,7 +31,6 @@ export const monitoringKeys = {
   devices: [...MONITORING_ROOT, "devices"] as const,
   risk: (pregnancyId: string) =>
     [...MONITORING_ROOT, "risk", pregnancyId] as const,
-  attention: [...MONITORING_ROOT, "attention"] as const,
 };
 
 function retryUnlessSessionExpired(failureCount: number, error: unknown) {
@@ -160,23 +158,6 @@ export function useRiskHistory(pregnancyId: string | undefined) {
   });
 }
 
-/**
- * The queue every clinician's shift starts from.
- *
- * Refetched on window focus and on a timer: this is the one view where a
- * stale screen is a clinical problem rather than an inconvenience.
- */
-export function useAttentionQueue() {
-  return useQuery({
-    queryKey: monitoringKeys.attention,
-    queryFn: getAttentionQueue,
-    retry: retryUnlessSessionExpired,
-    staleTime: 30 * 1000,
-    refetchInterval: 60 * 1000,
-    refetchOnWindowFocus: true,
-  });
-}
-
 export function useVerifyRisk(pregnancyId: string) {
   const queryClient = useQueryClient();
   return useMutation({
@@ -191,7 +172,6 @@ export function useVerifyRisk(pregnancyId: string) {
       queryClient.invalidateQueries({
         queryKey: monitoringKeys.risk(pregnancyId),
       });
-      queryClient.invalidateQueries({ queryKey: monitoringKeys.attention });
     },
   });
 }
@@ -204,7 +184,6 @@ export function useReassessRisk(pregnancyId: string) {
       queryClient.invalidateQueries({
         queryKey: monitoringKeys.risk(pregnancyId),
       });
-      queryClient.invalidateQueries({ queryKey: monitoringKeys.attention });
       // A changed level changes the badge on the patient list too.
       queryClient.invalidateQueries({ queryKey: ["patients"] });
     },

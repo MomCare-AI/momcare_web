@@ -33,6 +33,22 @@ function respond(status: number, body: unknown) {
   });
 }
 
+/** The reset-password page now makes two calls in sequence: a
+ *  verify-reset-token check on mount, then reset-password on submit. Routes
+ *  by URL substring so each test can script the two independently. */
+function respondByUrl(routes: Record<string, [number, unknown]>) {
+  return vi.fn().mockImplementation((url: string) => {
+    const match = Object.entries(routes).find(([path]) => url.includes(path));
+    if (!match) throw new Error(`Unexpected fetch to ${url}`);
+    const [, [status, body]] = match;
+    return Promise.resolve({
+      ok: status >= 200 && status < 300,
+      status,
+      json: async () => body,
+    });
+  });
+}
+
 function type(field: HTMLElement, value: string) {
   fireEvent.change(field, { target: { value } });
 }
@@ -102,14 +118,39 @@ describe("forgot password", () => {
 });
 
 describe("reset password", () => {
+  it("shows the dead-link state immediately when the link fails the mount-time check, without letting the form appear", async () => {
+    const fetchMock = respondByUrl({
+      "verify-reset-token": [
+        400,
+        { detail: "This reset link has already been used." },
+      ],
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    await renderReset();
+
+    expect(await screen.findByText(/this link has expired/i)).toBeTruthy();
+    expect(
+      screen.getByText(/this reset link has already been used/i)
+    ).toBeTruthy();
+    expect(screen.queryByLabelText(/new password/i)).toBeNull();
+    // Never got as far as trying to set a password.
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it("replaces the form when the link is dead", async () => {
     // The regression. `detail` arrives as a list, and the dead-link branch has
     // to survive that — a form left on screen invites another attempt at a
-    // link that can never work again.
+    // link that can never work again. Verified live (not just the submit) —
+    // the link passes the mount-time check but dies between then and submit
+    // (e.g. used from a second tab in the meantime).
     vi.stubGlobal(
       "fetch",
-      respond(400, {
-        detail: ["This reset link is not valid. Request a new one."],
+      respondByUrl({
+        "verify-reset-token": [200, { valid: true }],
+        "reset-password": [
+          400,
+          { detail: ["This reset link is not valid. Request a new one."] },
+        ],
       })
     );
     await renderReset();
@@ -131,7 +172,13 @@ describe("reset password", () => {
   it("shows the server's own wording for a weak password, and keeps the form", async () => {
     vi.stubGlobal(
       "fetch",
-      respond(400, { new_password: ["This password is too common."] })
+      respondByUrl({
+        "verify-reset-token": [200, { valid: true }],
+        "reset-password": [
+          400,
+          { new_password: ["This password is too common."] },
+        ],
+      })
     );
     await renderReset();
 
@@ -145,8 +192,42 @@ describe("reset password", () => {
     expect(screen.getByRole("button", { name: /set password/i })).toBeTruthy();
   });
 
+  it("shows the validator's wording even when DRF nests it under non_field_errors", async () => {
+    // validate_password() is called from the serializer's whole-object
+    // validate(), not a per-field validate_new_password() — DRF puts that
+    // error under non_field_errors, not new_password. Found live: the
+    // generic fallback ("Could not set your password. Please try again.")
+    // was all a real user ever saw for a too-common or too-similar password.
+    vi.stubGlobal(
+      "fetch",
+      respondByUrl({
+        "verify-reset-token": [200, { valid: true }],
+        "reset-password": [
+          400,
+          {
+            non_field_errors: [
+              "This password is too similar to your email address.",
+            ],
+          },
+        ],
+      })
+    );
+    await renderReset();
+
+    const password = await screen.findByLabelText(/new password/i);
+    type(password, "zaka.satti@momcare");
+    type(screen.getByLabelText(/confirm password/i), "zaka.satti@momcare");
+    fireEvent.click(screen.getByRole("button", { name: /set password/i }));
+
+    expect(await screen.findByText(/too similar to your email/i)).toBeTruthy();
+    expect(screen.getByRole("button", { name: /set password/i })).toBeTruthy();
+  });
+
   it("catches a mismatch without asking the server", async () => {
-    const fetchMock = respond(200, {});
+    const fetchMock = respondByUrl({
+      "verify-reset-token": [200, { valid: true }],
+      "reset-password": [200, {}],
+    });
     vi.stubGlobal("fetch", fetchMock);
     await renderReset();
 
@@ -156,13 +237,22 @@ describe("reset password", () => {
     fireEvent.click(screen.getByRole("button", { name: /set password/i }));
 
     expect(await screen.findByText(/don't match/i)).toBeTruthy();
-    expect(fetchMock).not.toHaveBeenCalled();
+    // Only the mount-time verify call happened — the mismatch was caught
+    // before ever asking the server to actually reset anything.
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).not.toHaveBeenCalledWith(
+      expect.stringContaining("reset-password"),
+      expect.anything()
+    );
   });
 
   it("confirms success and points at sign-in", async () => {
     vi.stubGlobal(
       "fetch",
-      respond(200, { detail: "Your password has been set." })
+      respondByUrl({
+        "verify-reset-token": [200, { valid: true }],
+        "reset-password": [200, { detail: "Your password has been set." }],
+      })
     );
     await renderReset();
 

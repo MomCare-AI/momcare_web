@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { authFetch, authJson, SessionExpiredError } from "@/core/api/authFetch";
+import type { Paginated } from "@/features/patients/types";
 
 /**
  * The signed-in user and their hospital, fetched once by the portal shell.
@@ -15,31 +16,54 @@ import { authFetch, authJson, SessionExpiredError } from "@/core/api/authFetch";
 export interface OrgSummary {
   id: string;
   name: string;
+  license_number: string;
+  /** Read-only — no upload endpoint exists for this yet. */
+  license_image: string | null;
   status: "pending" | "approved" | "rejected" | "suspended";
   status_display: string;
+  reviewed_at: string | null;
   email: string;
   phone: string;
-  license_no: string;
-  license_authority_display: string;
   address_line1: string;
   address_line2: string;
   city: string;
   state: string;
+  postal_code: string;
   country: string;
   /** Derived from country on the server, never stored. null when the risk
    *  model has no training data for that population. */
   region: "asia" | "africa" | "americas" | null;
   region_display: string;
+  timezone: string;
+  date_format: string;
+  established_date: string | null;
   owner_name: string;
   staff_count: number;
   patient_count: number;
   location_count: number;
-  building_photo: string | null;
   /** This hospital's own override, or null when it has never set one. */
   confidence_threshold: string | null;
   /** What scoring actually uses: the override above, or the platform
    *  default when there is none. Always a number, never null. */
   effective_confidence_threshold: string;
+  created_at: string;
+}
+
+/** The fields a hospital admin may actually edit on their own org profile. */
+export interface OrganizationUpdateInput {
+  name?: string;
+  license_number?: string;
+  email?: string;
+  phone?: string;
+  address_line1?: string;
+  address_line2?: string;
+  city?: string;
+  state?: string;
+  postal_code?: string;
+  country?: string;
+  timezone?: string;
+  date_format?: string;
+  established_date?: string | null;
 }
 
 export interface CurrentUser {
@@ -53,36 +77,27 @@ export interface CurrentUser {
   staff_id: string | null;
 }
 
-/** The model's own three-level scale — see core/organization/api/dashboard.py. */
-export interface DashboardRisk {
-  high: number;
-  medium: number;
-  low: number;
-  /** Enrolled, but no assessment has ever been written for this pregnancy —
-   *  kept apart from "low" everywhere in this app: a patient nobody has
-   *  measured is not a patient who is well. */
-  not_assessed: number;
-  total: number;
-  needing_attention: number;
-}
-
-export interface DashboardActivity {
-  action: string;
-  resource: string;
+/** One row from the hospital's own audit trail — every PHI-touching
+ *  request, not just the "interesting" ones; callers filter for
+ *  noteworthy actions themselves (see dashboard/page.tsx's isNoteworthy). */
+export interface AuditLogEntry {
+  id: string;
+  user_email: string;
   /** Empty when the acting account has since been deactivated. */
-  actor: string;
-  at: string;
-}
-
-export interface DashboardSummary {
-  risk: DashboardRisk;
-  activity: DashboardActivity[];
+  user_name: string;
+  action: string;
+  action_display: string;
+  resource: string;
+  resource_id: string;
+  ip_address: string;
+  endpoint: string;
+  timestamp: string;
 }
 
 export const portalKeys = {
   organization: ["organization"] as const,
   currentUser: ["current-user"] as const,
-  dashboardSummary: ["dashboard-summary"] as const,
+  auditLog: ["organization", "audit-log"] as const,
 };
 
 function retryUnlessSessionExpired(failureCount: number, error: unknown) {
@@ -99,36 +114,29 @@ export function useOrganization() {
 }
 
 /**
- * The one field on the hospital's own record that's actually writable from
- * here — see MyOrganizationView's docstring on the backend for why every
- * other field stays locked (approval evidence, or drives the risk model's
- * region).
+ * Editing the hospital's own profile. Region/status/license_image/counts
+ * stay server-derived and read-only — see `MyOrganizationView` on the
+ * backend for exactly which fields are PATCH-able; this hook only ever
+ * sends that set.
  */
-export function useUpdateOrganizationPhoto() {
+export function useUpdateOrganization() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    // null clears the photo — sent as JSON, since a FormData value can't
-    // carry a real null (an empty string would just be "field not provided").
-    mutationFn: async (photo: File | null) => {
-      const res =
-        photo === null
-          ? await authFetch("/api/organization/me/", {
-              method: "PATCH",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ building_photo: null }),
-            })
-          : await authFetch("/api/organization/me/", {
-              method: "PATCH",
-              body: (() => {
-                const form = new FormData();
-                form.set("building_photo", photo);
-                return form;
-              })(),
-            });
+    mutationFn: async (input: OrganizationUpdateInput) => {
+      const res = await authFetch("/api/organization/me/", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input),
+      });
       const body = await res.json().catch(() => null);
       if (!res.ok) {
-        throw new Error(body?.detail ?? "Could not save this photo.");
+        const firstFieldError = Object.values(body ?? {}).find(
+          (v): v is string[] => Array.isArray(v) && typeof v[0] === "string"
+        )?.[0];
+        throw new Error(
+          firstFieldError ?? body?.detail ?? "Could not save these changes."
+        );
       }
       return body as OrgSummary;
     },
@@ -146,13 +154,17 @@ export function useCurrentUser() {
   });
 }
 
-export function useDashboardSummary() {
+/** The Overview page's activity feed. Replaces the dead
+ *  `/api/dashboard/summary/` endpoint's `activity` array — same idea, real
+ *  audit-log data instead of a server-side summary that no longer exists. */
+export function useAuditLog() {
   return useQuery({
-    queryKey: portalKeys.dashboardSummary,
-    queryFn: () => authJson<DashboardSummary>("/api/dashboard/summary/"),
+    queryKey: portalKeys.auditLog,
+    queryFn: () =>
+      authJson<Paginated<AuditLogEntry>>("/api/organization/me/audit-log/"),
     retry: retryUnlessSessionExpired,
-    // Aggregates, not a live clock — reused across a normal page visit rather
-    // than refetched on every focus, unlike the attention queue and alerts.
+    // Not a live clock — reused across a normal page visit rather than
+    // refetched on every focus, unlike alerts.
     staleTime: 60 * 1000,
   });
 }

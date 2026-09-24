@@ -18,7 +18,7 @@ import {
 import { useAlerts } from "@/features/alerts/hooks/useAlerts";
 import { useDevices } from "@/features/monitoring/hooks/useMonitoring";
 import { useWorklist } from "@/features/patients/hooks/usePatients";
-import { useInvites, useStaffList } from "@/features/staff/hooks/useStaff";
+import { useStaffList } from "@/features/staff/hooks/useStaff";
 import { StatusDonut } from "@/shared/charts/StatusDonut";
 import { Card, CardBody, CardHeader } from "@/shared/ui/Card";
 import { EmptyState } from "@/shared/ui/EmptyState";
@@ -350,14 +350,16 @@ function ClinicalOverviewTab() {
 
 function CareTeamTab({ isHospitalAdmin }: { isHospitalAdmin: boolean }) {
   const staffQuery = useStaffList();
-  const invitesQuery = useInvites(isHospitalAdmin);
 
   const staff = staffQuery.data ?? [];
-  const invites = invitesQuery.data ?? [];
   const activeStaff = staff.filter(
     (m) => m.is_active && m.is_user_active
   ).length;
-  const pendingInvites = invites.filter((i) => i.status === "pending").length;
+  // "Invited" no longer exists as its own state — an account is created
+  // directly and just hasn't set a password yet.
+  const pendingActivation = staff.filter(
+    (m) => m.is_active && !m.has_activated
+  ).length;
 
   const roleSlices = useMemo(() => aggregateStaffByRole(staff), [staff]);
 
@@ -419,13 +421,15 @@ function CareTeamTab({ isHospitalAdmin }: { isHospitalAdmin: boolean }) {
         {isHospitalAdmin && (
           <div className="mc-kpi">
             <div className="mc-kpi-top">
-              <span className="mc-kpi-label">Pending invites</span>
+              <span className="mc-kpi-label">Pending activation</span>
               <span className="mc-kpi-icon mc-kpi-icon-info">
                 <Mail size={17} strokeWidth={1.9} aria-hidden />
               </span>
             </div>
-            <span className="mc-kpi-value">{pendingInvites}</span>
-            <span className="mc-kpi-foot">Awaiting acceptance</span>
+            <span className="mc-kpi-value">{pendingActivation}</span>
+            <span className="mc-kpi-foot">
+              Haven&rsquo;t set a password yet
+            </span>
           </div>
         )}
       </section>

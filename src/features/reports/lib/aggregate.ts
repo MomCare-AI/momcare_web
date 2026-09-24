@@ -16,6 +16,7 @@ import type {
   AlertMetrics,
   DistributionSlice,
   EnrollmentTrendPoint,
+  RiskDistribution,
   WorklistGap,
 } from "../types";
 
@@ -96,6 +97,31 @@ export function aggregatePregnancyStatus(
     });
   }
   return slices;
+}
+
+/**
+ * The Overview page's risk donut, computed client-side now that
+ * `/api/dashboard/summary/` is gone — same shape and same computation
+ * (`needing_attention` = high + medium) the old endpoint used. Scoped to
+ * *active* pregnancies only, matching the old endpoint's own framing
+ * ("active pregnancies by current risk level") — a patient who delivered
+ * or miscarried isn't "active" any more, and counting her risk level here
+ * would overstate how many pregnancies actually need eyes on them today.
+ */
+export function aggregateRiskLevels(
+  patients: PatientListItem[]
+): RiskDistribution {
+  const active = patients.filter((p) => p.pregnancy_status === "active");
+  const counts = { high: 0, medium: 0, low: 0, not_assessed: 0 };
+  for (const p of active) {
+    const key = p.risk_level ?? "not_assessed";
+    if (key in counts) counts[key as keyof typeof counts] += 1;
+  }
+  return {
+    ...counts,
+    total: active.length,
+    needing_attention: counts.high + counts.medium,
+  };
 }
 
 const WORKLIST_REASON_LABELS: Record<string, string> = {

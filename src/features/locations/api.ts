@@ -1,12 +1,10 @@
 import { authJson } from "@/core/api/authFetch";
+import type { Paginated } from "@/features/patients/types";
 import type { Location } from "./types";
 
-/**
- * `GET /api/locations/` doesn't exist yet — `core/locations/api/views.py` is
- * an unimplemented placeholder — so this call will 404 until the backend
- * ships it. That's the correct, honest failure today, not a bug to work
- * around: see `LocationsTab`'s error state.
- */
+/** Real as of Ahmed's Sep 2026 backend push — confirmed live against
+ *  production. Paginated like every other list endpoint, not a plain array
+ *  (an earlier, stub-era version of this file assumed the latter). */
 export function listLocations() {
-  return authJson<Location[]>("/api/locations/");
+  return authJson<Paginated<Location>>("/api/locations/");
 }
