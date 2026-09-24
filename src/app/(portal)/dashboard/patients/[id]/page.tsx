@@ -30,20 +30,35 @@ import { RiskPanel } from "@/features/monitoring/components/RiskPanel";
 import { RiskAssessmentInput } from "@/features/monitoring/components/RiskAssessmentInput";
 import { VitalsPanel } from "@/features/monitoring/components/VitalsPanel";
 import { MonitoringNotesPanel } from "@/features/patients/components/MonitoringNotesPanel";
+import { PatientDevicesPanel } from "@/features/patients/components/PatientDevicesPanel";
+import { PatientDocumentsPanel } from "@/features/patients/components/PatientDocumentsPanel";
+import { PatientHeaderBanner } from "@/features/patients/components/PatientHeaderBanner";
+import { PatientOverviewSnapshot } from "@/features/patients/components/PatientOverviewSnapshot";
+import { PatientReadingsPanel } from "@/features/patients/components/PatientReadingsPanel";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { Pair } from "@/shared/ui/Pair";
 import { usePortal } from "../../layout";
 import { usePageTitle } from "@/hooks/usePageTitle";
 
-type Tab = "overview" | "risk" | "pregnancy" | "notes" | "history" | "consent";
+type Tab =
+  | "overview"
+  | "readings"
+  | "risk"
+  | "pregnancy"
+  | "notes"
+  | "devices"
+  | "documents"
+  | "history";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "overview", label: "Overview" },
+  { id: "readings", label: "Readings" },
   { id: "risk", label: "AI Risk Assessment" },
   { id: "pregnancy", label: "Pregnancy" },
   { id: "notes", label: "Notes" },
+  { id: "devices", label: "Devices" },
+  { id: "documents", label: "Documents" },
   { id: "history", label: "History" },
-  { id: "consent", label: "Consent" },
 ];
 
 export default function PatientProfilePage({
@@ -116,6 +131,8 @@ export default function PatientProfilePage({
         </p>
       )}
 
+      <PatientHeaderBanner patient={patient} current={current} />
+
       <div className="mc-subnav">
         <div className="mc-subnav-trail">
           <Link href="/dashboard/patients">Patients</Link>
@@ -136,37 +153,16 @@ export default function PatientProfilePage({
           ))}
         </nav>
 
-        <div className="mc-subnav-aside">
-          {current ? (
-            <>
-              <span className="mc-ga">{current.gestational_age_display}</span>
-              <span
-                className={`mc-badge mc-badge-${pregnancyTone(current.status)}`}
-              >
-                {current.status_display}
-              </span>
-            </>
-          ) : (
-            <span className="mc-badge mc-badge-neutral">
-              No active pregnancy
-            </span>
-          )}
-        </div>
-      </div>
-
-      <div className="mc-head">
-        <div>
-          <h1 className="mc-h1">{patient.full_name}</h1>
-          <p className="mc-sub">
-            {[patient.mrn, patient.phone, patient.cnic]
-              .filter(Boolean)
-              .join(" · ")}
-          </p>
-        </div>
+        <div className="mc-subnav-aside" />
       </div>
 
       {tab === "overview" && (
         <>
+          <PatientOverviewSnapshot
+            patientId={patient.id}
+            pregnancyId={current?.id ?? null}
+          />
+
           <section className="mc-card">
             <div className="mc-card-head">
               <div className="mc-card-title">Patient details</div>
@@ -211,6 +207,22 @@ export default function PatientProfilePage({
           {current && <VitalsPanel pregnancyId={current.id} />}
         </>
       )}
+
+      {tab === "readings" &&
+        (current ? (
+          <PatientReadingsPanel
+            patientId={patient.id}
+            pregnancyId={current.id}
+            patientName={patient.full_name}
+          />
+        ) : (
+          <div className="mc-card">
+            <EmptyState
+              title="No active pregnancy"
+              text="Readings need an active pregnancy to attach to."
+            />
+          </div>
+        ))}
 
       {tab === "risk" && (
         <>
@@ -325,6 +337,23 @@ export default function PatientProfilePage({
 
       {tab === "notes" && <MonitoringNotesPanel patientId={patient.id} />}
 
+      {tab === "devices" &&
+        (current ? (
+          <PatientDevicesPanel
+            pregnancyId={current.id}
+            canWrite={canManageCareTeam}
+          />
+        ) : (
+          <div className="mc-card">
+            <EmptyState
+              title="No active pregnancy"
+              text="Device assignment needs an active pregnancy to attach to."
+            />
+          </div>
+        ))}
+
+      {tab === "documents" && <PatientDocumentsPanel />}
+
       {tab === "history" && (
         <section className="mc-card">
           <div className="mc-card-head">
@@ -372,30 +401,6 @@ export default function PatientProfilePage({
               ))}
             </div>
           )}
-        </section>
-      )}
-
-      {tab === "consent" && (
-        <section className="mc-card">
-          <div className="mc-card-head">
-            <div>
-              <div className="mc-card-title">Consent</div>
-              <div className="mc-card-sub">
-                A single date, not an event log — recorded once, not mandatory
-                to enrol.
-              </div>
-            </div>
-          </div>
-          <div className="mc-card-body">
-            {patient.consent_date ? (
-              <Pair
-                label="Consent recorded"
-                value={formatDate(patient.consent_date)}
-              />
-            ) : (
-              <EmptyState title="No consent recorded yet" />
-            )}
-          </div>
         </section>
       )}
     </>

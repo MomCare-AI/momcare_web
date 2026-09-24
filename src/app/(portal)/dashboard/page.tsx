@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "motion/react";
 import {
-  AlertTriangle,
+  AlertCircle,
   BellRing,
   Brain,
   Building2,
@@ -26,9 +27,20 @@ import {
   useAuditLog,
   type AuditLogEntry,
 } from "@/features/portal/hooks/usePortalData";
+import { SessionExpiredError } from "@/core/api/authFetch";
+import { useJoinRequests } from "@/features/join-requests/hooks/useJoinRequests";
+import { JoinRequestsPanel } from "@/features/patients/components/JoinRequestsPanel";
+import { PatientsTable } from "@/features/patients/components/PatientsTable";
+import { WorkflowActivityBanner } from "@/features/patients/components/WorkflowActivityBanner";
+import { WorklistPanel } from "@/features/patients/components/WorklistPanel";
+import {
+  usePatientList,
+  useWorklist,
+} from "@/features/patients/hooks/usePatients";
 import { Card, CardBody, CardHeader } from "@/shared/ui/Card";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { Pair } from "@/shared/ui/Pair";
+import { RowSkeleton } from "@/shared/ui/RowSkeleton";
 import { usePortal } from "./layout";
 import { usePageTitle } from "@/hooks/usePageTitle";
 
@@ -63,11 +75,6 @@ const RISK_LEVELS: {
     color: "var(--c-faint)",
   },
 ];
-
-/** A `Link` that also accepts motion's animation props — same pattern the
- *  KPI cards need for their entrance and the alert/device rows already use
- *  for theirs, just on an anchor instead of a div. */
-const MotionLink = motion.create(Link);
 
 /** CSS conic-gradient stops for the risk donut — no charting library needed
  *  for five static segments, and it stays crisp at any size. */
@@ -111,20 +118,37 @@ function timeAgo(iso: string): string {
   return `${Math.floor(hours / 24)}d ago`;
 }
 
-function greeting(d: Date) {
-  const h = d.getHours();
-  if (h < 12) return "Good morning";
-  if (h < 17) return "Good afternoon";
-  return "Good evening";
-}
-
 export default function OverviewPage() {
-  usePageTitle("Overview");
-  const { org, user, isHospitalAdmin } = usePortal();
-  const now = new Date();
+  usePageTitle("Clinical Overview");
+  const { org, isHospitalAdmin, isClinician } = usePortal();
+  const router = useRouter();
   const patientsQuery = useAllPatients();
   const liveAlertsQuery = useAlerts("live", false);
   const auditLogQuery = useAuditLog();
+
+  // Folded in from the old standalone Patients page — same three tabs
+  // (Patients / Worklist / Join Requests), unchanged hooks and panels.
+  const assignedToMe = isClinician && !isHospitalAdmin;
+  const [listTab, setListTab] = useState<"patients" | "worklist" | "requests">(
+    "patients"
+  );
+  const worklist = useWorklist(assignedToMe);
+  const joinRequests = useJoinRequests("pending");
+
+  const initialSearch = useSearchParams().get("search") ?? "";
+  // page_size=100: the whole hospital's list fetched once, so Search and
+  // Advance Filters (both client-side, in PatientsTable) share one
+  // consistent in-memory set — see that component's own doc comment for the
+  // honest tradeoff at hospitals with more than 100 patients.
+  const listResult = usePatientList("", 1, assignedToMe, 100);
+
+  useEffect(() => {
+    if (listResult.error instanceof SessionExpiredError)
+      router.replace("/login");
+  }, [listResult.error, router]);
+
+  const listPatients = listResult.data?.results ?? [];
+  const listCount = listResult.data?.count ?? 0;
 
   const patients = patientsQuery.data ?? [];
   const liveAlerts = liveAlertsQuery.data?.results ?? [];
@@ -148,105 +172,13 @@ export default function OverviewPage() {
 
   return (
     <>
-      <div className="mc-hero">
-        <div className="mc-head">
-          <div>
-            <h1 className="mc-h1">
-              {greeting(now)}, {user.first_name || "there"}
-            </h1>
-            <p className="mc-sub">
-              {isHospitalAdmin
-                ? "Your hospital's maternal health overview."
-                : "Your hospital at a glance."}
-            </p>
-          </div>
-          <div className="mc-head-aside">
-            <div className="mc-head-date">
-              {now.toLocaleDateString(undefined, {
-                day: "numeric",
-                month: "short",
-                year: "numeric",
-              })}
-            </div>
-            <div className="mc-hero-pill">
-              Monitoring live · alerts escalating
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Ordered by urgency, not by how the data is sourced: what needs a
-          clinician's attention leads, ahead of the administrative counts. */}
-      <section className="mc-kpis">
-        <MotionLink
-          href="/dashboard/alerts"
-          className={`mc-kpi ${unacknowledged ? "mc-kpi-fill-alert" : "mc-kpi-fill-attn"}`}
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.22, delay: 0 }}
-        >
-          <div className="mc-kpi-top">
-            <span className="mc-kpi-label">Needing attention</span>
-            <span
-              className={`mc-kpi-icon mc-kpi-icon-attn${
-                unacknowledged ? " mc-kpi-icon-alert" : ""
-              }`}
-            >
-              <AlertTriangle size={17} strokeWidth={1.9} aria-hidden />
-            </span>
-          </div>
-          <span className="mc-kpi-value">{unacknowledged ?? "—"}</span>
-          <span className="mc-kpi-foot">
-            {unacknowledged === undefined
-              ? liveAlertsQuery.isError
-                ? "Alerts unavailable"
-                : "Checking…"
-              : unacknowledged === 0
-                ? "Nothing unanswered"
-                : "Alerts awaiting a response"}
-          </span>
-        </MotionLink>
-
-        <MotionLink
-          href="/dashboard/patients"
-          className="mc-kpi"
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.22, delay: 0.05 }}
-        >
-          <div className="mc-kpi-top">
-            <span className="mc-kpi-label">Patients</span>
-            <span className="mc-kpi-icon mc-kpi-icon-brand">
-              <Users size={17} strokeWidth={1.9} aria-hidden />
-            </span>
-          </div>
-          <span className="mc-kpi-value">{org.patient_count}</span>
-          <span className="mc-kpi-foot">
-            {hasPatients
-              ? "Enrolled at this hospital"
-              : "No patients enrolled yet"}
-          </span>
-        </MotionLink>
-
-        <MotionLink
-          href="/dashboard/governance"
-          className="mc-kpi"
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.22, delay: 0.1 }}
-        >
-          <div className="mc-kpi-top">
-            <span className="mc-kpi-label">Doctors &amp; staff</span>
-            <span className="mc-kpi-icon mc-kpi-icon-stable">
-              <Stethoscope size={17} strokeWidth={1.9} aria-hidden />
-            </span>
-          </div>
-          <span className="mc-kpi-value">{org.staff_count}</span>
-          <span className="mc-kpi-foot">
-            {hasStaff ? "Active clinical team" : "No team members yet"}
-          </span>
-        </MotionLink>
-      </section>
+      <WorkflowActivityBanner
+        activeTab={listTab}
+        onSelect={setListTab}
+        patientsCount={listCount}
+        worklistCount={worklist.data?.count ?? 0}
+        requestsCount={joinRequests.data?.count ?? 0}
+      />
 
       {isHospitalAdmin && (
         <div className="mc-actions">
@@ -262,6 +194,66 @@ export default function OverviewPage() {
             Vitals, risk scoring and alert escalation are all live
           </span>
         </div>
+      )}
+
+      {listTab === "requests" ? (
+        <Card style={{ marginBottom: 18 }}>
+          <CardBody>
+            <JoinRequestsPanel />
+          </CardBody>
+        </Card>
+      ) : listTab === "worklist" ? (
+        <Card style={{ marginBottom: 18 }}>
+          <CardBody>
+            <p className="mc-hint" style={{ marginBottom: 14 }}>
+              Cases missing a recent reading, a recent note, an answered risk
+              history, or a lead clinician — not a statement about clinical
+              severity. See Needing attention for that.
+            </p>
+            <WorklistPanel assignedToMe={assignedToMe} />
+          </CardBody>
+        </Card>
+      ) : listResult.isPending ? (
+        <Card style={{ marginBottom: 18 }}>
+          <div className="mc-rows">
+            <RowSkeleton count={4} variant="plain" />
+          </div>
+        </Card>
+      ) : (
+        <>
+          {listResult.error &&
+            !(listResult.error instanceof SessionExpiredError) && (
+              <p className="mc-alert mc-alert-error">
+                <AlertCircle size={15} strokeWidth={2} aria-hidden />
+                {listResult.error instanceof Error
+                  ? listResult.error.message
+                  : "Could not load patients."}
+              </p>
+            )}
+
+          <Card style={{ marginBottom: 18 }}>
+            {listPatients.length === 0 ? (
+              <CardBody>
+                <EmptyState
+                  icon={<Users size={20} strokeWidth={1.9} aria-hidden />}
+                  title="No patients enrolled yet"
+                  text="Enrol your first patient to start tracking her pregnancy."
+                  actions={
+                    <Link href="/dashboard/patients/new" className="mc-btn">
+                      <UserPlus size={15} strokeWidth={2} aria-hidden />
+                      Enrol patient
+                    </Link>
+                  }
+                />
+              </CardBody>
+            ) : (
+              <PatientsTable
+                patients={listPatients}
+                initialSearch={initialSearch}
+              />
+            )}
+          </Card>
+        </>
       )}
 
       <div className="mc-fullstack">

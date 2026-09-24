@@ -198,7 +198,7 @@ export function VitalsPanel({ pregnancyId }: Props) {
  * band. The server enforces the two rules that matter: at least one vital,
  * and blood pressure only as a pair.
  */
-function ManualReadingForm({
+export function ManualReadingForm({
   pregnancyId,
   onDone,
 }: {

@@ -77,7 +77,9 @@
   color: var(--c-body);
   min-height: 100vh;
   font-family: var(--font-display), system-ui, sans-serif;
-  font-size: 14.5px;
+  /* Matches the reference platform's own base size (measured live:
+     `getComputedStyle(document.body).fontSize` there is 16px) — was 14.5px. */
+  font-size: 16px;
   line-height: 1.55;
 }
 
@@ -460,6 +462,16 @@ body::-webkit-scrollbar-thumb:hover {
 .mc-modal-body {
   padding: 20px;
   overflow-y: auto;
+}
+
+/* ── Custom select (shared/ui/Select.tsx) ────────────────────────────────
+   A plain <select>'s open state is drawn by the OS/browser, not CSS — this
+   restyles it as an in-DOM listbox instead, first used by Advance Filter. */
+.mc-select-trigger:hover:not(:disabled) {
+  border-color: var(--c-border-control);
+}
+.mc-select-option:hover {
+  background: var(--c-surface-subtle) !important;
 }
 
 /* ── Application header ──────────────────────────────────────────────────

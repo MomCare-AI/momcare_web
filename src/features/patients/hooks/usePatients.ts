@@ -45,11 +45,12 @@ function retryUnlessSessionExpired(failureCount: number, error: unknown) {
 export function usePatientList(
   search: string,
   page: number,
-  assignedToMe = false
+  assignedToMe = false,
+  pageSize?: number
 ) {
   return useQuery({
-    queryKey: patientKeys.list(search, page, assignedToMe),
-    queryFn: () => listPatients({ search, page, assignedToMe }),
+    queryKey: [...patientKeys.list(search, page, assignedToMe), pageSize],
+    queryFn: () => listPatients({ search, page, assignedToMe, pageSize }),
     retry: retryUnlessSessionExpired,
     // Keeps the previous page on screen while the next one loads, so paging
     // and searching don't blank the table on every keystroke.

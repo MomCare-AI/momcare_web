@@ -14,7 +14,6 @@ import {
   BellRing,
   LayoutDashboard,
   ShieldCheck,
-  Users,
   Watch,
 } from "lucide-react";
 import {
@@ -94,7 +93,7 @@ export function usePortal(): PortalValue {
 }
 
 const NAV: NavItem[] = [
-  { href: "/dashboard", label: "Overview", Icon: LayoutDashboard },
+  { href: "/dashboard", label: "Clinical Overview", Icon: LayoutDashboard },
   { href: "/dashboard/alerts", label: "Quick Lookup", Icon: BellRing },
   { href: "/dashboard/devices", label: "Devices", Icon: Watch },
   {
@@ -102,7 +101,6 @@ const NAV: NavItem[] = [
     label: "Executive Dashboard",
     Icon: BarChart3,
   },
-  { href: "/dashboard/patients", label: "Patients", Icon: Users },
   {
     href: "/dashboard/governance",
     label: "System Governance",
@@ -218,9 +216,7 @@ export default function DashboardLayout({
     e.preventDefault();
     const term = navSearch.trim();
     router.push(
-      term
-        ? `/dashboard/patients?search=${encodeURIComponent(term)}`
-        : "/dashboard/patients"
+      term ? `/dashboard?search=${encodeURIComponent(term)}` : "/dashboard"
     );
   };
 
