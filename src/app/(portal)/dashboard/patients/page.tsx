@@ -18,6 +18,8 @@ import {
   usePatientList,
   useWorklist,
 } from "@/features/patients/hooks/usePatients";
+import { useJoinRequests } from "@/features/join-requests/hooks/useJoinRequests";
+import { JoinRequestsPanel } from "@/features/patients/components/JoinRequestsPanel";
 import { WorklistPanel } from "@/features/patients/components/WorklistPanel";
 import { RiskBadge } from "@/features/monitoring/components/RiskBadge";
 import { pregnancyTone } from "@/features/patients/types";
@@ -70,8 +72,11 @@ export default function PatientsPage() {
   // lead clinician) - deliberately a different question from clinical
   // severity, so it's a separate tab rather than merged into the list
   // above. See docs/worklist-feature-scope.md.
-  const [tab, setTab] = useState<"patients" | "worklist">("patients");
+  const [tab, setTab] = useState<"patients" | "worklist" | "requests">(
+    "patients"
+  );
   const worklist = useWorklist(assignedToMe);
+  const joinRequests = useJoinRequests("pending");
 
   // Seeds from ?search=, so the navbar search box can land here with a
   // result already showing rather than an empty box to retype into.
@@ -142,9 +147,26 @@ export default function PatientsPage() {
           Worklist
           <span className="mc-tab-count">{worklist.data?.count ?? 0}</span>
         </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === "requests"}
+          aria-current={tab === "requests" ? "page" : undefined}
+          className="mc-tab"
+          onClick={() => setTab("requests")}
+        >
+          Join Requests
+          <span className="mc-tab-count">{joinRequests.data?.count ?? 0}</span>
+        </button>
       </div>
 
-      {tab === "worklist" ? (
+      {tab === "requests" ? (
+        <section className="mc-card">
+          <div className="mc-card-body">
+            <JoinRequestsPanel />
+          </div>
+        </section>
+      ) : tab === "worklist" ? (
         <section className="mc-card">
           <div className="mc-card-body">
             <p className="mc-hint" style={{ marginBottom: 14 }}>

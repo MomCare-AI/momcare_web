@@ -107,8 +107,14 @@ export async function recordReading(
   return readOrThrow<RecordedReading>(res, "Could not record this reading.");
 }
 
-export function listDevices() {
-  return authJson<Device[]>("/api/devices/");
+export async function listDevices(): Promise<Device[]> {
+  // page_size=100 (the server's max) — this feeds a management list and an
+  // assignment picker, neither of which should silently drop devices past
+  // page 1.
+  const { results } = await authJson<Paginated<Device>>(
+    "/api/devices/?page_size=100"
+  );
+  return results;
 }
 
 /**

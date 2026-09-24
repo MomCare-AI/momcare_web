@@ -16,27 +16,32 @@ import {
   useClinicians,
   usePatient,
   usePregnancies,
+  useUpdatePatient,
   useUpdatePregnancy,
 } from "@/features/patients/hooks/usePatients";
 import {
   RISK_FACTORS,
   pregnancyTone,
+  type PatientDetail,
   type Pregnancy,
 } from "@/features/patients/types";
+import { useSecondaryProviders } from "@/features/secondary-providers/hooks/useSecondaryProviders";
 import { RiskPanel } from "@/features/monitoring/components/RiskPanel";
 import { RiskAssessmentInput } from "@/features/monitoring/components/RiskAssessmentInput";
 import { VitalsPanel } from "@/features/monitoring/components/VitalsPanel";
+import { MonitoringNotesPanel } from "@/features/patients/components/MonitoringNotesPanel";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { Pair } from "@/shared/ui/Pair";
 import { usePortal } from "../../layout";
 import { usePageTitle } from "@/hooks/usePageTitle";
 
-type Tab = "overview" | "risk" | "pregnancy" | "history" | "consent";
+type Tab = "overview" | "risk" | "pregnancy" | "notes" | "history" | "consent";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "overview", label: "Overview" },
   { id: "risk", label: "AI Risk Assessment" },
   { id: "pregnancy", label: "Pregnancy" },
+  { id: "notes", label: "Notes" },
   { id: "history", label: "History" },
   { id: "consent", label: "Consent" },
 ];
@@ -198,6 +203,11 @@ export default function PatientProfilePage({
             </div>
           </section>
 
+          <SecondaryProviderEditor
+            patient={patient}
+            canWrite={canManageCareTeam}
+          />
+
           {current && <VitalsPanel pregnancyId={current.id} />}
         </>
       )}
@@ -313,6 +323,8 @@ export default function PatientProfilePage({
         />
       )}
 
+      {tab === "notes" && <MonitoringNotesPanel patientId={patient.id} />}
+
       {tab === "history" && (
         <section className="mc-card">
           <div className="mc-card-head">
@@ -387,6 +399,94 @@ export default function PatientProfilePage({
         </section>
       )}
     </>
+  );
+}
+
+/**
+ * The referring clinician outside this hospital, if any — a patient-level
+ * fact (not tied to any one pregnancy), so it lives on Overview rather than
+ * inside the pregnancy tab's Care Team card.
+ */
+function SecondaryProviderEditor({
+  patient,
+  canWrite,
+}: {
+  patient: PatientDetail;
+  canWrite: boolean;
+}) {
+  const { data } = useSecondaryProviders();
+  const providers = data?.results ?? [];
+  const [value, setValue] = useState(patient.secondary_provider ?? "");
+  const [saved, setSaved] = useState(false);
+  const update = useUpdatePatient(patient.id);
+
+  const dirty = value !== (patient.secondary_provider ?? "");
+
+  const save = () => {
+    setSaved(false);
+    update.mutate(
+      { secondary_provider: value || null },
+      { onSuccess: () => setSaved(true) }
+    );
+  };
+
+  return (
+    <section className="mc-card" style={{ marginTop: 18 }}>
+      <div className="mc-card-head">
+        <div>
+          <div className="mc-card-title">Secondary provider</div>
+          <div className="mc-card-sub">
+            An external clinician she also sees — a referring doctor or a
+            specialist elsewhere.
+          </div>
+        </div>
+      </div>
+      <div className="mc-card-body">
+        <label className="mc-label" htmlFor="secondary-provider">
+          Secondary provider
+        </label>
+        <select
+          id="secondary-provider"
+          className="mc-input"
+          value={value}
+          disabled={!canWrite}
+          onChange={(e) => setValue(e.target.value)}
+        >
+          <option value="">None</option>
+          {providers.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+              {p.affiliation && ` · ${p.affiliation}`}
+            </option>
+          ))}
+        </select>
+
+        {update.isError && (
+          <p className="mc-alert mc-alert-error" style={{ marginTop: 12 }}>
+            {update.error instanceof Error
+              ? update.error.message
+              : "Could not save this."}
+          </p>
+        )}
+        {saved && !update.isPending && !dirty && (
+          <p className="mc-alert mc-alert-success" style={{ marginTop: 12 }}>
+            Saved.
+          </p>
+        )}
+
+        {canWrite && (
+          <button
+            type="button"
+            className="mc-btn mc-btn-sm"
+            style={{ marginTop: 14 }}
+            disabled={!dirty || update.isPending}
+            onClick={save}
+          >
+            {update.isPending ? "Saving…" : "Save"}
+          </button>
+        )}
+      </div>
+    </section>
   );
 }
 

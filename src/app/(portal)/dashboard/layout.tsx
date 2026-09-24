@@ -95,7 +95,7 @@ export function usePortal(): PortalValue {
 
 const NAV: NavItem[] = [
   { href: "/dashboard", label: "Overview", Icon: LayoutDashboard },
-  { href: "/dashboard/alerts", label: "Alerts", Icon: BellRing },
+  { href: "/dashboard/alerts", label: "Quick Lookup", Icon: BellRing },
   { href: "/dashboard/devices", label: "Devices", Icon: Watch },
   {
     href: "/dashboard/reports",

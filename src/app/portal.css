@@ -416,6 +416,52 @@ body::-webkit-scrollbar-thumb:hover {
   height: 100%;
 }
 
+/* ── Centered modal ──────────────────────────────────────────────────────
+   Generalized from the drawer's backdrop pattern above for a centered
+   dialog (shared/ui/Modal.tsx) rather than an off-canvas panel. */
+.mc-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  background: rgba(15, 30, 40, 0.4);
+}
+.mc-modal-wrap {
+  position: fixed;
+  inset: 0;
+  z-index: 56;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  overflow-y: auto;
+}
+.mc-modal-panel {
+  width: min(640px, 100%);
+  max-height: calc(100vh - 48px);
+  display: flex;
+  flex-direction: column;
+  background: var(--c-card);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-card);
+  box-shadow: var(--shadow-pop);
+}
+.mc-modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--c-border-soft);
+  flex-shrink: 0;
+}
+.mc-modal-close {
+  flex-shrink: 0;
+}
+.mc-modal-body {
+  padding: 20px;
+  overflow-y: auto;
+}
+
 /* ── Application header ──────────────────────────────────────────────────
    What's left once primary navigation moves into the sidebar: search, the
    alert bell, and a compact link to the account. */
@@ -2471,4 +2517,92 @@ a.mc-kpi:hover,
   color: var(--c-ink);
   text-align: right;
   font-variant-numeric: tabular-nums;
+}
+
+/* ── Dense data table ────────────────────────────────────────────────────
+   System Governance's table screens (Locations/Staff/Secondary Providers) — a denser
+   alternative to .mc-rows for lists with several sortable columns. A clicked
+   row expands a detail row beneath it holding the same edit forms/actions
+   those screens already had as card content. */
+.mc-dtable-wrap {
+  overflow-x: auto;
+}
+.mc-dtable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+.mc-dtable th {
+  text-align: left;
+  padding: 10px 16px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--c-faint);
+  background: var(--c-ground);
+  border-bottom: 1px solid var(--c-border);
+  white-space: nowrap;
+}
+.mc-dtable-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.mc-dtable-sort:hover {
+  color: var(--c-ink);
+}
+.mc-dtable-sort svg {
+  opacity: 0.55;
+  flex: none;
+}
+.mc-dtable-sort[aria-sort="ascending"] svg,
+.mc-dtable-sort[aria-sort="descending"] svg {
+  opacity: 1;
+  color: var(--c-teal);
+}
+.mc-dtable td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--c-border-soft);
+  color: var(--c-body);
+  vertical-align: middle;
+}
+.mc-dtable tbody tr:last-child td {
+  border-bottom: none;
+}
+.mc-dtable-row {
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.mc-dtable-row:hover {
+  background: var(--c-ground);
+}
+.mc-dtable-row[aria-expanded="true"] {
+  background: var(--c-ground);
+}
+.mc-dtable-primary {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--c-ink);
+}
+.mc-dtable-sub {
+  font-size: 12.5px;
+  color: var(--c-faint);
+  margin-top: 2px;
+}
+.mc-dtable-detail td {
+  padding: 0;
+  background: var(--c-ground);
+}
+.mc-dtable-detail-inner {
+  padding: 16px 20px 20px;
 }

@@ -137,6 +137,12 @@ export interface PatientDetail {
   updated_at: string;
 }
 
+/** Just the one field this phase needs to edit post-enrollment — a general
+ *  patient-edit form is a separate, unscoped feature. */
+export interface PatientUpdateInput {
+  secondary_provider?: string | null;
+}
+
 export interface Paginated<T> {
   count: number;
   page: number;
@@ -172,10 +178,7 @@ export interface WorklistPatient {
   reasons: WorklistReason[];
 }
 
-export interface WorklistResponse {
-  count: number;
-  results: WorklistPatient[];
-}
+export type WorklistResponse = Paginated<WorklistPatient>;
 
 export const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 

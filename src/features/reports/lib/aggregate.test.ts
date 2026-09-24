@@ -140,6 +140,11 @@ describe("aggregateWorklistGaps", () => {
   it("counts each reason code across every worklist patient", () => {
     const worklist: WorklistResponse = {
       count: 2,
+      page: 1,
+      page_size: 25,
+      total_pages: 1,
+      next: null,
+      previous: null,
       results: [
         {
           patient_id: "1",
@@ -198,6 +203,7 @@ describe("aggregateDeviceStatus", () => {
 function staffMember(role_code: string): StaffMember {
   return {
     id: "s1",
+    user_id: "u1",
     employee_id: "E1",
     full_name: "Staff Person",
     email: "s@example.com",

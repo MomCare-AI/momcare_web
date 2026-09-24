@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import {
@@ -8,6 +8,7 @@ import {
   AlertTriangle,
   ChevronDown,
   Power,
+  Search,
   Stethoscope,
   UserPlus,
   X,
@@ -18,6 +19,7 @@ import { Card, CardBody, CardHeader } from "@/shared/ui/Card";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { InitialsAvatar } from "@/shared/ui/InitialsAvatar";
 import { RowSkeleton } from "@/shared/ui/RowSkeleton";
+import { SortableHeader, type SortDirection } from "@/shared/ui/SortableHeader";
 import {
   useCreateStaff,
   useDeactivateStaff,
@@ -25,6 +27,7 @@ import {
   useStaffAssignmentStatus,
   useStaffList,
   type CreateStaffInput,
+  type StaffMember,
 } from "@/features/staff/hooks/useStaff";
 import { StaffCredentialsPanel } from "@/features/staff/components/StaffCredentialsPanel";
 import { useLocations } from "@/features/locations/hooks/useLocations";
@@ -54,6 +57,12 @@ export function StaffTab() {
   const [formError, setFormError] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [deactivatingId, setDeactivatingId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState("");
+  const [sort, setSort] = useState<{
+    key: "name" | "role";
+    dir: SortDirection;
+  }>({ key: "name", dir: "asc" });
 
   const staffQuery = useStaffList();
   const locationsQuery = useLocations();
@@ -65,6 +74,47 @@ export function StaffTab() {
   const locations = locationsQuery.data?.results ?? [];
   const submitting = createStaff.isPending;
   const needsLocations = form.role_code !== "hospital_admin";
+
+  const roleOptions = useMemo(
+    () =>
+      Array.from(new Set(staff.map((m) => m.role_name)))
+        .filter(Boolean)
+        .sort(),
+    [staff]
+  );
+
+  const rows = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    let filtered = staff;
+    if (roleFilter)
+      filtered = filtered.filter((m) => m.role_name === roleFilter);
+    if (q) {
+      filtered = filtered.filter((m) =>
+        [m.full_name, m.email, m.phone, m.employee_id]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase()
+          .includes(q)
+      );
+    }
+    const dir = sort.dir === "desc" ? -1 : 1;
+    return [...filtered].sort((a, b) => {
+      if (sort.key === "role") {
+        return a.role_name.localeCompare(b.role_name) * dir;
+      }
+      return (
+        (a.full_name || a.email).localeCompare(b.full_name || b.email) * dir
+      );
+    });
+  }, [staff, search, roleFilter, sort]);
+
+  const toggleSort = (key: "name" | "role") => {
+    setSort((s) =>
+      s.key !== key
+        ? { key, dir: "asc" }
+        : { key, dir: s.dir === "asc" ? "desc" : "asc" }
+    );
+  };
 
   // A failed request must not render as "no staff yet" — an empty team and a
   // broken server look identical to the user otherwise, which is a bad failure
@@ -345,115 +395,210 @@ export function StaffTab() {
             }
           />
         ) : (
-          <div className="mc-rows">
-            {staff.map((m, index) => {
-              const isSelf = m.id === user.staff_id;
-              const expanded = expandedId === m.id;
-              return (
-                <motion.div
-                  key={m.id}
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{
-                    duration: 0.2,
-                    delay: Math.min(index, 8) * 0.03,
+          <>
+            <div style={{ padding: "14px 20px 0", display: "flex", gap: 10 }}>
+              <div style={{ position: "relative", flex: 1, maxWidth: 320 }}>
+                <Search
+                  size={14}
+                  strokeWidth={2}
+                  aria-hidden
+                  style={{
+                    position: "absolute",
+                    left: 10,
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    opacity: 0.5,
                   }}
-                >
-                  <button
-                    type="button"
-                    className="mc-row"
-                    style={{
-                      width: "100%",
-                      border: "none",
-                      background: "none",
-                      cursor: "pointer",
-                      textAlign: "left",
-                      font: "inherit",
-                    }}
-                    onClick={() => setExpandedId(expanded ? null : m.id)}
-                    aria-expanded={expanded}
-                  >
-                    <InitialsAvatar name={m.full_name || m.email} />
-                    <div className="mc-row-main">
-                      <div className="mc-row-title">
-                        {m.full_name || m.email}
-                        {isSelf && (
-                          <span
-                            className="mc-badge mc-badge-info"
-                            style={{ marginLeft: 8 }}
-                          >
-                            You
-                          </span>
-                        )}
-                      </div>
-                      <div className="mc-row-meta">
-                        {m.email} · {m.employee_id}
-                        {m.specialty && ` · ${m.specialty}`}
-                      </div>
-                    </div>
-                    <span className="mc-badge mc-badge-neutral">
-                      {m.role_name}
-                    </span>
-                    {!m.is_active ? (
-                      <span className="mc-badge mc-badge-high">
-                        <AlertCircle size={12} strokeWidth={2.2} aria-hidden />
-                        Deactivated
-                      </span>
-                    ) : (
-                      !m.has_activated && (
-                        <span className="mc-badge mc-badge-moderate">
-                          Pending activation
-                        </span>
-                      )
-                    )}
-                    <ChevronDown
-                      size={16}
-                      strokeWidth={2}
-                      aria-hidden
-                      style={{
-                        transform: expanded ? "rotate(180deg)" : undefined,
-                        transition: "transform 0.15s ease",
-                      }}
+                />
+                <input
+                  className="mc-input"
+                  style={{ paddingLeft: 30 }}
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search by name, email or phone…"
+                  aria-label="Search staff"
+                />
+              </div>
+              <select
+                className="mc-input"
+                style={{ maxWidth: 180 }}
+                value={roleFilter}
+                onChange={(e) => setRoleFilter(e.target.value)}
+                aria-label="Filter by role"
+              >
+                <option value="">All Roles</option>
+                {roleOptions.map((r) => (
+                  <option key={r} value={r}>
+                    {r}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="mc-dtable-wrap" style={{ marginTop: 14 }}>
+              <table className="mc-dtable">
+                <thead>
+                  <tr>
+                    <SortableHeader
+                      label="Staff Member"
+                      direction={sort.key === "name" ? sort.dir : null}
+                      onClick={() => toggleSort("name")}
                     />
-                  </button>
-
-                  <AnimatePresence initial={false}>
-                    {expanded && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                        style={{ overflow: "hidden" }}
-                      >
-                        <div style={{ padding: "0 4px 14px" }}>
-                          <StaffCredentialsPanel
-                            member={m}
-                            canEdit={isHospitalAdmin || isSelf}
-                          />
-
-                          {isHospitalAdmin && !isSelf && (
-                            <EmploymentStatus
-                              staffId={m.id}
-                              isActive={m.is_active}
-                              deactivating={deactivatingId === m.id}
-                              onStartDeactivate={() => setDeactivatingId(m.id)}
-                              onCancelDeactivate={() => setDeactivatingId(null)}
-                              deactivateStaff={deactivateStaff}
-                              reactivateStaff={reactivateStaff}
-                            />
-                          )}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </motion.div>
-              );
-            })}
-          </div>
+                    <SortableHeader
+                      label="Role"
+                      direction={sort.key === "role" ? sort.dir : null}
+                      onClick={() => toggleSort("role")}
+                    />
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Status</th>
+                    <th />
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((m) => (
+                    <StaffRow
+                      key={m.id}
+                      member={m}
+                      isSelf={m.id === user.staff_id}
+                      isHospitalAdmin={isHospitalAdmin}
+                      expanded={expandedId === m.id}
+                      onToggleExpand={() =>
+                        setExpandedId(expandedId === m.id ? null : m.id)
+                      }
+                      deactivating={deactivatingId === m.id}
+                      onStartDeactivate={() => setDeactivatingId(m.id)}
+                      onCancelDeactivate={() => setDeactivatingId(null)}
+                      deactivateStaff={deactivateStaff}
+                      reactivateStaff={reactivateStaff}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </Card>
     </>
+  );
+}
+
+function StaffRow({
+  member: m,
+  isSelf,
+  isHospitalAdmin,
+  expanded,
+  onToggleExpand,
+  deactivating,
+  onStartDeactivate,
+  onCancelDeactivate,
+  deactivateStaff,
+  reactivateStaff,
+}: {
+  member: StaffMember;
+  isSelf: boolean;
+  isHospitalAdmin: boolean;
+  expanded: boolean;
+  onToggleExpand: () => void;
+  deactivating: boolean;
+  onStartDeactivate: () => void;
+  onCancelDeactivate: () => void;
+  deactivateStaff: ReturnType<typeof useDeactivateStaff>;
+  reactivateStaff: ReturnType<typeof useReactivateStaff>;
+}) {
+  return (
+    <Fragment>
+      <tr
+        className="mc-dtable-row"
+        aria-expanded={expanded}
+        onClick={onToggleExpand}
+      >
+        <td>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <InitialsAvatar name={m.full_name || m.email} />
+            <div>
+              <div className="mc-dtable-primary">
+                {m.full_name || m.email}
+                {isSelf && (
+                  <span
+                    className="mc-badge mc-badge-info"
+                    style={{ marginLeft: 8 }}
+                  >
+                    You
+                  </span>
+                )}
+              </div>
+              <div className="mc-dtable-sub">
+                {m.employee_id}
+                {m.specialty && ` · ${m.specialty}`}
+              </div>
+            </div>
+          </div>
+        </td>
+        <td>{m.role_name}</td>
+        <td>{m.email}</td>
+        <td>{m.phone || "—"}</td>
+        <td>
+          {!m.is_active ? (
+            <span className="mc-badge mc-badge-high">
+              <AlertCircle size={12} strokeWidth={2.2} aria-hidden />
+              Deactivated
+            </span>
+          ) : !m.has_activated ? (
+            <span className="mc-badge mc-badge-moderate">
+              Pending activation
+            </span>
+          ) : (
+            <span className="mc-badge mc-badge-stable">Active</span>
+          )}
+        </td>
+        <td>
+          <ChevronDown
+            size={16}
+            strokeWidth={2}
+            aria-hidden
+            style={{
+              transform: expanded ? "rotate(180deg)" : undefined,
+              transition: "transform 0.15s ease",
+            }}
+          />
+        </td>
+      </tr>
+      <AnimatePresence initial={false}>
+        {expanded && (
+          <tr className="mc-dtable-detail">
+            <td colSpan={6}>
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                style={{ overflow: "hidden" }}
+              >
+                <div className="mc-dtable-detail-inner">
+                  <StaffCredentialsPanel
+                    member={m}
+                    canEdit={isHospitalAdmin || isSelf}
+                  />
+
+                  {isHospitalAdmin && !isSelf && (
+                    <EmploymentStatus
+                      staffId={m.id}
+                      isActive={m.is_active}
+                      deactivating={deactivating}
+                      onStartDeactivate={onStartDeactivate}
+                      onCancelDeactivate={onCancelDeactivate}
+                      deactivateStaff={deactivateStaff}
+                      reactivateStaff={reactivateStaff}
+                    />
+                  )}
+                </div>
+              </motion.div>
+            </td>
+          </tr>
+        )}
+      </AnimatePresence>
+    </Fragment>
   );
 }
 

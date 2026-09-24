@@ -3,10 +3,15 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { authFetch, authJson, SessionExpiredError } from "@/core/api/authFetch";
+import type { Paginated } from "@/features/patients/types";
 import { portalKeys } from "@/features/portal/hooks/usePortalData";
 
 export interface StaffMember {
   id: string;
+  /** The underlying User id — a Staff row and its User are different
+   *  records with different ids; this is what a User-referencing field
+   *  (e.g. Location.location_manager) needs, never `id` above. */
+  user_id: string;
   employee_id: string;
   full_name: string;
   email: string;
@@ -76,7 +81,15 @@ function retryUnlessSessionExpired(failureCount: number, error: unknown) {
 export function useStaffList() {
   return useQuery({
     queryKey: staffKeys.list,
-    queryFn: () => authJson<StaffMember[]>("/api/staff/"),
+    // page_size=100 (the server's max) rather than real pagination — the
+    // consumers here are a team roster and role-filtered pickers, and this
+    // endpoint's own history called a hospital's staff count "small enough
+    // to return in one shot." True for every real hospital today; a
+    // hospital that ever exceeds 100 staff needs this to become real
+    // pagination, not quietly truncate.
+    queryFn: () =>
+      authJson<Paginated<StaffMember>>("/api/staff/?page_size=100"),
+    select: (data) => data.results,
     retry: retryUnlessSessionExpired,
   });
 }

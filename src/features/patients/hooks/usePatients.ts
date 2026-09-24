@@ -10,10 +10,11 @@ import {
   listPatients,
   listPregnancies,
   listWorklist,
+  updatePatient,
   updatePregnancy,
   type EnrolmentInput,
 } from "../api";
-import type { PregnancyUpdateInput } from "../types";
+import type { PatientUpdateInput, PregnancyUpdateInput } from "../types";
 
 /**
  * Server data for the patients domain.
@@ -104,6 +105,19 @@ export function useEnrolPatient() {
       // A new patient changes both the list and the dashboard's count.
       queryClient.invalidateQueries({ queryKey: patientKeys.all });
       queryClient.invalidateQueries({ queryKey: ["organization"] });
+    },
+  });
+}
+
+export function useUpdatePatient(patientId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: PatientUpdateInput) => updatePatient(patientId, input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: patientKeys.detail(patientId),
+      });
     },
   });
 }

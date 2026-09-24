@@ -4,6 +4,7 @@ import type {
   Paginated,
   PatientDetail,
   PatientListItem,
+  PatientUpdateInput,
   Pregnancy,
   PregnancyUpdateInput,
   RiskFactors,
@@ -74,8 +75,27 @@ export function getPatient(id: string) {
   return authJson<PatientDetail>(`/api/patients/${id}/`);
 }
 
-export function listPregnancies(patientId: string) {
-  return authJson<Pregnancy[]>(`/api/patients/${patientId}/pregnancies/`);
+export async function updatePatient(
+  patientId: string,
+  input: PatientUpdateInput
+): Promise<PatientDetail> {
+  const res = await authFetch(`/api/patients/${patientId}/`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new Error(firstError(data) ?? "Could not save this patient.");
+  }
+  return data as PatientDetail;
+}
+
+export async function listPregnancies(patientId: string): Promise<Pregnancy[]> {
+  const { results } = await authJson<Paginated<Pregnancy>>(
+    `/api/patients/${patientId}/pregnancies/`
+  );
+  return results;
 }
 
 /** Care team (provider/nurse/care_manager) lives directly on the pregnancy
@@ -119,7 +139,11 @@ export interface StaffOption {
  * so this list is convenience, never the authorization boundary.
  */
 export async function listClinicians(): Promise<StaffOption[]> {
-  const staff = await authJson<StaffOption[]>("/api/staff/");
+  // page_size=100 (the server's max), same reasoning as useStaffList — a
+  // role-filtered picker must never silently truncate the roster.
+  const { results: staff } = await authJson<Paginated<StaffOption>>(
+    "/api/staff/?page_size=100"
+  );
   const rank = (r: string) => (r === "provider" ? 0 : r === "nurse" ? 1 : 2);
   return staff
     .filter((s) => s.is_active && s.is_user_active)
