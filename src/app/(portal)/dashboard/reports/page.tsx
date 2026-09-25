@@ -36,6 +36,7 @@ import {
   aggregateWorklistGaps,
 } from "@/features/reports/lib/aggregate";
 import { downloadCsv, toCsv, type CsvColumn } from "@/shared/lib/exportCsv";
+import { formatDateTime } from "@/shared/lib/formatDateTime";
 import { usePortal } from "../layout";
 import { usePageTitle } from "@/hooks/usePageTitle";
 
@@ -202,7 +203,7 @@ function ClinicalOverviewTab() {
           columns={[
             { header: "MRN", value: (p) => p.mrn ?? "" },
             { header: "Full name", value: (p) => p.full_name },
-            { header: "Enrolled", value: (p) => p.created_at },
+            { header: "Enrolled", value: (p) => formatDateTime(p.created_at) },
             { header: "Active", value: (p) => (p.is_active ? "yes" : "no") },
             {
               header: "Pregnancy status",
@@ -500,8 +501,11 @@ function AlertsTab() {
             { header: "Level", value: (a) => a.level },
             { header: "Tier", value: (a) => a.tier_label },
             { header: "Status", value: (a) => a.status_display },
-            { header: "Raised", value: (a) => a.raised_at },
-            { header: "Acknowledged", value: (a) => a.acknowledged_at },
+            { header: "Raised", value: (a) => formatDateTime(a.raised_at) },
+            {
+              header: "Acknowledged",
+              value: (a) => formatDateTime(a.acknowledged_at),
+            },
             {
               header: "Assigned staff",
               value: (a) => a.assigned_staff_name,

@@ -14,6 +14,7 @@ import type {
   JoinRequestStatus,
 } from "@/features/join-requests/types";
 import { RISK_FACTORS } from "@/features/patients/types";
+import { formatDate } from "@/shared/lib/formatDateTime";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { Pair } from "@/shared/ui/Pair";
 import { RowSkeleton } from "@/shared/ui/RowSkeleton";
@@ -96,15 +97,6 @@ export function JoinRequestsPanel() {
         ))}
     </div>
   );
-}
-
-function formatDate(value: string | null | undefined): string {
-  if (!value) return "";
-  return new Date(value).toLocaleDateString(undefined, {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
 }
 
 function JoinRequestRow({

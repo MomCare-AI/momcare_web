@@ -26,6 +26,7 @@ import {
   type Pregnancy,
 } from "@/features/patients/types";
 import { useSecondaryProviders } from "@/features/secondary-providers/hooks/useSecondaryProviders";
+import { formatDate } from "@/shared/lib/formatDateTime";
 import { RiskPanel } from "@/features/monitoring/components/RiskPanel";
 import { RiskAssessmentInput } from "@/features/monitoring/components/RiskAssessmentInput";
 import { VitalsPanel } from "@/features/monitoring/components/VitalsPanel";
@@ -638,13 +639,4 @@ function CareTeamEditor({
       </div>
     </section>
   );
-}
-
-function formatDate(value: string | null): string {
-  if (!value) return "";
-  return new Date(value).toLocaleDateString(undefined, {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
 }

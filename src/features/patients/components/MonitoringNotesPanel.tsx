@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 
 import { usePortal } from "@/app/(portal)/dashboard/layout";
+import { formatDateTime } from "@/shared/lib/formatDateTime";
 import {
   useClinicalTags,
   useDeleteNote,
@@ -586,16 +587,6 @@ function SearchResults({
       ))}
     </div>
   );
-}
-
-function formatDateTime(value: string): string {
-  return new Date(value).toLocaleString(undefined, {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
 }
 
 function TimelineRow({

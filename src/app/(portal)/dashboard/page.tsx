@@ -19,10 +19,7 @@ import {
   Users,
 } from "lucide-react";
 import { useAlerts } from "@/features/alerts/hooks/useAlerts";
-import {
-  useLocationPatients,
-  useLocations,
-} from "@/features/locations/hooks/useLocations";
+import { useLocationPatients } from "@/features/locations/hooks/useLocations";
 import { useLocationScope } from "@/features/locations/LocationScopeContext";
 import { RecentAlertsList } from "@/features/reports/components/AlertMetricsPanel";
 import { useAllPatients } from "@/features/reports/hooks/useReports";
@@ -155,10 +152,6 @@ export default function OverviewPage() {
   const locationResult = useLocationPatients(selectedLocationId);
   const scopedToLocation = selectedLocationId !== null;
   const activeResult = scopedToLocation ? locationResult : listResult;
-  const allLocations = useLocations().data?.results ?? [];
-  const scopedLocationName = allLocations.find(
-    (l) => l.id === selectedLocationId
-  )?.name;
 
   useEffect(() => {
     if (listResult.error instanceof SessionExpiredError)
@@ -198,28 +191,11 @@ export default function OverviewPage() {
         requestsCount={joinRequests.data?.count ?? 0}
       />
 
-      {listTab === "patients" && scopedToLocation && (
-        <p className="mc-hint" style={{ marginBottom: 14 }}>
-          <MapPin
-            size={13}
-            strokeWidth={2}
-            aria-hidden
-            style={{ verticalAlign: -2, marginRight: 4 }}
-          />
-          Showing patients at {scopedLocationName ?? "this location"} only —
-          switch to &ldquo;All Locations&rdquo; in the sidebar to see the whole
-          hospital.
-        </p>
-      )}
-
       {isHospitalAdmin && (
         <div className="mc-actions">
           <Link href="/dashboard/patients/new" className="mc-btn">
             <UserPlus size={15} strokeWidth={2} aria-hidden />
             Enrol patient
-          </Link>
-          <Link href="/dashboard/governance" className="mc-btn-ghost">
-            Add staff
           </Link>
           <span className="mc-badge mc-badge-neutral">
             <Info size={12} strokeWidth={2.2} aria-hidden />
