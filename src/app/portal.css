@@ -245,6 +245,102 @@ body::-webkit-scrollbar-thumb:hover {
   flex: none;
 }
 
+/* ── Location switcher ───────────────────────────────────────────────────
+   The trigger sits inside .mc-sidebar (on-blue tokens); its dropdown panel
+   is portaled into .mc-portal with position: fixed (see the component's
+   own note on why), so it uses the ordinary light card tokens instead. */
+.mc-locationswitch {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 11px;
+  border-radius: var(--r-control);
+  border: 1px solid var(--sb-border);
+  background: var(--sb-bg-hover);
+  color: var(--sb-text);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.mc-locationswitch:hover {
+  background: var(--sb-bg-active);
+}
+.mc-locationswitch-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mc-locationswitch-panel {
+  background: var(--c-card);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-card);
+  box-shadow: var(--shadow-pop);
+  padding: 8px;
+  max-height: 320px;
+  display: flex;
+  flex-direction: column;
+}
+.mc-locationswitch-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border: 1px solid var(--c-border-control);
+  border-radius: var(--r-control);
+  color: var(--c-faint);
+  margin-bottom: 6px;
+  flex-shrink: 0;
+}
+.mc-locationswitch-search input {
+  border: none;
+  outline: none;
+  background: none;
+  font: inherit;
+  font-size: 13.5px;
+  color: var(--c-ink);
+  width: 100%;
+}
+.mc-locationswitch-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+}
+.mc-locationswitch-option {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  background: transparent;
+  border-radius: calc(var(--r-control) - 3px);
+  cursor: pointer;
+  font-size: 13.5px;
+  color: var(--c-ink);
+  text-align: left;
+}
+.mc-locationswitch-option:hover {
+  background: var(--c-surface-subtle);
+}
+.mc-locationswitch-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--c-border-control);
+  flex-shrink: 0;
+}
+.mc-locationswitch-dot[data-active="true"] {
+  background: var(--c-teal);
+}
+.mc-locationswitch-empty {
+  padding: 10px;
+  font-size: 13px;
+  color: var(--c-faint);
+}
+
 .mc-sidebar-nav {
   flex: 1;
   display: flex;
@@ -737,6 +833,13 @@ body::-webkit-scrollbar-thumb:hover {
   gap: 16px;
   margin-bottom: 22px;
 }
+/* A shorter, icon-left layout — the icon anchors the left edge and spans
+   every row, with label/value/caption stacked tightly beside it, instead
+   of the icon sitting in its own row above the number. `.mc-kpi-top`
+   keeps its DOM position (nested inside `.mc-kpi`, wrapping label+icon)
+   for every existing caller — `display: contents` lifts its two children
+   into the grid as if the wrapper weren't there, so this is a CSS-only
+   change, not a rewrite of every card's markup. */
 .mc-kpi {
   background: var(--c-card);
   border: 1px solid var(--c-border);
@@ -747,10 +850,12 @@ body::-webkit-scrollbar-thumb:hover {
   border-left: 3px solid var(--c-border);
   border-radius: var(--r-card);
   box-shadow: var(--shadow-card);
-  padding: 17px 19px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
+  padding: 14px 18px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 14px;
+  row-gap: 1px;
+  align-items: center;
   text-decoration: none;
 }
 a.mc-kpi {
@@ -760,31 +865,39 @@ a.mc-kpi:hover {
   border-color: var(--c-teal-soft);
 }
 .mc-kpi-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
+  display: contents;
 }
 .mc-kpi-label {
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--c-body);
+  grid-column: 2;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--c-faint);
 }
 .mc-kpi-icon {
+  grid-column: 1;
+  grid-row: 1 / span 3;
   color: var(--c-faint);
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r-control);
   display: grid;
   place-items: center;
+  flex-shrink: 0;
 }
 .mc-kpi-value {
-  font-size: 31px;
+  grid-column: 2;
+  font-size: 26px;
   font-weight: 700;
   color: var(--c-ink);
   font-variant-numeric: tabular-nums;
-  line-height: 1.05;
+  line-height: 1.2;
   letter-spacing: -0.02em;
 }
 .mc-kpi-foot {
-  font-size: 12.5px;
+  grid-column: 2;
+  font-size: 12px;
   color: var(--c-faint);
   display: flex;
   align-items: center;

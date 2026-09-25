@@ -13,6 +13,7 @@ import {
   BarChart3,
   BellRing,
   LayoutDashboard,
+  Search,
   ShieldCheck,
   Watch,
 } from "lucide-react";
@@ -23,6 +24,7 @@ import {
 } from "@/core/api/authFetch";
 import { clearQueryCache } from "@/core/query/queryClient";
 import { useAlerts } from "@/features/alerts/hooks/useAlerts";
+import { LocationScopeProvider } from "@/features/locations/LocationScopeContext";
 import { useAllPatients } from "@/features/reports/hooks/useReports";
 import {
   useAuditLog,
@@ -94,7 +96,8 @@ export function usePortal(): PortalValue {
 
 const NAV: NavItem[] = [
   { href: "/dashboard", label: "Clinical Overview", Icon: LayoutDashboard },
-  { href: "/dashboard/alerts", label: "Quick Lookup", Icon: BellRing },
+  { href: "/dashboard/lookup", label: "Quick Lookup", Icon: Search },
+  { href: "/dashboard/alerts", label: "Alerts", Icon: BellRing },
   { href: "/dashboard/devices", label: "Devices", Icon: Watch },
   {
     href: "/dashboard/reports",
@@ -309,39 +312,41 @@ export default function DashboardLayout({
 
   return (
     <PortalContext.Provider value={value}>
-      <div className="mc-portal">
-        <Sidebar
-          variant="desktop"
-          collapsed={effectiveCollapsed}
-          navItems={visibleNav}
-          pathname={pathname}
-          onSignOut={signOut}
-          onToggleCollapse={isDesktopTier ? toggleCollapse : undefined}
-          {...identity}
-        />
-
-        <MobileSidebarDrawer
-          open={menuOpen}
-          onClose={() => setMenuOpen(false)}
-          navItems={visibleNav}
-          pathname={pathname}
-          onSignOut={signOut}
-          {...identity}
-        />
-
-        <div className="mc-shell">
-          <AppHeader
-            showMenuTrigger
-            menuOpen={menuOpen}
-            onToggleMenu={() => setMenuOpen((v) => !v)}
-            navSearch={navSearch}
-            onNavSearchChange={setNavSearch}
-            onSubmitSearch={submitNavSearch}
-            initials={initials}
+      <LocationScopeProvider>
+        <div className="mc-portal">
+          <Sidebar
+            variant="desktop"
+            collapsed={effectiveCollapsed}
+            navItems={visibleNav}
+            pathname={pathname}
+            onSignOut={signOut}
+            onToggleCollapse={isDesktopTier ? toggleCollapse : undefined}
+            {...identity}
           />
-          <div className="mc-page">{children}</div>
+
+          <MobileSidebarDrawer
+            open={menuOpen}
+            onClose={() => setMenuOpen(false)}
+            navItems={visibleNav}
+            pathname={pathname}
+            onSignOut={signOut}
+            {...identity}
+          />
+
+          <div className="mc-shell">
+            <AppHeader
+              showMenuTrigger
+              menuOpen={menuOpen}
+              onToggleMenu={() => setMenuOpen((v) => !v)}
+              navSearch={navSearch}
+              onNavSearchChange={setNavSearch}
+              onSubmitSearch={submitNavSearch}
+              initials={initials}
+            />
+            <div className="mc-page">{children}</div>
+          </div>
         </div>
-      </div>
+      </LocationScopeProvider>
     </PortalContext.Provider>
   );
 }

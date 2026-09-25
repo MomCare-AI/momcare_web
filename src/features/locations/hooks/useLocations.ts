@@ -7,6 +7,7 @@ import {
   createLocation,
   deactivateLocation,
   getLocationAssignmentStatus,
+  listLocationPatients,
   listLocations,
   moveLocationPatients,
   reactivateLocation,
@@ -19,12 +20,24 @@ export const locationsKeys = {
   list: ["locations", "list"] as const,
   assignmentStatus: (id: string) =>
     ["locations", "assignment-status", id] as const,
+  patients: (id: string) => ["locations", "patients", id] as const,
 };
 
 export function useLocations() {
   return useQuery({
     queryKey: locationsKeys.list,
     queryFn: listLocations,
+  });
+}
+
+/** The patients at one specific site — backs the sidebar location
+ *  switcher's scoping of the Patients tab. `null` means "no location
+ *  selected," matching the "All locations" default. */
+export function useLocationPatients(locationId: string | null) {
+  return useQuery({
+    queryKey: locationsKeys.patients(locationId ?? ""),
+    queryFn: () => listLocationPatients(locationId as string),
+    enabled: locationId !== null,
   });
 }
 

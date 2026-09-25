@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, LogOut, Settings } from "lucide-react";
 
+import { LocationSwitcher } from "@/features/locations/components/LocationSwitcher";
 import { SidebarNavItem, type NavItem } from "./SidebarNavItem";
 
 export interface SidebarIdentity {
@@ -101,6 +102,8 @@ export function Sidebar({
           </span>
         )}
       </div>
+
+      <LocationSwitcher collapsed={iconOnly} />
 
       {variant === "desktop" && onToggleCollapse && (
         <button

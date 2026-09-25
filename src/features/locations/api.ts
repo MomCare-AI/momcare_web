@@ -1,5 +1,5 @@
 import { authFetch, authJson } from "@/core/api/authFetch";
-import type { Paginated } from "@/features/patients/types";
+import type { Paginated, PatientListItem } from "@/features/patients/types";
 import type {
   Location,
   LocationAssignmentStatus,
@@ -9,6 +9,18 @@ import type {
 
 export function listLocations() {
   return authJson<Paginated<Location>>("/api/locations/");
+}
+
+/** Every patient at one specific site — `LocationPatientsView`, a
+ *  sub-resource of the location, not the hospital-wide `/api/patients/`.
+ *  Same lean list shape, but no `?search=` support server-side (only
+ *  `?is_active=` + pagination) — the location switcher's own patient list
+ *  filters by name/MRN/phone client-side over whatever page this returns,
+ *  same honest-cap tradeoff already used elsewhere in this app. */
+export function listLocationPatients(locationId: string, page = 1) {
+  return authJson<Paginated<PatientListItem>>(
+    `/api/locations/${locationId}/patients/?page=${page}&page_size=100`
+  );
 }
 
 export async function createLocation(

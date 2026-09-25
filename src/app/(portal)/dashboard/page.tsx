@@ -19,6 +19,11 @@ import {
   Users,
 } from "lucide-react";
 import { useAlerts } from "@/features/alerts/hooks/useAlerts";
+import {
+  useLocationPatients,
+  useLocations,
+} from "@/features/locations/hooks/useLocations";
+import { useLocationScope } from "@/features/locations/LocationScopeContext";
 import { RecentAlertsList } from "@/features/reports/components/AlertMetricsPanel";
 import { useAllPatients } from "@/features/reports/hooks/useReports";
 import { aggregateRiskLevels } from "@/features/reports/lib/aggregate";
@@ -142,13 +147,26 @@ export default function OverviewPage() {
   // honest tradeoff at hospitals with more than 100 patients.
   const listResult = usePatientList("", 1, assignedToMe, 100);
 
+  // The sidebar's location switcher — "All Locations" (null) uses the
+  // hospital-wide query above; a specific site swaps in its own
+  // sub-resource endpoint (`/api/locations/<id>/patients/`), the only
+  // place a per-location patient list actually exists server-side today.
+  const { selectedLocationId } = useLocationScope();
+  const locationResult = useLocationPatients(selectedLocationId);
+  const scopedToLocation = selectedLocationId !== null;
+  const activeResult = scopedToLocation ? locationResult : listResult;
+  const allLocations = useLocations().data?.results ?? [];
+  const scopedLocationName = allLocations.find(
+    (l) => l.id === selectedLocationId
+  )?.name;
+
   useEffect(() => {
     if (listResult.error instanceof SessionExpiredError)
       router.replace("/login");
   }, [listResult.error, router]);
 
-  const listPatients = listResult.data?.results ?? [];
-  const listCount = listResult.data?.count ?? 0;
+  const listPatients = activeResult.data?.results ?? [];
+  const listCount = activeResult.data?.count ?? 0;
 
   const patients = patientsQuery.data ?? [];
   const liveAlerts = liveAlertsQuery.data?.results ?? [];
@@ -179,6 +197,20 @@ export default function OverviewPage() {
         worklistCount={worklist.data?.count ?? 0}
         requestsCount={joinRequests.data?.count ?? 0}
       />
+
+      {listTab === "patients" && scopedToLocation && (
+        <p className="mc-hint" style={{ marginBottom: 14 }}>
+          <MapPin
+            size={13}
+            strokeWidth={2}
+            aria-hidden
+            style={{ verticalAlign: -2, marginRight: 4 }}
+          />
+          Showing patients at {scopedLocationName ?? "this location"} only —
+          switch to &ldquo;All Locations&rdquo; in the sidebar to see the whole
+          hospital.
+        </p>
+      )}
 
       {isHospitalAdmin && (
         <div className="mc-actions">
@@ -213,7 +245,7 @@ export default function OverviewPage() {
             <WorklistPanel assignedToMe={assignedToMe} />
           </CardBody>
         </Card>
-      ) : listResult.isPending ? (
+      ) : activeResult.isPending ? (
         <Card style={{ marginBottom: 18 }}>
           <div className="mc-rows">
             <RowSkeleton count={4} variant="plain" />
@@ -221,12 +253,12 @@ export default function OverviewPage() {
         </Card>
       ) : (
         <>
-          {listResult.error &&
-            !(listResult.error instanceof SessionExpiredError) && (
+          {activeResult.error &&
+            !(activeResult.error instanceof SessionExpiredError) && (
               <p className="mc-alert mc-alert-error">
                 <AlertCircle size={15} strokeWidth={2} aria-hidden />
-                {listResult.error instanceof Error
-                  ? listResult.error.message
+                {activeResult.error instanceof Error
+                  ? activeResult.error.message
                   : "Could not load patients."}
               </p>
             )}
@@ -236,13 +268,23 @@ export default function OverviewPage() {
               <CardBody>
                 <EmptyState
                   icon={<Users size={20} strokeWidth={1.9} aria-hidden />}
-                  title="No patients enrolled yet"
-                  text="Enrol your first patient to start tracking her pregnancy."
+                  title={
+                    scopedToLocation
+                      ? "No patients at this location"
+                      : "No patients enrolled yet"
+                  }
+                  text={
+                    scopedToLocation
+                      ? "Switch locations, or clear the filter to see the whole hospital."
+                      : "Enrol your first patient to start tracking her pregnancy."
+                  }
                   actions={
-                    <Link href="/dashboard/patients/new" className="mc-btn">
-                      <UserPlus size={15} strokeWidth={2} aria-hidden />
-                      Enrol patient
-                    </Link>
+                    !scopedToLocation && (
+                      <Link href="/dashboard/patients/new" className="mc-btn">
+                        <UserPlus size={15} strokeWidth={2} aria-hidden />
+                        Enrol patient
+                      </Link>
+                    )
                   }
                 />
               </CardBody>
