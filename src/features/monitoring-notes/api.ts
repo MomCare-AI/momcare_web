@@ -1,6 +1,5 @@
 import { authFetch, authJson } from "@/core/api/authFetch";
 import type {
-  ClinicalTag,
   ClinicalTagListResponse,
   CombinedMonitoringInput,
   MonitoringNote,
@@ -106,52 +105,6 @@ export async function deleteNote(noteId: string): Promise<void> {
 
 export function listClinicalTags() {
   return authJson<ClinicalTagListResponse>("/api/clinical-tags/");
-}
-
-/** V1 scope: organization-level tags only — `location` is never sent. The
- *  server requires the caller to name their own org explicitly (it does not
- *  infer one from the requesting user), and rejects any other org's id. */
-export async function createClinicalTag(input: {
-  name: string;
-  color?: string | null;
-  organization: string;
-}): Promise<ClinicalTag> {
-  const res = await authFetch("/api/clinical-tags/", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(input),
-  });
-  const body = await res.json().catch(() => null);
-  if (!res.ok) {
-    throw new Error(firstError(body) ?? "Could not add this tag.");
-  }
-  return body as ClinicalTag;
-}
-
-export async function updateClinicalTag(
-  tagId: string,
-  input: { name?: string; color?: string | null }
-): Promise<ClinicalTag> {
-  const res = await authFetch(`/api/clinical-tags/${tagId}/`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(input),
-  });
-  const body = await res.json().catch(() => null);
-  if (!res.ok) {
-    throw new Error(firstError(body) ?? "Could not save this tag.");
-  }
-  return body as ClinicalTag;
-}
-
-export async function deleteClinicalTag(tagId: string): Promise<void> {
-  const res = await authFetch(`/api/clinical-tags/${tagId}/`, {
-    method: "DELETE",
-  });
-  if (!res.ok) {
-    const body = await res.json().catch(() => null);
-    throw new Error(firstError(body) ?? "Could not delete this tag.");
-  }
 }
 
 export function searchPatientNotes(

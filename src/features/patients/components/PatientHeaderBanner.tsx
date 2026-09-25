@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
-  AlertTriangle,
   Calendar,
   MapPin,
   Pause,
@@ -14,9 +13,9 @@ import {
   User,
 } from "lucide-react";
 
-import { useLogContact } from "@/features/monitoring-notes/hooks/useMonitoringNotes";
 import { InitialsAvatar } from "@/shared/ui/InitialsAvatar";
 import { pregnancyTone, type PatientDetail, type Pregnancy } from "../types";
+import { LogSessionModal } from "./LogSessionModal";
 
 function ageFromDob(dob: string | null): string | null {
   if (!dob) return null;
@@ -42,6 +41,16 @@ function formatClock(totalSeconds: number): string {
 interface Props {
   patient: PatientDetail;
   current: Pregnancy | null;
+  /** The live "time on this patient" timer — lifted up to the page itself
+   *  so the page-level Back button can check `seconds > 0` and prompt for
+   *  a note before navigating away, instead of losing unsaved time
+   *  silently. This component still owns the ticking interval and the
+   *  Play/Pause/Reset/Save controls; the page just needs to read/reset
+   *  the count. */
+  seconds: number;
+  setSeconds: React.Dispatch<React.SetStateAction<number>>;
+  running: boolean;
+  setRunning: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 /**
@@ -56,12 +65,16 @@ interface Props {
  * diagnosis list, no second program, and no messaging/calling
  * infrastructure at all, not even partially.
  */
-export function PatientHeaderBanner({ patient, current }: Props) {
-  const [seconds, setSeconds] = useState(0);
-  const [running, setRunning] = useState(false);
-  const [saved, setSaved] = useState(false);
+export function PatientHeaderBanner({
+  patient,
+  current,
+  seconds,
+  setSeconds,
+  running,
+  setRunning,
+}: Props) {
+  const [showLogModal, setShowLogModal] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const logContact = useLogContact(patient.id);
 
   useEffect(() => {
     if (!running) return;
@@ -69,20 +82,7 @@ export function PatientHeaderBanner({ patient, current }: Props) {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [running]);
-
-  const saveSession = async () => {
-    if (seconds === 0) return;
-    setSaved(false);
-    try {
-      await logContact.mutateAsync({ duration_seconds: seconds });
-      setSeconds(0);
-      setRunning(false);
-      setSaved(true);
-    } catch {
-      // Surfaced below via logContact.isError.
-    }
-  };
+  }, [running, setSeconds]);
 
   const age = ageFromDob(patient.date_of_birth);
   const careTeam = [
@@ -249,34 +249,30 @@ export function PatientHeaderBanner({ patient, current }: Props) {
             <button
               type="button"
               className="mc-btn mc-btn-sm"
-              disabled={seconds === 0 || logContact.isPending}
-              onClick={saveSession}
+              disabled={seconds === 0}
+              onClick={() => {
+                setRunning(false);
+                setShowLogModal(true);
+              }}
             >
               <Save size={13} strokeWidth={2} aria-hidden />
-              {logContact.isPending ? "Saving…" : "Save"}
+              Save
             </button>
           </div>
           <div className="mc-hint" style={{ marginTop: 4 }}>
             Time on this patient — saves as a logged contact on Notes
           </div>
-          {logContact.isError && (
-            <p
-              className="mc-alert mc-alert-error"
-              style={{ marginTop: 8, justifyContent: "flex-end" }}
-            >
-              <AlertTriangle size={13} strokeWidth={2} aria-hidden />
-              {logContact.error instanceof Error
-                ? logContact.error.message
-                : "Could not save this session."}
-            </p>
-          )}
-          {saved && !logContact.isPending && (
-            <p className="mc-alert mc-alert-success" style={{ marginTop: 8 }}>
-              Session saved.
-            </p>
-          )}
         </div>
       </div>
+
+      <LogSessionModal
+        patientId={patient.id}
+        patientLocationName={patient.location_name}
+        open={showLogModal}
+        onClose={() => setShowLogModal(false)}
+        initialSeconds={seconds}
+        onSaved={() => setSeconds(0)}
+      />
     </div>
   );
 }

@@ -31,11 +31,14 @@ import { RiskPanel } from "@/features/monitoring/components/RiskPanel";
 import { RiskAssessmentInput } from "@/features/monitoring/components/RiskAssessmentInput";
 import { VitalsPanel } from "@/features/monitoring/components/VitalsPanel";
 import { MonitoringNotesPanel } from "@/features/patients/components/MonitoringNotesPanel";
+import { ExitNoteModal } from "@/features/patients/components/ExitNoteModal";
 import { PatientDevicesPanel } from "@/features/patients/components/PatientDevicesPanel";
 import { PatientDocumentsPanel } from "@/features/patients/components/PatientDocumentsPanel";
 import { PatientHeaderBanner } from "@/features/patients/components/PatientHeaderBanner";
 import { PatientOverviewSnapshot } from "@/features/patients/components/PatientOverviewSnapshot";
 import { PatientReadingsPanel } from "@/features/patients/components/PatientReadingsPanel";
+import { RecentActivityCards } from "@/features/patients/components/RecentActivityCards";
+import { BackButton } from "@/shared/ui/BackButton";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { Pair } from "@/shared/ui/Pair";
 import { usePortal } from "../../layout";
@@ -56,7 +59,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "readings", label: "Readings" },
   { id: "risk", label: "AI Risk Assessment" },
   { id: "pregnancy", label: "Pregnancy" },
-  { id: "notes", label: "Notes" },
+  { id: "notes", label: "Clinical Notes" },
   { id: "devices", label: "Devices" },
   { id: "documents", label: "Documents" },
   { id: "history", label: "History" },
@@ -73,6 +76,12 @@ export default function PatientProfilePage({
   const { isClinician, isHospitalAdmin } = usePortal();
 
   const [tab, setTab] = useState<Tab>("overview");
+  // The header's live "time on this patient" timer, lifted up here so the
+  // Back button can prompt to log it before navigating away instead of
+  // silently losing unsaved time.
+  const [timerSeconds, setTimerSeconds] = useState(0);
+  const [timerRunning, setTimerRunning] = useState(true);
+  const [showExitModal, setShowExitModal] = useState(false);
 
   const patientQuery = usePatient(id);
   const pregnancyQuery = usePregnancies(id);
@@ -112,6 +121,29 @@ export default function PatientProfilePage({
 
   return (
     <>
+      <div style={{ marginBottom: 14 }}>
+        <BackButton
+          onBeforeBack={() => {
+            if (timerSeconds > 0) {
+              setShowExitModal(true);
+              return false;
+            }
+          }}
+        />
+      </div>
+
+      <ExitNoteModal
+        patientId={patient.id}
+        open={showExitModal}
+        seconds={timerSeconds}
+        onCancel={() => setShowExitModal(false)}
+        onDone={() => {
+          setTimerSeconds(0);
+          setShowExitModal(false);
+          router.back();
+        }}
+      />
+
       {justEnrolled && (
         <p className="mc-alert mc-alert-success">
           <CheckCircle2 size={15} strokeWidth={2} aria-hidden />
@@ -132,15 +164,16 @@ export default function PatientProfilePage({
         </p>
       )}
 
-      <PatientHeaderBanner patient={patient} current={current} />
+      <PatientHeaderBanner
+        patient={patient}
+        current={current}
+        seconds={timerSeconds}
+        setSeconds={setTimerSeconds}
+        running={timerRunning}
+        setRunning={setTimerRunning}
+      />
 
       <div className="mc-subnav">
-        <div className="mc-subnav-trail">
-          <Link href="/dashboard/patients">Patients</Link>
-          <span aria-hidden>/</span>
-          <strong>{patient.full_name}</strong>
-        </div>
-
         <nav className="mc-subnav-tabs" aria-label="Patient sections">
           {TABS.map((t) => (
             <button
@@ -159,53 +192,15 @@ export default function PatientProfilePage({
 
       {tab === "overview" && (
         <>
-          <PatientOverviewSnapshot
-            patientId={patient.id}
-            pregnancyId={current?.id ?? null}
-          />
-
-          <section className="mc-card">
-            <div className="mc-card-head">
-              <div className="mc-card-title">Patient details</div>
-              {!patient.has_app_account && (
-                <span className="mc-badge mc-badge-neutral">
-                  No app account
-                </span>
-              )}
-            </div>
-            <div className="mc-card-body">
-              <div className="mc-pairs">
-                <Pair
-                  label="Date of birth"
-                  value={formatDate(patient.date_of_birth)}
-                />
-                <Pair label="Blood group" value={patient.blood_group} />
-                <Pair label="Phone" value={patient.phone} />
-                <Pair label="CNIC" value={patient.cnic} />
-                <Pair label="Site" value={patient.location_name} />
-                <Pair
-                  label="Emergency contact"
-                  value={
-                    [
-                      patient.emergency_contact_name,
-                      patient.emergency_contact_relation &&
-                        `(${patient.emergency_contact_relation})`,
-                      patient.emergency_contact_phone,
-                    ]
-                      .filter(Boolean)
-                      .join(" ") || ""
-                  }
-                />
-              </div>
-            </div>
-          </section>
-
-          <SecondaryProviderEditor
-            patient={patient}
-            canWrite={canManageCareTeam}
-          />
+          <PatientOverviewSnapshot pregnancyId={current?.id ?? null} />
 
           {current && <VitalsPanel pregnancyId={current.id} />}
+
+          <RecentActivityCards
+            patientId={patient.id}
+            patientLocationName={patient.location_name}
+            onOpenNotes={() => setTab("notes")}
+          />
         </>
       )}
 
@@ -229,11 +224,11 @@ export default function PatientProfilePage({
         <>
           {current ? (
             <>
-              <RiskPanel pregnancyId={current.id} canVerify={isClinician} />
               <RiskAssessmentInput
                 pregnancyId={current.id}
                 patientName={patient.full_name}
               />
+              <RiskPanel pregnancyId={current.id} canVerify={isClinician} />
             </>
           ) : (
             <div className="mc-card">
@@ -336,7 +331,19 @@ export default function PatientProfilePage({
         />
       )}
 
-      {tab === "notes" && <MonitoringNotesPanel patientId={patient.id} />}
+      {tab === "pregnancy" && (
+        <SecondaryProviderEditor
+          patient={patient}
+          canWrite={canManageCareTeam}
+        />
+      )}
+
+      {tab === "notes" && (
+        <MonitoringNotesPanel
+          patientId={patient.id}
+          patientLocationName={patient.location_name}
+        />
+      )}
 
       {tab === "devices" &&
         (current ? (
@@ -353,7 +360,13 @@ export default function PatientProfilePage({
           </div>
         ))}
 
-      {tab === "documents" && <PatientDocumentsPanel />}
+      {tab === "documents" && (
+        <PatientDocumentsPanel
+          patientId={patient.id}
+          pregnancyId={current?.id ?? null}
+          patientName={patient.full_name}
+        />
+      )}
 
       {tab === "history" && (
         <section className="mc-card">

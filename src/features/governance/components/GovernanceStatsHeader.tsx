@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Building2, MapPin, Pencil, Stethoscope, Users } from "lucide-react";
+import { Building2, Pencil } from "lucide-react";
 
 import { usePortal } from "@/app/(portal)/dashboard/layout";
-import { Card, CardBody } from "@/shared/ui/Card";
+import { Card } from "@/shared/ui/Card";
 import { EditOrganizationModal } from "./EditOrganizationModal";
 
 function formatEstablished(value: string | null): string | null {
@@ -14,15 +14,10 @@ function formatEstablished(value: string | null): string | null {
 }
 
 /**
- * The persistent card atop System Governance, above the tab strip — org
- * identity plus the same three counts every tab's own data ultimately rolls
- * up to. All three (location_count/staff_count/patient_count) are already on
- * OrgSummary via usePortal(); this makes no API call of its own.
- *
- * Editing the hospital's own record happens from here (an "Edit organization"
- * icon, matching the reference platform's own header-card pattern) rather
- * than a dedicated governance tab — there never was a "Hospital" tab in the
- * layout MomCare is matching, only this card with an inline edit affordance.
+ * The persistent header atop System Governance, above the tab strip — one
+ * compact row (icon, name, established date, inline counts, status/edit),
+ * matching the reference platform's own header bar rather than a taller
+ * stacked card + separate KPI-tile grid.
  */
 export function GovernanceStatsHeader() {
   const { org, isHospitalAdmin } = usePortal();
@@ -31,24 +26,47 @@ export function GovernanceStatsHeader() {
 
   return (
     <Card style={{ marginBottom: 18 }}>
-      <CardBody>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 14,
+          flexWrap: "wrap",
+          padding: "12px 18px",
+        }}
+      >
+        <span className="mc-empty-icon" style={{ flexShrink: 0 }}>
+          <Building2 size={17} strokeWidth={1.9} aria-hidden />
+        </span>
+
+        <div style={{ minWidth: 0 }}>
+          <div className="mc-card-title" style={{ fontSize: 15 }}>
+            {org.name}
+          </div>
+          {established && (
+            <div className="mc-card-sub" style={{ fontSize: 12 }}>
+              {established}
+            </div>
+          )}
+        </div>
+
         <div
           style={{
             display: "flex",
             alignItems: "center",
-            gap: 12,
-            marginBottom: 16,
+            gap: 14,
+            marginLeft: "auto",
           }}
         >
-          <span className="mc-empty-icon" style={{ flexShrink: 0 }}>
-            <Building2 size={18} strokeWidth={1.9} aria-hidden />
-          </span>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div className="mc-card-title">{org.name}</div>
-            {established && <div className="mc-card-sub">{established}</div>}
-          </div>
+          <InlineStat value={org.location_count} label="Locations" />
+          <StatDivider />
+          <InlineStat value={org.staff_count} label="Staff" />
+          <StatDivider />
+          <InlineStat value={org.patient_count} label="Patients" />
+
           {isHospitalAdmin && (
             <>
+              <StatDivider />
               <span
                 className={`mc-badge mc-badge-${org.status === "approved" ? "stable" : "neutral"}`}
               >
@@ -69,52 +87,33 @@ export function GovernanceStatsHeader() {
             </>
           )}
         </div>
-
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))",
-            gap: 16,
-          }}
-        >
-          <StatTile
-            icon={<MapPin size={16} strokeWidth={1.9} aria-hidden />}
-            label="Locations"
-            value={org.location_count}
-          />
-          <StatTile
-            icon={<Stethoscope size={16} strokeWidth={1.9} aria-hidden />}
-            label="Staff"
-            value={org.staff_count}
-          />
-          <StatTile
-            icon={<Users size={16} strokeWidth={1.9} aria-hidden />}
-            label="Patients"
-            value={org.patient_count}
-          />
-        </div>
-      </CardBody>
+      </div>
     </Card>
   );
 }
 
-function StatTile({
-  icon,
-  label,
-  value,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: number;
-}) {
+function StatDivider() {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-      <span className="mc-kpi-icon mc-kpi-icon-brand">{icon}</span>
-      <div>
-        <div className="mc-kpi-value" style={{ fontSize: 22 }}>
-          {value}
-        </div>
-        <div className="mc-kpi-label">{label}</div>
+    <span
+      aria-hidden
+      style={{
+        width: 1,
+        height: 26,
+        background: "var(--c-border-soft)",
+        flexShrink: 0,
+      }}
+    />
+  );
+}
+
+function InlineStat({ value, label }: { value: number; label: string }) {
+  return (
+    <div style={{ textAlign: "center", lineHeight: 1.2 }}>
+      <div className="mc-kpi-value" style={{ fontSize: 18 }}>
+        {value}
+      </div>
+      <div className="mc-kpi-label" style={{ fontSize: 10.5 }}>
+        {label}
       </div>
     </div>
   );

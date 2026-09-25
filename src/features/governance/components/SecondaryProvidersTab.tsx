@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { AlertCircle, Contact, Plus, Search, X } from "lucide-react";
+import { AlertCircle, Contact, Plus, Search } from "lucide-react";
 
 import { usePortal } from "@/app/(portal)/dashboard/layout";
 import {
@@ -12,6 +12,7 @@ import type { SecondaryProviderInput } from "@/features/secondary-providers/type
 import { SortableHeader, type SortDirection } from "@/shared/ui/SortableHeader";
 import { Card, CardBody } from "@/shared/ui/Card";
 import { EmptyState } from "@/shared/ui/EmptyState";
+import { Modal } from "@/shared/ui/Modal";
 import { RowSkeleton } from "@/shared/ui/RowSkeleton";
 import { ProviderActionMenu } from "./ProviderActionMenu";
 
@@ -107,100 +108,12 @@ export function SecondaryProvidersTab() {
             </div>
 
             {canWrite && (
-              <button className="mc-btn" onClick={() => setShowForm((v) => !v)}>
-                {showForm ? (
-                  <X size={15} strokeWidth={2} />
-                ) : (
-                  <Plus size={15} strokeWidth={2} />
-                )}
-                {showForm ? "Cancel" : "Add provider"}
+              <button className="mc-btn" onClick={() => setShowForm(true)}>
+                <Plus size={15} strokeWidth={2} aria-hidden />
+                Add provider
               </button>
             )}
           </div>
-        )}
-
-        {canWrite && showForm && (
-          <CardBody>
-            <form onSubmit={submitCreate}>
-              <div className="mc-formgrid">
-                <div>
-                  <label className="mc-label" htmlFor="new-sp-name">
-                    Name <span className="mc-req">*</span>
-                  </label>
-                  <input
-                    id="new-sp-name"
-                    className="mc-input"
-                    required
-                    value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    placeholder="Dr. Amina Yousaf"
-                  />
-                </div>
-                <div>
-                  <label className="mc-label" htmlFor="new-sp-affiliation">
-                    Affiliation
-                  </label>
-                  <input
-                    id="new-sp-affiliation"
-                    className="mc-input"
-                    value={form.affiliation}
-                    onChange={(e) =>
-                      setForm({ ...form, affiliation: e.target.value })
-                    }
-                    placeholder="e.g. Rural Health Centre, Kahuta"
-                  />
-                </div>
-                <div>
-                  <label className="mc-label" htmlFor="new-sp-phone">
-                    Phone
-                  </label>
-                  <input
-                    id="new-sp-phone"
-                    className="mc-input"
-                    value={form.phone}
-                    onChange={(e) =>
-                      setForm({ ...form, phone: e.target.value })
-                    }
-                    placeholder="Optional"
-                  />
-                </div>
-                <div>
-                  <label className="mc-label" htmlFor="new-sp-email">
-                    Email
-                  </label>
-                  <input
-                    id="new-sp-email"
-                    className="mc-input"
-                    type="email"
-                    value={form.email}
-                    onChange={(e) =>
-                      setForm({ ...form, email: e.target.value })
-                    }
-                    placeholder="Optional"
-                  />
-                </div>
-              </div>
-
-              {formError && (
-                <p
-                  className="mc-alert mc-alert-error"
-                  style={{ marginTop: 12 }}
-                >
-                  <AlertCircle size={15} strokeWidth={2} aria-hidden />
-                  {formError}
-                </p>
-              )}
-              <button
-                type="submit"
-                className="mc-btn"
-                style={{ marginTop: 14 }}
-                disabled={createProvider.isPending}
-              >
-                <Plus size={15} strokeWidth={2} aria-hidden />
-                {createProvider.isPending ? "Adding…" : "Add provider"}
-              </button>
-            </form>
-          </CardBody>
         )}
 
         {providersQuery.isPending && (
@@ -280,6 +193,111 @@ export function SecondaryProvidersTab() {
             </div>
           ))}
       </Card>
+
+      {canWrite && (
+        <Modal
+          open={showForm}
+          onClose={() => setShowForm(false)}
+          title="Add provider"
+          subtitle="A referring clinician a patient can be linked to"
+          icon={<Contact size={17} strokeWidth={2} aria-hidden />}
+          tinted
+        >
+          <form onSubmit={submitCreate}>
+            <div className="mc-formgrid" style={{ gap: 12, marginBottom: 0 }}>
+              <div>
+                <label className="mc-label" htmlFor="new-sp-name">
+                  Name <span className="mc-req">*</span>
+                </label>
+                <input
+                  id="new-sp-name"
+                  className="mc-input"
+                  required
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  placeholder="Dr. Amina Yousaf"
+                />
+              </div>
+              <div>
+                <label className="mc-label" htmlFor="new-sp-affiliation">
+                  Affiliation
+                </label>
+                <input
+                  id="new-sp-affiliation"
+                  className="mc-input"
+                  value={form.affiliation}
+                  onChange={(e) =>
+                    setForm({ ...form, affiliation: e.target.value })
+                  }
+                  placeholder="e.g. Rural Health Centre, Kahuta"
+                />
+              </div>
+              <div>
+                <label className="mc-label" htmlFor="new-sp-phone">
+                  Phone
+                </label>
+                <input
+                  id="new-sp-phone"
+                  className="mc-input"
+                  value={form.phone}
+                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                  placeholder="Optional"
+                />
+              </div>
+              <div>
+                <label className="mc-label" htmlFor="new-sp-email">
+                  Email
+                </label>
+                <input
+                  id="new-sp-email"
+                  className="mc-input"
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  placeholder="Optional"
+                />
+              </div>
+            </div>
+
+            {formError && (
+              <p className="mc-alert mc-alert-error" style={{ marginTop: 12 }}>
+                <AlertCircle size={15} strokeWidth={2} aria-hidden />
+                {formError}
+              </p>
+            )}
+
+            <div
+              style={{
+                background: "var(--c-teal-wash)",
+                margin: "20px -20px -20px",
+                padding: "14px 20px",
+                borderTop: "1px solid var(--c-border-soft)",
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+              }}
+            >
+              <button
+                type="button"
+                className="mc-btn-ghost"
+                style={{ marginLeft: "auto" }}
+                onClick={() => setShowForm(false)}
+                disabled={createProvider.isPending}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="mc-btn"
+                disabled={createProvider.isPending}
+              >
+                <Plus size={15} strokeWidth={2} aria-hidden />
+                {createProvider.isPending ? "Adding…" : "Add provider"}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
     </>
   );
 }

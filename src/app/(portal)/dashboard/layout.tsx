@@ -15,6 +15,7 @@ import {
   LayoutDashboard,
   Search,
   ShieldCheck,
+  UserCog,
   Watch,
 } from "lucide-react";
 import {
@@ -108,6 +109,11 @@ const NAV: NavItem[] = [
     href: "/dashboard/governance",
     label: "System Governance",
     Icon: ShieldCheck,
+  },
+  {
+    href: "/dashboard/account-insights",
+    label: "Account Insights",
+    Icon: UserCog,
   },
 ];
 

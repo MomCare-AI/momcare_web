@@ -833,6 +833,22 @@ body::-webkit-scrollbar-thumb:hover {
   gap: 16px;
   margin-bottom: 22px;
 }
+/* A fixed 4-per-row variant — Account Insights' three KPI rows, where the
+   count per row is deliberately grouped by meaning (headline / rates /
+   per-day rates) rather than left to auto-fit's width-driven wrapping. */
+.mc-kpis-4col {
+  grid-template-columns: repeat(4, 1fr);
+}
+@media (max-width: 900px) {
+  .mc-kpis-4col {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 520px) {
+  .mc-kpis-4col {
+    grid-template-columns: 1fr;
+  }
+}
 /* A shorter, icon-left layout — the icon anchors the left edge and spans
    every row, with label/value/caption stacked tightly beside it, instead
    of the icon sitting in its own row above the number. `.mc-kpi-top`

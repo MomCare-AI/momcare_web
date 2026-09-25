@@ -3,15 +3,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
-  createClinicalTag,
-  deleteClinicalTag,
   deleteNote,
   deleteSession,
   getPatientMonitoring,
   listClinicalTags,
   logContact,
   searchPatientNotes,
-  updateClinicalTag,
   updateNote,
   updateSession,
 } from "../api";
@@ -75,50 +72,6 @@ export function useSearchPatientNotes(
         page: params.page,
       }),
     enabled: Boolean(params.search.trim() || params.tagId),
-  });
-}
-
-export function useCreateClinicalTag() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (input: {
-      name: string;
-      color?: string | null;
-      organization: string;
-    }) => createClinicalTag(input),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: monitoringNotesKeys.tags });
-    },
-  });
-}
-
-export function useUpdateClinicalTag() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({
-      tagId,
-      input,
-    }: {
-      tagId: string;
-      input: { name?: string; color?: string | null };
-    }) => updateClinicalTag(tagId, input),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: monitoringNotesKeys.tags });
-      // A renamed/recolored tag also shows on every note that already
-      // carries it (both timeline and search results embed the full tag).
-      queryClient.invalidateQueries({ queryKey: monitoringNotesKeys.all });
-    },
-  });
-}
-
-export function useDeleteClinicalTag() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (tagId: string) => deleteClinicalTag(tagId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: monitoringNotesKeys.tags });
-      queryClient.invalidateQueries({ queryKey: monitoringNotesKeys.all });
-    },
   });
 }
 

@@ -3,12 +3,13 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
-import { AlertCircle, Search, Stethoscope, UserPlus, X } from "lucide-react";
+import { AlertCircle, Search, Stethoscope, UserPlus } from "lucide-react";
 import { usePortal } from "@/app/(portal)/dashboard/layout";
 import { SessionExpiredError } from "@/core/api/authFetch";
-import { Card, CardBody, CardHeader } from "@/shared/ui/Card";
+import { Card } from "@/shared/ui/Card";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { InitialsAvatar } from "@/shared/ui/InitialsAvatar";
+import { Modal } from "@/shared/ui/Modal";
 import { RowSkeleton } from "@/shared/ui/RowSkeleton";
 import { SortableHeader, type SortDirection } from "@/shared/ui/SortableHeader";
 import {
@@ -165,15 +166,6 @@ export function StaffTab() {
 
   return (
     <>
-      <div className="mc-head">
-        <div>
-          <p className="mc-sub">
-            {staff.length} {staff.length === 1 ? "person" : "people"} on your
-            clinical team
-          </p>
-        </div>
-      </div>
-
       {error && (
         <p className="mc-alert mc-alert-error">
           <AlertCircle size={15} strokeWidth={2} aria-hidden />
@@ -181,155 +173,161 @@ export function StaffTab() {
         </p>
       )}
 
-      {isHospitalAdmin && showForm && (
-        <Card style={{ marginBottom: 18 }}>
-          <CardHeader>
-            <div>
-              <div className="mc-card-title">Add a team member</div>
-              <div className="mc-card-sub">
-                Their account is created right away — a one-time link to set
-                their own password is emailed to them.
+      {isHospitalAdmin && (
+        <Modal
+          open={showForm}
+          onClose={() => setShowForm(false)}
+          title="Onboard staff"
+          subtitle="Their account is created right away — a one-time link to set their own password is emailed to them"
+          icon={<UserPlus size={17} strokeWidth={2} aria-hidden />}
+          tinted
+        >
+          <form onSubmit={submitCreate}>
+            <div className="mc-formgrid" style={{ gap: 12, marginBottom: 0 }}>
+              <div>
+                <label className="mc-label" htmlFor="staff-email">
+                  Email address <span className="mc-req">*</span>
+                </label>
+                <input
+                  id="staff-email"
+                  className="mc-input"
+                  type="email"
+                  required
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  placeholder="doctor@yourhospital.pk"
+                />
+              </div>
+              <div>
+                <label className="mc-label" htmlFor="staff-role">
+                  Role <span className="mc-req">*</span>
+                </label>
+                <select
+                  id="staff-role"
+                  className="mc-input"
+                  value={form.role_code}
+                  onChange={(e) =>
+                    setForm({ ...form, role_code: e.target.value })
+                  }
+                >
+                  {ROLES.map((r) => (
+                    <option key={r.code} value={r.code}>
+                      {r.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="mc-label" htmlFor="staff-first">
+                  First name
+                </label>
+                <input
+                  id="staff-first"
+                  className="mc-input"
+                  value={form.first_name}
+                  onChange={(e) =>
+                    setForm({ ...form, first_name: e.target.value })
+                  }
+                  placeholder="Optional"
+                />
+              </div>
+              <div>
+                <label className="mc-label" htmlFor="staff-last">
+                  Last name
+                </label>
+                <input
+                  id="staff-last"
+                  className="mc-input"
+                  value={form.last_name}
+                  onChange={(e) =>
+                    setForm({ ...form, last_name: e.target.value })
+                  }
+                  placeholder="Optional"
+                />
+              </div>
+              <div>
+                <label className="mc-label" htmlFor="staff-phone">
+                  Phone
+                </label>
+                <input
+                  id="staff-phone"
+                  className="mc-input"
+                  value={form.phone}
+                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                  placeholder="Optional"
+                />
               </div>
             </div>
-          </CardHeader>
-          <CardBody>
-            <form onSubmit={submitCreate}>
-              <div className="mc-formgrid">
-                <div>
-                  <label className="mc-label" htmlFor="staff-email">
-                    Email address <span className="mc-req">*</span>
-                  </label>
-                  <input
-                    id="staff-email"
-                    className="mc-input"
-                    type="email"
-                    required
-                    value={form.email}
-                    onChange={(e) =>
-                      setForm({ ...form, email: e.target.value })
-                    }
-                    placeholder="doctor@yourhospital.pk"
-                  />
+
+            {needsLocations && (
+              <div style={{ marginTop: 14 }}>
+                <div className="mc-label">
+                  Locations <span className="mc-req">*</span>
                 </div>
-                <div>
-                  <label className="mc-label" htmlFor="staff-role">
-                    Role <span className="mc-req">*</span>
-                  </label>
-                  <select
-                    id="staff-role"
-                    className="mc-input"
-                    value={form.role_code}
-                    onChange={(e) =>
-                      setForm({ ...form, role_code: e.target.value })
-                    }
-                  >
-                    {ROLES.map((r) => (
-                      <option key={r.code} value={r.code}>
-                        {r.label}
-                      </option>
+                {locations.length === 0 ? (
+                  <p className="mc-hint">
+                    No locations recorded yet — add one under System Governance
+                    &rarr; Locations first.
+                  </p>
+                ) : (
+                  <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
+                    {locations.map((loc) => (
+                      <label
+                        key={loc.id}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 6,
+                          fontSize: 13.5,
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={form.locations.includes(loc.id)}
+                          onChange={() => toggleLocation(loc.id)}
+                        />
+                        {loc.name}
+                      </label>
                     ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="mc-label" htmlFor="staff-first">
-                    First name
-                  </label>
-                  <input
-                    id="staff-first"
-                    className="mc-input"
-                    value={form.first_name}
-                    onChange={(e) =>
-                      setForm({ ...form, first_name: e.target.value })
-                    }
-                    placeholder="Optional"
-                  />
-                </div>
-                <div>
-                  <label className="mc-label" htmlFor="staff-last">
-                    Last name
-                  </label>
-                  <input
-                    id="staff-last"
-                    className="mc-input"
-                    value={form.last_name}
-                    onChange={(e) =>
-                      setForm({ ...form, last_name: e.target.value })
-                    }
-                    placeholder="Optional"
-                  />
-                </div>
-                <div>
-                  <label className="mc-label" htmlFor="staff-phone">
-                    Phone
-                  </label>
-                  <input
-                    id="staff-phone"
-                    className="mc-input"
-                    value={form.phone}
-                    onChange={(e) =>
-                      setForm({ ...form, phone: e.target.value })
-                    }
-                    placeholder="Optional"
-                  />
-                </div>
-              </div>
-
-              {needsLocations && (
-                <div style={{ marginTop: 14 }}>
-                  <div className="mc-label">
-                    Locations <span className="mc-req">*</span>
                   </div>
-                  {locations.length === 0 ? (
-                    <p className="mc-hint">
-                      No locations recorded yet — add one under System
-                      Governance &rarr; Locations first.
-                    </p>
-                  ) : (
-                    <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
-                      {locations.map((loc) => (
-                        <label
-                          key={loc.id}
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 6,
-                            fontSize: 13.5,
-                          }}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={form.locations.includes(loc.id)}
-                            onChange={() => toggleLocation(loc.id)}
-                          />
-                          {loc.name}
-                        </label>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
+                )}
+              </div>
+            )}
 
-              {formError && (
-                <p
-                  className="mc-alert mc-alert-error"
-                  style={{ marginTop: 12 }}
-                >
-                  <AlertCircle size={15} strokeWidth={2} aria-hidden />
-                  {formError}
-                </p>
-              )}
+            {formError && (
+              <p className="mc-alert mc-alert-error" style={{ marginTop: 12 }}>
+                <AlertCircle size={15} strokeWidth={2} aria-hidden />
+                {formError}
+              </p>
+            )}
+
+            <div
+              style={{
+                background: "var(--c-teal-wash)",
+                margin: "20px -20px -20px",
+                padding: "14px 20px",
+                borderTop: "1px solid var(--c-border-soft)",
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+              }}
+            >
               <button
-                type="submit"
-                className="mc-btn"
-                style={{ marginTop: 14 }}
+                type="button"
+                className="mc-btn-ghost"
+                style={{ marginLeft: "auto" }}
+                onClick={() => setShowForm(false)}
                 disabled={submitting}
               >
-                <UserPlus size={15} strokeWidth={2} aria-hidden />
-                {submitting ? "Creating…" : "Create account"}
+                Cancel
               </button>
-            </form>
-          </CardBody>
-        </Card>
+              <button type="submit" className="mc-btn" disabled={submitting}>
+                <UserPlus size={15} strokeWidth={2} aria-hidden />
+                {submitting ? "Onboarding…" : "Onboard staff"}
+              </button>
+            </div>
+          </form>
+        </Modal>
       )}
 
       <Card>
@@ -357,7 +355,7 @@ export function StaffTab() {
               isHospitalAdmin && (
                 <button className="mc-btn" onClick={() => setShowForm(true)}>
                   <UserPlus size={15} strokeWidth={2} aria-hidden />
-                  Add staff
+                  Onboard staff
                 </button>
               )
             }
@@ -405,14 +403,10 @@ export function StaffTab() {
                 <button
                   className="mc-btn"
                   style={{ marginLeft: "auto" }}
-                  onClick={() => setShowForm((v) => !v)}
+                  onClick={() => setShowForm(true)}
                 >
-                  {showForm ? (
-                    <X size={15} strokeWidth={2} />
-                  ) : (
-                    <UserPlus size={15} strokeWidth={2} />
-                  )}
-                  {showForm ? "Cancel" : "Add staff"}
+                  <UserPlus size={15} strokeWidth={2} aria-hidden />
+                  Onboard staff
                 </button>
               )}
             </div>

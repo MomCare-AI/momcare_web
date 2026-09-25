@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import {
+  Activity,
   AlertTriangle,
   BellRing,
   CheckCircle2,
@@ -17,7 +18,6 @@ import {
 
 import { useAlerts } from "@/features/alerts/hooks/useAlerts";
 import { useDevices } from "@/features/monitoring/hooks/useMonitoring";
-import { useWorklist } from "@/features/patients/hooks/usePatients";
 import { useStaffList } from "@/features/staff/hooks/useStaff";
 import { StatusDonut } from "@/shared/charts/StatusDonut";
 import { Card, CardBody, CardHeader } from "@/shared/ui/Card";
@@ -33,12 +33,18 @@ import {
   aggregateEnrollmentTrend,
   aggregatePregnancyStatus,
   aggregateStaffByRole,
-  aggregateWorklistGaps,
 } from "@/features/reports/lib/aggregate";
 import { downloadCsv, toCsv, type CsvColumn } from "@/shared/lib/exportCsv";
 import { formatDateTime } from "@/shared/lib/formatDateTime";
 import { usePortal } from "../layout";
 import { usePageTitle } from "@/hooks/usePageTitle";
+
+// Tinted KPI-tile backgrounds, matching the reference platform's own
+// colored stat cards — light enough to keep dark text readable, distinct
+// from the plain white card background around them.
+const TINT_BLUE = "#eaf1fd";
+const TINT_GREEN = "#e7f6ee";
+const TINT_AMBER = "#fdf1e0";
 
 /** Today's date as YYYYMMDD, for a filename that sorts and doesn't collide. */
 function exportDateStamp(): string {
@@ -137,7 +143,6 @@ export default function ReportsPage() {
 
 function ClinicalOverviewTab() {
   const patientsQuery = useAllPatients();
-  const worklistQuery = useWorklist(false);
   const devicesQuery = useDevices();
 
   const patients = patientsQuery.data ?? [];
@@ -158,15 +163,7 @@ function ClinicalOverviewTab() {
     () => aggregatePregnancyStatus(patients),
     [patients]
   );
-  const worklistGaps = useMemo(
-    () => (worklistQuery.data ? aggregateWorklistGaps(worklistQuery.data) : []),
-    [worklistQuery.data]
-  );
-  const deviceSlices = useMemo(
-    () => aggregateDeviceStatus(devicesQuery.data ?? []),
-    [devicesQuery.data]
-  );
-
+  const deviceSlices = useMemo(() => aggregateDeviceStatus(devices), [devices]);
   if (patientsQuery.isPending) {
     return (
       <Card>
@@ -213,131 +210,228 @@ function ClinicalOverviewTab() {
           ]}
         />
       </div>
-      <section className="mc-kpis">
-        <div className="mc-kpi">
-          <div className="mc-kpi-top">
-            <span className="mc-kpi-label">Total enrolled</span>
-            <span className="mc-kpi-icon mc-kpi-icon-brand">
-              <Users size={17} strokeWidth={1.9} aria-hidden />
-            </span>
-          </div>
-          <span className="mc-kpi-value">{patients.length}</span>
-          <span className="mc-kpi-foot">At this hospital</span>
-        </div>
-        <div className="mc-kpi">
-          <div className="mc-kpi-top">
-            <span className="mc-kpi-label">Active</span>
-            <span className="mc-kpi-icon mc-kpi-icon-stable">
-              <Users size={17} strokeWidth={1.9} aria-hidden />
-            </span>
-          </div>
-          <span className="mc-kpi-value">{active}</span>
-          <span className="mc-kpi-foot">At this hospital</span>
-        </div>
-        <div className="mc-kpi">
-          <div className="mc-kpi-top">
-            <span className="mc-kpi-label">Inactive</span>
-            <span className="mc-kpi-icon mc-kpi-icon-neutral">
-              <UserX size={17} strokeWidth={1.9} aria-hidden />
-            </span>
-          </div>
-          <span className="mc-kpi-value">{inactive}</span>
-          <span className="mc-kpi-foot">No longer under care</span>
-        </div>
-        <div className="mc-kpi">
-          <div className="mc-kpi-top">
-            <span className="mc-kpi-label">New this month</span>
-            <span className="mc-kpi-icon mc-kpi-icon-info">
-              <UserPlus size={17} strokeWidth={1.9} aria-hidden />
-            </span>
-          </div>
-          <span className="mc-kpi-value">{newThisMonth}</span>
-          <span className="mc-kpi-foot">Enrolled since the 1st</span>
-        </div>
-        <div className="mc-kpi">
-          <div className="mc-kpi-top">
-            <span className="mc-kpi-label">Connected devices</span>
-            <span className="mc-kpi-icon mc-kpi-icon-stable">
-              <Wifi size={17} strokeWidth={1.9} aria-hidden />
-            </span>
-          </div>
-          <span className="mc-kpi-value">{connectedDevices}</span>
-          <span className="mc-kpi-foot">
-            of {devices.length} device{devices.length === 1 ? "" : "s"} total
-          </span>
-        </div>
-      </section>
 
-      <div className="mc-fullstack">
-        <Card>
-          <CardHeader>
-            <div className="mc-card-title">Enrollment trend</div>
-            <div className="mc-card-sub">Last 6 months</div>
-          </CardHeader>
-          <CardBody>
-            {patients.length === 0 ? (
-              <p className="mc-hint">No patients enrolled yet.</p>
-            ) : (
-              <EnrollmentTrendChart data={trend} />
-            )}
-          </CardBody>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <div className="mc-card-title">Pregnancy status</div>
-            <div className="mc-card-sub">
-              Every enrolled patient, by outcome
-            </div>
-          </CardHeader>
-          <CardBody>
-            <StatusDonut
-              slices={statusSlices}
-              centerLabel="patients"
-              emptyText="No patients enrolled yet."
-            />
-          </CardBody>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <div className="mc-card-title">Worklist gaps</div>
-            <div className="mc-card-sub">
-              Administrative/care-continuity gaps, not clinical severity
-            </div>
-          </CardHeader>
-          <CardBody>
-            {worklistQuery.isPending ? (
-              <p className="mc-hint">Loading…</p>
-            ) : worklistGaps.length === 0 ? (
-              <p className="mc-hint">No open gaps right now.</p>
-            ) : (
-              <div className="mc-riskbars">
-                {worklistGaps.map((g) => (
-                  <div key={g.code} className="mc-riskbar-row">
-                    <span className="mc-riskbar-tag">{g.label}</span>
-                    <span className="mc-riskbar-count">{g.count}</span>
-                  </div>
-                ))}
+      <Card style={{ marginBottom: 24 }}>
+        <CardHeader>
+          <div className="mc-card-title">Patient Enrollment</div>
+        </CardHeader>
+        <CardBody>
+          <section className="mc-kpis">
+            <div
+              className="mc-kpi"
+              style={{ background: TINT_BLUE, borderLeftColor: "transparent" }}
+            >
+              <div className="mc-kpi-top">
+                <span className="mc-kpi-label">Total enrolled</span>
+                <span className="mc-kpi-icon mc-kpi-icon-brand">
+                  <Users size={17} strokeWidth={1.9} aria-hidden />
+                </span>
               </div>
-            )}
-          </CardBody>
-        </Card>
+              <span className="mc-kpi-value">{patients.length}</span>
+            </div>
+            <div
+              className="mc-kpi"
+              style={{ background: TINT_GREEN, borderLeftColor: "transparent" }}
+            >
+              <div className="mc-kpi-top">
+                <span className="mc-kpi-label">Active</span>
+                <span className="mc-kpi-icon mc-kpi-icon-stable">
+                  <Users size={17} strokeWidth={1.9} aria-hidden />
+                </span>
+              </div>
+              <span className="mc-kpi-value">{active}</span>
+            </div>
+            <div
+              className="mc-kpi"
+              style={{ background: TINT_AMBER, borderLeftColor: "transparent" }}
+            >
+              <div className="mc-kpi-top">
+                <span className="mc-kpi-label">Inactive</span>
+                <span className="mc-kpi-icon mc-kpi-icon-neutral">
+                  <UserX size={17} strokeWidth={1.9} aria-hidden />
+                </span>
+              </div>
+              <span className="mc-kpi-value">{inactive}</span>
+            </div>
+            <div
+              className="mc-kpi"
+              style={{ background: TINT_BLUE, borderLeftColor: "transparent" }}
+            >
+              <div className="mc-kpi-top">
+                <span className="mc-kpi-label">New this month</span>
+                <span className="mc-kpi-icon mc-kpi-icon-info">
+                  <UserPlus size={17} strokeWidth={1.9} aria-hidden />
+                </span>
+              </div>
+              <span className="mc-kpi-value">{newThisMonth}</span>
+            </div>
+            <div
+              className="mc-kpi"
+              style={{ background: TINT_BLUE, borderLeftColor: "transparent" }}
+            >
+              <div className="mc-kpi-top">
+                <span className="mc-kpi-label">Connected devices</span>
+                <span className="mc-kpi-icon mc-kpi-icon-stable">
+                  <Wifi size={17} strokeWidth={1.9} aria-hidden />
+                </span>
+              </div>
+              <span className="mc-kpi-value">{connectedDevices}</span>
+            </div>
+          </section>
 
-        <Card>
-          <CardHeader>
-            <div className="mc-card-title">Device distribution</div>
-            <div className="mc-card-sub">Every device this hospital owns</div>
-          </CardHeader>
-          <CardBody>
-            <StatusDonut
-              slices={deviceSlices}
-              centerLabel="devices"
-              emptyText="No devices registered yet."
-            />
-          </CardBody>
-        </Card>
-      </div>
+          <div
+            className="mc-fullstack"
+            style={{
+              gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))",
+            }}
+          >
+            <Card>
+              <CardHeader>
+                <div className="mc-card-title">Enrollment trend</div>
+                <div className="mc-card-sub">Last 6 months</div>
+              </CardHeader>
+              <CardBody>
+                {patients.length === 0 ? (
+                  <p className="mc-hint">No patients enrolled yet.</p>
+                ) : (
+                  <EnrollmentTrendChart data={trend} />
+                )}
+              </CardBody>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <div className="mc-card-title">Pregnancy status</div>
+                <div className="mc-card-sub">
+                  Every enrolled patient, by outcome
+                </div>
+              </CardHeader>
+              <CardBody>
+                <StatusDonut
+                  slices={statusSlices}
+                  centerLabel="patients"
+                  emptyText="No patients enrolled yet."
+                />
+              </CardBody>
+            </Card>
+          </div>
+        </CardBody>
+      </Card>
+
+      <Card style={{ marginBottom: 24 }}>
+        <CardHeader>
+          <div className="mc-card-title">Patient Overview</div>
+        </CardHeader>
+        <CardBody>
+          <section className="mc-kpis">
+            <div
+              className="mc-kpi"
+              style={{ background: TINT_AMBER, borderLeftColor: "transparent" }}
+            >
+              <div className="mc-kpi-top">
+                <span className="mc-kpi-label">Total readings</span>
+                <span className="mc-kpi-icon mc-kpi-icon-neutral">
+                  <Activity size={17} strokeWidth={1.9} aria-hidden />
+                </span>
+              </div>
+              <span
+                className="mc-kpi-value"
+                title="Not yet available — no hospital-wide reading-count endpoint exists yet (readings are only listed per pregnancy)"
+              >
+                —
+              </span>
+            </div>
+            <div
+              className="mc-kpi"
+              style={{ background: TINT_BLUE, borderLeftColor: "transparent" }}
+            >
+              <div className="mc-kpi-top">
+                <span className="mc-kpi-label">RPM compliance</span>
+                <span className="mc-kpi-icon mc-kpi-icon-neutral">
+                  <CheckCircle2 size={17} strokeWidth={1.9} aria-hidden />
+                </span>
+              </div>
+              <span
+                className="mc-kpi-value"
+                title="MomCare runs one programme — there is no RPM/CCM split on the backend to compute this from"
+              >
+                —
+              </span>
+            </div>
+            <div
+              className="mc-kpi"
+              style={{ background: TINT_GREEN, borderLeftColor: "transparent" }}
+            >
+              <div className="mc-kpi-top">
+                <span className="mc-kpi-label">CCM compliance</span>
+                <span className="mc-kpi-icon mc-kpi-icon-neutral">
+                  <CheckCircle2 size={17} strokeWidth={1.9} aria-hidden />
+                </span>
+              </div>
+              <span
+                className="mc-kpi-value"
+                title="MomCare runs one programme — there is no RPM/CCM split on the backend to compute this from"
+              >
+                —
+              </span>
+            </div>
+            <div
+              className="mc-kpi"
+              style={{ background: TINT_BLUE, borderLeftColor: "transparent" }}
+            >
+              <div className="mc-kpi-top">
+                <span className="mc-kpi-label">Total connected devices</span>
+                <span className="mc-kpi-icon mc-kpi-icon-stable">
+                  <Wifi size={17} strokeWidth={1.9} aria-hidden />
+                </span>
+              </div>
+              <span className="mc-kpi-value">{connectedDevices}</span>
+            </div>
+          </section>
+
+          <div
+            className="mc-fullstack"
+            style={{
+              gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))",
+            }}
+          >
+            <Card>
+              <CardHeader>
+                <div className="mc-card-title">Monthly compliance</div>
+                <div className="mc-card-sub">
+                  No MomCare equivalent — RPM/CCM programme compliance
+                  isn&apos;t tracked here
+                </div>
+              </CardHeader>
+              <CardBody>
+                <EmptyState
+                  icon={
+                    <CheckCircle2 size={20} strokeWidth={1.9} aria-hidden />
+                  }
+                  title="Not applicable"
+                  text="MomCare runs a single programme with no billing-compliance concept to chart month by month."
+                />
+              </CardBody>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <div className="mc-card-title">Device distribution</div>
+                <div className="mc-card-sub">
+                  Every device this hospital owns
+                </div>
+              </CardHeader>
+              <CardBody>
+                <StatusDonut
+                  slices={deviceSlices}
+                  centerLabel="devices"
+                  emptyText="No devices registered yet."
+                />
+              </CardBody>
+            </Card>
+          </div>
+        </CardBody>
+      </Card>
     </>
   );
 }

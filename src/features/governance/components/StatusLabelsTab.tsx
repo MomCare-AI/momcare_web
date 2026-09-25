@@ -7,18 +7,18 @@ import {
   Pencil,
   Plus,
   Search,
-  Tag as TagIcon,
+  Sparkles,
   Trash2,
 } from "lucide-react";
 
 import { usePortal } from "@/app/(portal)/dashboard/layout";
 import {
-  useClinicalTags,
-  useCreateClinicalTag,
-  useDeleteClinicalTag,
-  useUpdateClinicalTag,
-} from "@/features/monitoring-notes/hooks/useMonitoringNotes";
-import type { ClinicalTag } from "@/features/monitoring-notes/types";
+  useCreateStatusLabel,
+  useDeleteStatusLabel,
+  useStatusLabels,
+  useUpdateStatusLabel,
+} from "@/features/statuses/hooks/useStatuses";
+import type { StatusLabel } from "@/features/statuses/types";
 import { ActionMenu, ActionMenuItem } from "@/shared/ui/ActionMenu";
 import { Card, CardBody } from "@/shared/ui/Card";
 import { EmptyState } from "@/shared/ui/EmptyState";
@@ -26,39 +26,32 @@ import { Modal } from "@/shared/ui/Modal";
 import { RowSkeleton } from "@/shared/ui/RowSkeleton";
 
 const DEFAULT_COLOR = "#4361ee";
-
 const PRESET_COLORS = ["#1f9254", "#f0972b", "#c0392b", "#31b6d6", "#26333f"];
 
 /**
- * Hospital-admin curation of the tag catalogue — rename, recolor, remove.
- * Separate from the type-to-create picker while logging a note (Phase 3),
- * which stays the primary way tags come into existence day to day.
- *
- * Laid out like the reference platform's own "Statuses" screen (search +
- * Create button above a table, a colored pill per row, a 3-dot Actions
- * menu). One deliberate gap: `ClinicalTag`
- * (`core/monitoring/api/serializers.py`) is `id, name, color, organization,
- * location, created_at, updated_at` — there is no `description` column on
- * the model at all. The Description field/column below is real UI, but
- * nothing typed into it is sent anywhere or saved — see the honest hint in
- * `TagFormModal` and the stub in the table. Worth a backend ask to Ahmed if
- * this is wanted for real; not silently faked here.
+ * Hospital-invented status vocabulary ("Critical", "Telehealth Connected",
+ * "Waiting"...) — a catalogue that powers a picker when logging a status on
+ * a patient (`PatientStatusPanel`), not a constraint on what can be logged
+ * (`PatientStatus` has no FK back here, matching the reference platform).
+ * Added 25 Sep 2026 alongside `ClinicalTag` as a genuinely separate model —
+ * `description` here is real and persisted, unlike the disclosed-fake field
+ * on the Clinical Tags tab.
  */
-export function ClinicalTagsTab() {
-  const tagsQuery = useClinicalTags();
+export function StatusLabelsTab() {
+  const labelsQuery = useStatusLabels();
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
 
-  const tags = tagsQuery.data?.results ?? [];
+  const labels = labelsQuery.data?.results ?? [];
   const rows = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return q ? tags.filter((t) => t.name.toLowerCase().includes(q)) : tags;
-  }, [tags, search]);
+    return q ? labels.filter((l) => l.name.toLowerCase().includes(q)) : labels;
+  }, [labels, search]);
 
   return (
     <>
       <Card>
-        {tagsQuery.isSuccess && (
+        {labelsQuery.isSuccess && (
           <div
             style={{
               display: "flex",
@@ -87,19 +80,19 @@ export function ClinicalTagsTab() {
                 style={{ paddingLeft: 30 }}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search tags…"
-                aria-label="Search clinical tags"
+                placeholder="Search statuses…"
+                aria-label="Search statuses"
               />
             </div>
 
             <button className="mc-btn" onClick={() => setShowCreate(true)}>
               <Plus size={15} strokeWidth={2} aria-hidden />
-              Create tag
+              Create status
             </button>
           </div>
         )}
 
-        {tagsQuery.isPending && (
+        {labelsQuery.isPending && (
           <CardBody>
             <div className="mc-rows">
               <RowSkeleton count={3} variant="plain" />
@@ -107,25 +100,27 @@ export function ClinicalTagsTab() {
           </CardBody>
         )}
 
-        {tagsQuery.isError && (
+        {labelsQuery.isError && (
           <CardBody>
             <EmptyState
-              icon={<TagIcon size={20} strokeWidth={1.9} aria-hidden />}
-              title="Couldn't load clinical tags"
+              icon={<Sparkles size={20} strokeWidth={1.9} aria-hidden />}
+              title="Couldn't load statuses"
               text="This is a problem reaching the server, not an empty list. Refresh to try again."
             />
           </CardBody>
         )}
 
-        {tagsQuery.isSuccess &&
+        {labelsQuery.isSuccess &&
           (rows.length === 0 ? (
             <CardBody>
               <EmptyState
-                icon={<TagIcon size={20} strokeWidth={1.9} aria-hidden />}
-                title={tags.length === 0 ? "No tags yet" : "No tags match"}
+                icon={<Sparkles size={20} strokeWidth={1.9} aria-hidden />}
+                title={
+                  labels.length === 0 ? "No statuses yet" : "No statuses match"
+                }
                 text={
-                  tags.length === 0
-                    ? "Tags typed while logging a contact note will appear here too."
+                  labels.length === 0
+                    ? "Create a status label to power the picker on a patient's record."
                     : "Try a different search term."
                 }
               />
@@ -135,25 +130,22 @@ export function ClinicalTagsTab() {
               <table className="mc-dtable">
                 <thead>
                   <tr>
-                    <th>Tag</th>
+                    <th>Status</th>
                     <th>Description</th>
                     <th />
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((tag) => (
-                    <tr key={tag.id} className="mc-dtable-row">
+                  {rows.map((label) => (
+                    <tr key={label.id} className="mc-dtable-row">
                       <td>
-                        <TagPill tag={tag} />
+                        <StatusPill label={label} />
                       </td>
-                      <td
-                        className="mc-dtable-sub"
-                        title="Not yet available — ClinicalTag has no description field on the backend yet"
-                      >
-                        —
+                      <td className="mc-dtable-sub">
+                        {label.description || "—"}
                       </td>
                       <td style={{ textAlign: "right" }}>
-                        <TagActionMenu tag={tag} />
+                        <StatusActionMenu label={label} />
                       </td>
                     </tr>
                   ))}
@@ -163,13 +155,13 @@ export function ClinicalTagsTab() {
           ))}
       </Card>
 
-      <TagFormModal open={showCreate} onClose={() => setShowCreate(false)} />
+      <StatusFormModal open={showCreate} onClose={() => setShowCreate(false)} />
     </>
   );
 }
 
-function TagPill({ tag }: { tag: ClinicalTag }) {
-  const color = tag.color ?? DEFAULT_COLOR;
+function StatusPill({ label }: { label: StatusLabel }) {
+  const color = label.color ?? DEFAULT_COLOR;
   return (
     <span
       style={{
@@ -184,18 +176,18 @@ function TagPill({ tag }: { tag: ClinicalTag }) {
         border: `1px solid ${color}55`,
       }}
     >
-      {tag.name}
+      {label.name}
     </span>
   );
 }
 
-function TagActionMenu({ tag }: { tag: ClinicalTag }) {
+function StatusActionMenu({ label }: { label: StatusLabel }) {
   const [showEdit, setShowEdit] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
 
   return (
     <div onClick={(e) => e.stopPropagation()}>
-      <ActionMenu label="Tag actions">
+      <ActionMenu label="Status actions">
         <ActionMenuItem
           icon={<Pencil size={13} strokeWidth={2} aria-hidden />}
           label="Edit"
@@ -209,42 +201,38 @@ function TagActionMenu({ tag }: { tag: ClinicalTag }) {
         />
       </ActionMenu>
 
-      <TagFormModal
+      <StatusFormModal
         open={showEdit}
         onClose={() => setShowEdit(false)}
-        tag={tag}
+        label={label}
       />
-      <DeleteTagModal
+      <DeleteStatusModal
         open={showDelete}
         onClose={() => setShowDelete(false)}
-        tag={tag}
+        label={label}
       />
     </div>
   );
 }
 
-/** Shared create/edit modal — editing an existing tag when `tag` is passed,
- *  creating a new one otherwise. */
-function TagFormModal({
+function StatusFormModal({
   open,
   onClose,
-  tag,
+  label,
 }: {
   open: boolean;
   onClose: () => void;
-  tag?: ClinicalTag;
+  label?: StatusLabel;
 }) {
   const { org } = usePortal();
-  const createTag = useCreateClinicalTag();
-  const updateTag = useUpdateClinicalTag();
-  const isEdit = !!tag;
+  const createLabel = useCreateStatusLabel();
+  const updateLabel = useUpdateStatusLabel();
+  const isEdit = !!label;
 
-  // `description` is deliberately local-only — see the module docblock
-  // above. It's never read on submit.
   const [form, setForm] = useState({
-    name: tag?.name ?? "",
-    description: "",
-    color: tag?.color ?? DEFAULT_COLOR,
+    name: label?.name ?? "",
+    description: label?.description ?? "",
+    color: label?.color ?? DEFAULT_COLOR,
   });
   const [error, setError] = useState<string | null>(null);
 
@@ -253,35 +241,42 @@ function TagFormModal({
     setWasOpen(open);
     if (open) {
       setForm({
-        name: tag?.name ?? "",
-        description: "",
-        color: tag?.color ?? DEFAULT_COLOR,
+        name: label?.name ?? "",
+        description: label?.description ?? "",
+        color: label?.color ?? DEFAULT_COLOR,
       });
       setError(null);
     }
   }
 
-  const pending = createTag.isPending || updateTag.isPending;
+  const pending = createLabel.isPending || updateLabel.isPending;
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     try {
       if (isEdit) {
-        await updateTag.mutateAsync({
-          tagId: tag.id,
-          input: { name: form.name, color: form.color },
+        await updateLabel.mutateAsync({
+          labelId: label.id,
+          input: {
+            name: form.name,
+            description: form.description,
+            color: form.color,
+          },
         });
       } else {
-        await createTag.mutateAsync({
+        await createLabel.mutateAsync({
           name: form.name,
+          description: form.description,
           color: form.color,
           organization: org.id,
         });
       }
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not save this tag.");
+      setError(
+        err instanceof Error ? err.message : "Could not save this status."
+      );
     }
   };
 
@@ -289,28 +284,28 @@ function TagFormModal({
     <Modal
       open={open}
       onClose={onClose}
-      title={isEdit ? "Edit tag" : "Create tag"}
+      title={isEdit ? "Edit status" : "Create status"}
       subtitle={
         isEdit
-          ? "Update this tag's name and color"
-          : "Define a reusable label for your organization"
+          ? "Update this status's name, description and color"
+          : "Define a reusable status for your organization"
       }
-      icon={<TagIcon size={17} strokeWidth={2} aria-hidden />}
+      icon={<Sparkles size={17} strokeWidth={2} aria-hidden />}
       tinted
     >
       <form onSubmit={submit}>
         <div style={{ marginBottom: 16 }}>
-          <label className="mc-label" htmlFor="tag-form-name">
-            Tag Name <span className="mc-req">*</span>
+          <label className="mc-label" htmlFor="status-form-name">
+            Status Name <span className="mc-req">*</span>
           </label>
           <input
-            id="tag-form-name"
+            id="status-form-name"
             className="mc-input"
             required
             maxLength={30}
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
-            placeholder="e.g. Swelling, Follow-up needed"
+            placeholder="e.g. Critical, Telehealth Connected"
           />
           <div className="mc-hint" style={{ textAlign: "right", marginTop: 4 }}>
             {form.name.length}/30
@@ -318,26 +313,22 @@ function TagFormModal({
         </div>
 
         <div style={{ marginBottom: 16 }}>
-          <label className="mc-label" htmlFor="tag-form-description">
+          <label className="mc-label" htmlFor="status-form-description">
             Description
           </label>
           <textarea
-            id="tag-form-description"
+            id="status-form-description"
             className="mc-input"
             rows={3}
-            maxLength={100}
+            maxLength={200}
             style={{ resize: "vertical" }}
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
-            placeholder="Describe what this tag is for…"
+            placeholder="Describe when this status applies…"
           />
           <div className="mc-hint" style={{ textAlign: "right", marginTop: 4 }}>
-            {form.description.length}/100
+            {form.description.length}/200
           </div>
-          <p className="mc-hint" style={{ marginTop: -2 }}>
-            Not saved yet — there&apos;s no description field on the backend tag
-            model. This box is a preview of where one would go.
-          </p>
         </div>
 
         <div>
@@ -407,7 +398,7 @@ function TagFormModal({
           </button>
           <button type="submit" className="mc-btn" disabled={pending}>
             <Plus size={15} strokeWidth={2} aria-hidden />
-            {pending ? "Saving…" : isEdit ? "Save changes" : "Create tag"}
+            {pending ? "Saving…" : isEdit ? "Save changes" : "Create status"}
           </button>
         </div>
       </form>
@@ -415,29 +406,35 @@ function TagFormModal({
   );
 }
 
-function DeleteTagModal({
+function DeleteStatusModal({
   open,
   onClose,
-  tag,
+  label,
 }: {
   open: boolean;
   onClose: () => void;
-  tag: ClinicalTag;
+  label: StatusLabel;
 }) {
-  const deleteTag = useDeleteClinicalTag();
+  const deleteLabel = useDeleteStatusLabel();
 
   return (
-    <Modal open={open} onClose={onClose} title="Remove tag" subtitle={tag.name}>
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Remove status"
+      subtitle={label.name}
+    >
       <p className="mc-hint">
-        This removes the tag from the catalogue and from every note it&apos;s
-        attached to. This can&apos;t be undone.
+        This removes the status from the catalogue picker. Statuses already
+        logged on a patient&apos;s record are unaffected — they carry their own
+        name/description/color, not a reference to this entry.
       </p>
 
-      {deleteTag.isError && (
+      {deleteLabel.isError && (
         <p className="mc-alert mc-alert-error" style={{ marginTop: 12 }}>
-          {deleteTag.error instanceof Error
-            ? deleteTag.error.message
-            : "Could not remove this tag."}
+          {deleteLabel.error instanceof Error
+            ? deleteLabel.error.message
+            : "Could not remove this status."}
         </p>
       )}
 
@@ -456,7 +453,7 @@ function DeleteTagModal({
           className="mc-btn-ghost"
           style={{ marginLeft: "auto" }}
           onClick={onClose}
-          disabled={deleteTag.isPending}
+          disabled={deleteLabel.isPending}
         >
           Cancel
         </button>
@@ -464,10 +461,10 @@ function DeleteTagModal({
           type="button"
           className="mc-btn"
           style={{ background: "var(--c-high)" }}
-          disabled={deleteTag.isPending}
-          onClick={() => deleteTag.mutate(tag.id, { onSuccess: onClose })}
+          disabled={deleteLabel.isPending}
+          onClick={() => deleteLabel.mutate(label.id, { onSuccess: onClose })}
         >
-          {deleteTag.isPending ? "Removing…" : "Confirm remove"}
+          {deleteLabel.isPending ? "Removing…" : "Confirm remove"}
         </button>
       </div>
     </Modal>

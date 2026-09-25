@@ -11,31 +11,28 @@ import {
   Plus,
   Search,
   Trash2,
-  X,
 } from "lucide-react";
 
 import { usePortal } from "@/app/(portal)/dashboard/layout";
-import { formatDateTime } from "@/shared/lib/formatDateTime";
 import {
   useClinicalTags,
   useDeleteNote,
   useDeleteSession,
-  useLogContact,
   usePatientMonitoring,
   useSearchPatientNotes,
   useUpdateNote,
   useUpdateSession,
 } from "@/features/monitoring-notes/hooks/useMonitoringNotes";
 import type {
-  ClinicalTag,
-  CombinedMonitoringInput,
   MonitoringNote,
   MonitoringSession,
-  TagSpec,
   TimelineEntry,
 } from "@/features/monitoring-notes/types";
+import { formatDateTime } from "@/shared/lib/formatDateTime";
 import { EmptyState } from "@/shared/ui/EmptyState";
+import { InitialsAvatar } from "@/shared/ui/InitialsAvatar";
 import { RowSkeleton } from "@/shared/ui/RowSkeleton";
+import { LogSessionModal } from "./LogSessionModal";
 
 /** ~350ms after the last keystroke, not on every keystroke. */
 function useDebouncedValue<T>(value: T, delayMs: number): T {
@@ -62,23 +59,18 @@ const MONTH_NAMES = [
   "December",
 ];
 
-const EMPTY_FORM = {
-  minutes: "",
-  note: "",
-  leftVoicemail: false,
-  twoWayCommunication: false,
-};
-
-export function MonitoringNotesPanel({ patientId }: { patientId: string }) {
+export function MonitoringNotesPanel({
+  patientId,
+  patientLocationName,
+}: {
+  patientId: string;
+  patientLocationName?: string;
+}) {
   const { user, isHospitalAdmin } = usePortal();
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
-  const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState(EMPTY_FORM);
-  const [pendingTags, setPendingTags] = useState<TagSpec[]>([]);
-  const [tagDraft, setTagDraft] = useState("");
-  const [formError, setFormError] = useState<string | null>(null);
+  const [showLogModal, setShowLogModal] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [tagFilter, setTagFilter] = useState("");
 
@@ -92,7 +84,6 @@ export function MonitoringNotesPanel({ patientId }: { patientId: string }) {
     tagId: tagFilter,
   });
   const tagsQuery = useClinicalTags();
-  const logContact = useLogContact(patientId);
 
   const canEdit = (addedById: string) =>
     isHospitalAdmin || addedById === user.id;
@@ -103,69 +94,6 @@ export function MonitoringNotesPanel({ patientId }: { patientId: string }) {
     setMonth(d.getMonth() + 1);
   };
 
-  const toggleTag = (tag: ClinicalTag) => {
-    setPendingTags((tags) =>
-      tags.some((t) => "id" in t && t.id === tag.id)
-        ? tags.filter((t) => !("id" in t && t.id === tag.id))
-        : [...tags, { id: tag.id }]
-    );
-  };
-
-  const addDraftTag = () => {
-    const name = tagDraft.trim();
-    if (!name) return;
-    if (!pendingTags.some((t) => "name" in t && t.name === name)) {
-      setPendingTags((tags) => [...tags, { name }]);
-    }
-    setTagDraft("");
-  };
-
-  const resetForm = () => {
-    setForm(EMPTY_FORM);
-    setPendingTags([]);
-    setTagDraft("");
-    setFormError(null);
-  };
-
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setFormError(null);
-
-    const minutes = form.minutes.trim() ? Number(form.minutes) : null;
-    const noteText = form.note.trim();
-
-    if (!minutes && !noteText) {
-      setFormError("Log at least a duration or a note.");
-      return;
-    }
-    if (pendingTags.length > 0 && !noteText) {
-      setFormError("Tags need a note to attach to.");
-      return;
-    }
-    if ((form.leftVoicemail || form.twoWayCommunication) && !noteText) {
-      setFormError("Recording a call outcome needs a note.");
-      return;
-    }
-
-    const input: CombinedMonitoringInput = {
-      duration_seconds: minutes ? Math.round(minutes * 60) : null,
-      note: noteText,
-      tags: pendingTags,
-      left_voicemail: form.leftVoicemail,
-      two_way_communication: form.twoWayCommunication,
-    };
-
-    try {
-      await logContact.mutateAsync(input);
-      resetForm();
-      setShowForm(false);
-    } catch (err) {
-      setFormError(
-        err instanceof Error ? err.message : "Could not log this contact."
-      );
-    }
-  };
-
   const entries = timeline.data?.results ?? [];
   const totalFormatted = timeline.data?.totals.total_formatted;
 
@@ -173,19 +101,15 @@ export function MonitoringNotesPanel({ patientId }: { patientId: string }) {
     <section className="mc-card">
       <div className="mc-card-head">
         <div>
-          <div className="mc-card-title">Clinical contact log</div>
+          <div className="mc-card-title">Clinical Notes</div>
           <div className="mc-card-sub">
             Calls, chart reviews, and follow-ups — separate from the readings a
             device sends automatically.
           </div>
         </div>
-        <button className="mc-btn" onClick={() => setShowForm((v) => !v)}>
-          {showForm ? (
-            <X size={15} strokeWidth={2} />
-          ) : (
-            <Plus size={15} strokeWidth={2} />
-          )}
-          {showForm ? "Cancel" : "Log a contact"}
+        <button className="mc-btn" onClick={() => setShowLogModal(true)}>
+          <Plus size={15} strokeWidth={2} />
+          Add Note
         </button>
       </div>
 
@@ -209,7 +133,7 @@ export function MonitoringNotesPanel({ patientId }: { patientId: string }) {
               style={{ paddingLeft: 30 }}
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
-              placeholder="Search notes, any month…"
+              placeholder="Search notes, tags, authors…"
               aria-label="Search notes"
             />
           </div>
@@ -282,181 +206,6 @@ export function MonitoringNotesPanel({ patientId }: { patientId: string }) {
               )}
             </div>
 
-            {showForm && (
-              <form
-                onSubmit={submit}
-                className="mc-card"
-                style={{
-                  padding: 14,
-                  marginBottom: 18,
-                  background: "var(--c-ground)",
-                }}
-              >
-                <div className="mc-formgrid">
-                  <div>
-                    <label className="mc-label" htmlFor="contact-minutes">
-                      Duration (minutes)
-                    </label>
-                    <input
-                      id="contact-minutes"
-                      className="mc-input"
-                      type="number"
-                      min="0"
-                      step="1"
-                      value={form.minutes}
-                      onChange={(e) =>
-                        setForm({ ...form, minutes: e.target.value })
-                      }
-                      placeholder="Optional"
-                    />
-                  </div>
-                </div>
-
-                <div style={{ marginTop: 14 }}>
-                  <label className="mc-label" htmlFor="contact-note">
-                    Note
-                  </label>
-                  <textarea
-                    id="contact-note"
-                    className="mc-input"
-                    rows={3}
-                    value={form.note}
-                    onChange={(e) => setForm({ ...form, note: e.target.value })}
-                    placeholder="What was discussed or found — optional if you're only logging time"
-                  />
-                </div>
-
-                <div style={{ marginTop: 14, display: "flex", gap: 18 }}>
-                  <label style={{ display: "flex", gap: 6, fontSize: 13.5 }}>
-                    <input
-                      type="checkbox"
-                      checked={form.leftVoicemail}
-                      onChange={(e) =>
-                        setForm({
-                          ...form,
-                          leftVoicemail: e.target.checked,
-                          twoWayCommunication: e.target.checked
-                            ? false
-                            : form.twoWayCommunication,
-                        })
-                      }
-                    />
-                    Left voicemail
-                  </label>
-                  <label style={{ display: "flex", gap: 6, fontSize: 13.5 }}>
-                    <input
-                      type="checkbox"
-                      checked={form.twoWayCommunication}
-                      onChange={(e) =>
-                        setForm({
-                          ...form,
-                          twoWayCommunication: e.target.checked,
-                          leftVoicemail: e.target.checked
-                            ? false
-                            : form.leftVoicemail,
-                        })
-                      }
-                    />
-                    Reached her (two-way)
-                  </label>
-                </div>
-
-                <div style={{ marginTop: 14 }}>
-                  <div className="mc-label">Tags</div>
-                  {tagsQuery.data && tagsQuery.data.results.length > 0 && (
-                    <div
-                      style={{
-                        display: "flex",
-                        flexWrap: "wrap",
-                        gap: 6,
-                        marginBottom: 8,
-                      }}
-                    >
-                      {tagsQuery.data.results.map((tag) => {
-                        const active = pendingTags.some(
-                          (t) => "id" in t && t.id === tag.id
-                        );
-                        return (
-                          <button
-                            key={tag.id}
-                            type="button"
-                            className="mc-badge mc-badge-neutral"
-                            style={{
-                              cursor: "pointer",
-                              border: active
-                                ? "1.5px solid var(--c-brand)"
-                                : "1.5px solid transparent",
-                            }}
-                            onClick={() => toggleTag(tag)}
-                          >
-                            {tag.name}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                  <div style={{ display: "flex", gap: 8 }}>
-                    <input
-                      className="mc-input"
-                      value={tagDraft}
-                      onChange={(e) => setTagDraft(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          addDraftTag();
-                        }
-                      }}
-                      placeholder="Type a new tag and press Enter"
-                    />
-                    <button
-                      type="button"
-                      className="mc-btn-ghost mc-btn-sm"
-                      onClick={addDraftTag}
-                    >
-                      Add
-                    </button>
-                  </div>
-                  {pendingTags.filter((t) => "name" in t).length > 0 && (
-                    <div
-                      style={{
-                        display: "flex",
-                        flexWrap: "wrap",
-                        gap: 6,
-                        marginTop: 8,
-                      }}
-                    >
-                      {pendingTags
-                        .filter((t): t is { name: string } => "name" in t)
-                        .map((t) => (
-                          <span key={t.name} className="mc-badge mc-badge-info">
-                            {t.name}
-                          </span>
-                        ))}
-                    </div>
-                  )}
-                </div>
-
-                {formError && (
-                  <p
-                    className="mc-alert mc-alert-error"
-                    style={{ marginTop: 14 }}
-                  >
-                    <AlertCircle size={15} strokeWidth={2} aria-hidden />
-                    {formError}
-                  </p>
-                )}
-
-                <button
-                  type="submit"
-                  className="mc-btn"
-                  style={{ marginTop: 14 }}
-                  disabled={logContact.isPending}
-                >
-                  {logContact.isPending ? "Saving…" : "Save"}
-                </button>
-              </form>
-            )}
-
             {timeline.isPending && (
               <div className="mc-rows">
                 <RowSkeleton count={3} variant="plain" />
@@ -492,6 +241,13 @@ export function MonitoringNotesPanel({ patientId }: { patientId: string }) {
           </>
         )}
       </div>
+
+      <LogSessionModal
+        patientId={patientId}
+        patientLocationName={patientLocationName}
+        open={showLogModal}
+        onClose={() => setShowLogModal(false)}
+      />
     </section>
   );
 }
@@ -535,57 +291,113 @@ function SearchResults({
   }
 
   return (
-    <div className="mc-rows">
+    <div>
       {notes.map((note) => (
-        <motion.div
+        <SearchResultRow
           key={note.id}
-          className="mc-card"
-          style={{ padding: 14 }}
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          <div className="mc-row-meta">
-            {formatDateTime(note.recorded_at)}
-            {note.added_by_name && ` · ${note.added_by_name}`}
-          </div>
-          <p
-            className="mc-pair-value"
-            style={{ marginTop: 8, whiteSpace: "pre-wrap" }}
-          >
-            {note.note}
-          </p>
-          {(note.left_voicemail || note.two_way_communication) && (
-            <span
-              className="mc-badge mc-badge-info"
-              style={{ marginTop: 6, display: "inline-flex" }}
-            >
-              {note.left_voicemail ? "Left voicemail" : "Reached her"}
-            </span>
-          )}
-          {note.tags.length > 0 && (
-            <div
-              style={{
-                display: "flex",
-                flexWrap: "wrap",
-                gap: 6,
-                marginTop: 8,
-              }}
-            >
-              {note.tags.map((tag) => (
-                <span key={tag.id} className="mc-badge mc-badge-neutral">
-                  {tag.name}
-                </span>
-              ))}
-            </div>
-          )}
-          {canEdit(note.added_by) && (
-            <div style={{ marginTop: 10 }}>
-              <NoteActions patientId={patientId} note={note} />
-            </div>
-          )}
-        </motion.div>
+          patientId={patientId}
+          note={note}
+          canEdit={canEdit(note.added_by)}
+        />
       ))}
     </div>
+  );
+}
+
+function SearchResultRow({
+  patientId,
+  note,
+  canEdit,
+}: {
+  patientId: string;
+  note: MonitoringNote;
+  canEdit: boolean;
+}) {
+  const [editing, setEditing] = useState(false);
+
+  return (
+    <motion.div
+      style={{
+        padding: "16px 0",
+        borderBottom: "1px solid var(--c-border-soft)",
+      }}
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+    >
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          gap: 12,
+        }}
+      >
+        <div style={{ display: "flex", gap: 10 }}>
+          <InitialsAvatar name={note.added_by_name || "?"} size={34} />
+          <div>
+            <div className="mc-row-title">{note.added_by_name}</div>
+            <div className="mc-row-meta">
+              <Clock
+                size={11}
+                strokeWidth={2.2}
+                aria-hidden
+                style={{ verticalAlign: -1, marginRight: 3 }}
+              />
+              {formatDateTime(note.recorded_at)}
+            </div>
+          </div>
+        </div>
+        {canEdit && (
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <IconButton
+              icon={<Pencil size={13} strokeWidth={2.2} aria-hidden />}
+              tone="brand"
+              label="Edit note"
+              onClick={() => setEditing((v) => !v)}
+            />
+            <DeleteButton patientId={patientId} noteId={note.id} />
+          </div>
+        )}
+      </div>
+
+      <div style={{ marginTop: 8, marginLeft: 44 }}>
+        <p
+          className="mc-pair-value"
+          style={{ whiteSpace: "pre-wrap", margin: 0 }}
+        >
+          {note.note}
+        </p>
+        {(note.left_voicemail || note.two_way_communication) && (
+          <span
+            className="mc-badge mc-badge-info"
+            style={{ marginTop: 6, display: "inline-flex" }}
+          >
+            {note.left_voicemail ? "Left voicemail" : "Reached her"}
+          </span>
+        )}
+        {note.tags.length > 0 && (
+          <div
+            style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}
+          >
+            {note.tags.map((tag) => (
+              <span key={tag.id} className="mc-badge mc-badge-neutral">
+                {tag.name}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {editing && (
+        <div style={{ marginTop: 10, marginLeft: 44 }}>
+          <NoteEditForm
+            patientId={patientId}
+            note={note}
+            onDone={() => setEditing(false)}
+          />
+        </div>
+      )}
+    </motion.div>
   );
 }
 
@@ -600,11 +412,15 @@ function TimelineRow({
 }) {
   const { session, note } = entry;
   const person = session?.added_by_name || note?.added_by_name || "";
+  const [editingSession, setEditingSession] = useState(false);
+  const [editingNote, setEditingNote] = useState(false);
 
   return (
     <motion.div
-      className="mc-card"
-      style={{ padding: 14 }}
+      style={{
+        padding: "16px 0",
+        borderBottom: "1px solid var(--c-border-soft)",
+      }}
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
     >
@@ -616,23 +432,60 @@ function TimelineRow({
           gap: 12,
         }}
       >
-        <div>
-          <div className="mc-row-meta">
-            {formatDateTime(entry.recorded_at)}
-            {person && ` · ${person}`}
+        <div style={{ display: "flex", gap: 10 }}>
+          <InitialsAvatar name={person || "?"} size={34} />
+          <div>
+            <div className="mc-row-title">{person}</div>
+            <div className="mc-row-meta">
+              <Clock
+                size={11}
+                strokeWidth={2.2}
+                aria-hidden
+                style={{ verticalAlign: -1, marginRight: 3 }}
+              />
+              {formatDateTime(entry.recorded_at)}
+            </div>
           </div>
         </div>
-        {session && (
-          <span className="mc-badge mc-badge-neutral">
-            <Clock size={12} strokeWidth={2.2} aria-hidden />{" "}
-            {Math.round(session.duration_seconds / 60)} min
-          </span>
-        )}
+
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {session && (
+            <span className="mc-badge mc-badge-neutral">
+              {Math.round(session.duration_seconds / 60)} min
+            </span>
+          )}
+          {session && canEdit(session.added_by) && (
+            <IconButton
+              icon={<Pencil size={13} strokeWidth={2.2} aria-hidden />}
+              tone="brand"
+              label="Edit duration"
+              onClick={() => setEditingSession((v) => !v)}
+            />
+          )}
+          {note && canEdit(note.added_by) && (
+            <IconButton
+              icon={<Pencil size={13} strokeWidth={2.2} aria-hidden />}
+              tone="brand"
+              label="Edit note"
+              onClick={() => setEditingNote((v) => !v)}
+            />
+          )}
+          {(session || note) && canEdit((session ?? note)!.added_by) && (
+            <DeleteButton
+              patientId={patientId}
+              sessionId={session?.id}
+              noteId={note?.id}
+            />
+          )}
+        </div>
       </div>
 
       {note && (
-        <div style={{ marginTop: 8 }}>
-          <p className="mc-pair-value" style={{ whiteSpace: "pre-wrap" }}>
+        <div style={{ marginTop: 8, marginLeft: 44 }}>
+          <p
+            className="mc-pair-value"
+            style={{ whiteSpace: "pre-wrap", margin: 0 }}
+          >
             {note.note}
           </p>
           {(note.left_voicemail || note.two_way_communication) && (
@@ -662,47 +515,179 @@ function TimelineRow({
         </div>
       )}
 
-      <div style={{ display: "flex", gap: 14, marginTop: 10 }}>
-        {session && canEdit(session.added_by) && (
-          <SessionActions patientId={patientId} session={session} />
-        )}
-        {note && canEdit(note.added_by) && (
-          <NoteActions patientId={patientId} note={note} />
-        )}
-      </div>
+      {session && editingSession && (
+        <div style={{ marginTop: 10, marginLeft: 44 }}>
+          <SessionEditForm
+            patientId={patientId}
+            session={session}
+            onDone={() => setEditingSession(false)}
+          />
+        </div>
+      )}
+
+      {note && editingNote && (
+        <div style={{ marginTop: 10, marginLeft: 44 }}>
+          <NoteEditForm
+            patientId={patientId}
+            note={note}
+            onDone={() => setEditingNote(false)}
+          />
+        </div>
+      )}
     </motion.div>
   );
 }
 
-function SessionActions({
+function IconButton({
+  icon,
+  tone,
+  label,
+  onClick,
+  disabled,
+}: {
+  icon: React.ReactNode;
+  tone: "brand" | "danger";
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      disabled={disabled}
+      onClick={onClick}
+      style={{
+        display: "grid",
+        placeItems: "center",
+        width: 30,
+        height: 30,
+        borderRadius: "var(--r-control)",
+        border: "none",
+        cursor: disabled ? "default" : "pointer",
+        color: tone === "danger" ? "var(--c-high-text)" : "var(--c-teal)",
+        background:
+          tone === "danger" ? "var(--c-high-soft)" : "var(--c-teal-wash)",
+        opacity: disabled ? 0.6 : 1,
+      }}
+    >
+      {icon}
+    </button>
+  );
+}
+
+function DeleteButton({
+  patientId,
+  sessionId,
+  noteId,
+}: {
+  patientId: string;
+  sessionId?: string;
+  noteId?: string;
+}) {
+  const delSession = useDeleteSession(patientId);
+  const delNote = useDeleteNote(patientId);
+  const pending = delSession.isPending || delNote.isPending;
+
+  return (
+    <IconButton
+      icon={<Trash2 size={13} strokeWidth={2.2} aria-hidden />}
+      tone="danger"
+      label={sessionId ? "Delete session" : "Delete note"}
+      disabled={pending}
+      onClick={() => {
+        if (sessionId) delSession.mutate(sessionId);
+        if (noteId) delNote.mutate(noteId);
+      }}
+    />
+  );
+}
+
+function SessionEditForm({
   patientId,
   session,
+  onDone,
 }: {
   patientId: string;
   session: MonitoringSession;
+  onDone: () => void;
 }) {
-  const [editing, setEditing] = useState(false);
   const [minutes, setMinutes] = useState(
     String(Math.round(session.duration_seconds / 60))
   );
   const update = useUpdateSession(patientId);
-  const del = useDeleteSession(patientId);
 
-  if (editing) {
-    return (
-      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-        <input
-          className="mc-input"
-          type="number"
-          min="1"
-          style={{ width: 90 }}
-          value={minutes}
-          onChange={(e) => setMinutes(e.target.value)}
-        />
+  return (
+    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+      <input
+        className="mc-input"
+        type="number"
+        min="1"
+        style={{ width: 90 }}
+        value={minutes}
+        onChange={(e) => setMinutes(e.target.value)}
+      />
+      <button
+        type="button"
+        className="mc-btn-ghost mc-btn-sm"
+        onClick={onDone}
+        disabled={update.isPending}
+      >
+        Cancel
+      </button>
+      <button
+        type="button"
+        className="mc-btn mc-btn-sm"
+        disabled={update.isPending || !Number(minutes)}
+        onClick={() =>
+          update.mutate(
+            {
+              sessionId: session.id,
+              input: { duration_seconds: Math.round(Number(minutes) * 60) },
+            },
+            { onSuccess: onDone }
+          )
+        }
+      >
+        {update.isPending ? "Saving…" : "Save duration"}
+      </button>
+    </div>
+  );
+}
+
+function NoteEditForm({
+  patientId,
+  note,
+  onDone,
+}: {
+  patientId: string;
+  note: MonitoringNote;
+  onDone: () => void;
+}) {
+  const [text, setText] = useState(note.note);
+  const update = useUpdateNote(patientId);
+
+  return (
+    <div>
+      <textarea
+        className="mc-input"
+        rows={2}
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+      />
+      {update.isError && (
+        <p className="mc-alert mc-alert-error" style={{ marginTop: 8 }}>
+          {update.error instanceof Error
+            ? update.error.message
+            : "Could not save this note."}
+        </p>
+      )}
+      <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
         <button
           type="button"
           className="mc-btn-ghost mc-btn-sm"
-          onClick={() => setEditing(false)}
+          onClick={onDone}
           disabled={update.isPending}
         >
           Cancel
@@ -710,118 +695,17 @@ function SessionActions({
         <button
           type="button"
           className="mc-btn mc-btn-sm"
-          disabled={update.isPending || !Number(minutes)}
+          disabled={update.isPending || !text.trim()}
           onClick={() =>
             update.mutate(
-              {
-                sessionId: session.id,
-                input: { duration_seconds: Math.round(Number(minutes) * 60) },
-              },
-              { onSuccess: () => setEditing(false) }
+              { noteId: note.id, input: { note: text.trim() } },
+              { onSuccess: onDone }
             )
           }
         >
-          {update.isPending ? "Saving…" : "Save duration"}
+          {update.isPending ? "Saving…" : "Save note"}
         </button>
       </div>
-    );
-  }
-
-  return (
-    <div style={{ display: "flex", gap: 8 }}>
-      <button
-        type="button"
-        className="mc-btn-ghost mc-btn-sm"
-        onClick={() => setEditing(true)}
-      >
-        <Pencil size={12} strokeWidth={2.2} aria-hidden /> Edit duration
-      </button>
-      <button
-        type="button"
-        className="mc-btn-ghost mc-btn-sm mc-btn-danger"
-        disabled={del.isPending}
-        onClick={() => del.mutate(session.id)}
-      >
-        <Trash2 size={12} strokeWidth={2.2} aria-hidden />
-        {del.isPending ? "Deleting…" : "Delete session"}
-      </button>
-    </div>
-  );
-}
-
-function NoteActions({
-  patientId,
-  note,
-}: {
-  patientId: string;
-  note: MonitoringNote;
-}) {
-  const [editing, setEditing] = useState(false);
-  const [text, setText] = useState(note.note);
-  const update = useUpdateNote(patientId);
-  const del = useDeleteNote(patientId);
-
-  if (editing) {
-    return (
-      <div style={{ flex: 1 }}>
-        <textarea
-          className="mc-input"
-          rows={2}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-        />
-        {update.isError && (
-          <p className="mc-alert mc-alert-error" style={{ marginTop: 8 }}>
-            {update.error instanceof Error
-              ? update.error.message
-              : "Could not save this note."}
-          </p>
-        )}
-        <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-          <button
-            type="button"
-            className="mc-btn-ghost mc-btn-sm"
-            onClick={() => setEditing(false)}
-            disabled={update.isPending}
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            className="mc-btn mc-btn-sm"
-            disabled={update.isPending || !text.trim()}
-            onClick={() =>
-              update.mutate(
-                { noteId: note.id, input: { note: text.trim() } },
-                { onSuccess: () => setEditing(false) }
-              )
-            }
-          >
-            {update.isPending ? "Saving…" : "Save note"}
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div style={{ display: "flex", gap: 8 }}>
-      <button
-        type="button"
-        className="mc-btn-ghost mc-btn-sm"
-        onClick={() => setEditing(true)}
-      >
-        <Pencil size={12} strokeWidth={2.2} aria-hidden /> Edit note
-      </button>
-      <button
-        type="button"
-        className="mc-btn-ghost mc-btn-sm mc-btn-danger"
-        disabled={del.isPending}
-        onClick={() => del.mutate(note.id)}
-      >
-        <Trash2 size={12} strokeWidth={2.2} aria-hidden />
-        {del.isPending ? "Deleting…" : "Delete note"}
-      </button>
     </div>
   );
 }

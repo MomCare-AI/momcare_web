@@ -2,17 +2,18 @@
 
 import { useState } from "react";
 import { motion } from "motion/react";
-import { AlertTriangle, FileText, Pencil, Plus, Trash2, X } from "lucide-react";
+import { AlertTriangle, FileText, Pencil, Plus, Trash2 } from "lucide-react";
 
+import {
+  addNoteTemplate,
+  deleteNoteTemplate,
+  updateNoteTemplate,
+  type NoteTemplate,
+} from "@/features/note-templates/store";
+import { useNoteTemplates } from "@/features/note-templates/useNoteTemplates";
 import { Card, CardBody } from "@/shared/ui/Card";
 import { EmptyState } from "@/shared/ui/EmptyState";
-
-interface NoteTemplate {
-  id: string;
-  title: string;
-  body: string;
-  updatedAt: string;
-}
+import { Modal } from "@/shared/ui/Modal";
 
 function timeAgo(iso: string): string {
   const minutes = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
@@ -29,12 +30,13 @@ const EMPTY_FORM = { title: "", body: "" };
  * Canned snippet text staff can reuse while logging a contact note — the
  * Neuro_RPM reference platform's "Notes" tab. MomCare's backend has no
  * matching NoteTemplate model yet (only ClinicalTag/MonitoringSession/
- * MonitoringNote exist — see core/monitoring), so this is deliberately
- * local-state-only per the user's explicit instruction: the frontend shell
- * to wire up once that backend piece exists, not a real feature yet.
+ * MonitoringNote exist — see core/monitoring), so this stays local-only,
+ * backed by `features/note-templates/store.ts` (localStorage, shared with
+ * the "Log a contact" form's template picker) rather than a real API —
+ * the frontend shell to wire up once that backend piece exists.
  */
 export function NoteTemplatesTab() {
-  const [templates, setTemplates] = useState<NoteTemplate[]>([]);
+  const templates = useNoteTemplates();
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -43,15 +45,7 @@ export function NoteTemplatesTab() {
   const submitCreate = (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.title.trim() || !form.body.trim()) return;
-    setTemplates((list) => [
-      {
-        id: crypto.randomUUID(),
-        title: form.title.trim(),
-        body: form.body.trim(),
-        updatedAt: new Date().toISOString(),
-      },
-      ...list,
-    ]);
+    addNoteTemplate(form.title.trim(), form.body.trim());
     setForm(EMPTY_FORM);
     setShowForm(false);
   };
@@ -73,64 +67,18 @@ export function NoteTemplatesTab() {
             padding: "14px 20px 0",
           }}
         >
-          <button className="mc-btn" onClick={() => setShowForm((v) => !v)}>
-            {showForm ? (
-              <X size={15} strokeWidth={2} />
-            ) : (
-              <Plus size={15} strokeWidth={2} />
-            )}
-            {showForm ? "Cancel" : "Add template"}
+          <button className="mc-btn" onClick={() => setShowForm(true)}>
+            <Plus size={15} strokeWidth={2} aria-hidden />
+            Add template
           </button>
         </div>
-
-        {showForm && (
-          <CardBody>
-            <form onSubmit={submitCreate}>
-              <div>
-                <label className="mc-label" htmlFor="new-template-title">
-                  Title <span className="mc-req">*</span>
-                </label>
-                <input
-                  id="new-template-title"
-                  className="mc-input"
-                  required
-                  value={form.title}
-                  onChange={(e) => setForm({ ...form, title: e.target.value })}
-                  placeholder="e.g. Missed Appointment Follow-up"
-                />
-              </div>
-              <div style={{ marginTop: 14 }}>
-                <label className="mc-label" htmlFor="new-template-body">
-                  Body <span className="mc-req">*</span>
-                </label>
-                <textarea
-                  id="new-template-body"
-                  className="mc-input"
-                  rows={3}
-                  required
-                  value={form.body}
-                  onChange={(e) => setForm({ ...form, body: e.target.value })}
-                  placeholder="The reusable text itself"
-                />
-              </div>
-              <button
-                type="submit"
-                className="mc-btn"
-                style={{ marginTop: 14 }}
-              >
-                <Plus size={15} strokeWidth={2} aria-hidden />
-                Add template
-              </button>
-            </form>
-          </CardBody>
-        )}
 
         {templates.length === 0 ? (
           <CardBody>
             <EmptyState
               icon={<FileText size={20} strokeWidth={1.9} aria-hidden />}
               title="No templates yet"
-              text="Once connected, reusable note text created here — by anyone at this hospital — will show up for every clinician logging a contact."
+              text="Templates created here show up in the template picker on the Log a Contact form — but only on this browser, since nothing is saved to the server yet."
             />
           </CardBody>
         ) : (
@@ -147,28 +95,78 @@ export function NoteTemplatesTab() {
                 }
                 onStartEdit={() => setEditingId(t.id)}
                 onStopEdit={() => setEditingId(null)}
-                onSave={(title, body) =>
-                  setTemplates((list) =>
-                    list.map((x) =>
-                      x.id === t.id
-                        ? {
-                            ...x,
-                            title,
-                            body,
-                            updatedAt: new Date().toISOString(),
-                          }
-                        : x
-                    )
-                  )
-                }
-                onDelete={() =>
-                  setTemplates((list) => list.filter((x) => x.id !== t.id))
-                }
+                onSave={(title, body) => updateNoteTemplate(t.id, title, body)}
+                onDelete={() => deleteNoteTemplate(t.id)}
               />
             ))}
           </div>
         )}
       </Card>
+
+      <Modal
+        open={showForm}
+        onClose={() => setShowForm(false)}
+        title="Add template"
+        subtitle="Reusable note text every clinician can reuse while logging a contact"
+        icon={<FileText size={17} strokeWidth={2} aria-hidden />}
+        tinted
+      >
+        <form onSubmit={submitCreate}>
+          <div style={{ marginBottom: 16 }}>
+            <label className="mc-label" htmlFor="new-template-title">
+              Title <span className="mc-req">*</span>
+            </label>
+            <input
+              id="new-template-title"
+              className="mc-input"
+              required
+              value={form.title}
+              onChange={(e) => setForm({ ...form, title: e.target.value })}
+              placeholder="e.g. Missed Appointment Follow-up"
+            />
+          </div>
+          <div>
+            <label className="mc-label" htmlFor="new-template-body">
+              Body <span className="mc-req">*</span>
+            </label>
+            <textarea
+              id="new-template-body"
+              className="mc-input"
+              rows={4}
+              required
+              style={{ resize: "vertical" }}
+              value={form.body}
+              onChange={(e) => setForm({ ...form, body: e.target.value })}
+              placeholder="The reusable text itself"
+            />
+          </div>
+
+          <div
+            style={{
+              background: "var(--c-teal-wash)",
+              margin: "20px -20px -20px",
+              padding: "14px 20px",
+              borderTop: "1px solid var(--c-border-soft)",
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+            }}
+          >
+            <button
+              type="button"
+              className="mc-btn-ghost"
+              style={{ marginLeft: "auto" }}
+              onClick={() => setShowForm(false)}
+            >
+              Cancel
+            </button>
+            <button type="submit" className="mc-btn">
+              <Plus size={15} strokeWidth={2} aria-hidden />
+              Add template
+            </button>
+          </div>
+        </form>
+      </Modal>
     </>
   );
 }
