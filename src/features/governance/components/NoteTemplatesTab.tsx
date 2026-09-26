@@ -1,19 +1,28 @@
 "use client";
 
-import { useState } from "react";
-import { motion } from "motion/react";
-import { AlertTriangle, FileText, Pencil, Plus, Trash2 } from "lucide-react";
-
+import { useMemo, useState } from "react";
 import {
-  addNoteTemplate,
-  deleteNoteTemplate,
-  updateNoteTemplate,
-  type NoteTemplate,
-} from "@/features/note-templates/store";
-import { useNoteTemplates } from "@/features/note-templates/useNoteTemplates";
+  AlertCircle,
+  FileText,
+  Pencil,
+  Plus,
+  Search,
+  Trash2,
+} from "lucide-react";
+
+import { usePortal } from "@/app/(portal)/dashboard/layout";
+import {
+  useCreateNoteTemplate,
+  useDeleteNoteTemplate,
+  useNoteTemplates,
+  useUpdateNoteTemplate,
+} from "@/features/note-templates/hooks/useNoteTemplates";
+import type { NoteTemplate } from "@/features/note-templates/types";
+import { ActionMenu, ActionMenuItem } from "@/shared/ui/ActionMenu";
 import { Card, CardBody } from "@/shared/ui/Card";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { Modal } from "@/shared/ui/Modal";
+import { RowSkeleton } from "@/shared/ui/RowSkeleton";
 
 function timeAgo(iso: string): string {
   const minutes = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
@@ -24,248 +33,163 @@ function timeAgo(iso: string): string {
   return `${Math.floor(hours / 24)}d ago`;
 }
 
-const EMPTY_FORM = { title: "", body: "" };
-
 /**
- * Canned snippet text staff can reuse while logging a contact note — the
- * Neuro_RPM reference platform's "Notes" tab. MomCare's backend has no
- * matching NoteTemplate model yet (only ClinicalTag/MonitoringSession/
- * MonitoringNote exist — see core/monitoring), so this stays local-only,
- * backed by `features/note-templates/store.ts` (localStorage, shared with
- * the "Log a contact" form's template picker) rather than a real API —
- * the frontend shell to wire up once that backend piece exists.
+ * Canned snippet text staff can reuse while logging a contact note. Real
+ * backend as of 2026-09-25 (`GET/POST /api/note-templates/`,
+ * `GET/PATCH/DELETE /api/note-templates/{id}/` — see the backend's own
+ * note-templates design doc), same org/location-scoped shape as
+ * `ClinicalTag`/`StatusLabel`. Read is open to any hospital staff; write
+ * (create/edit/delete) is hospital_admin only — the server enforces this
+ * too, this just avoids showing controls that would 403.
  */
 export function NoteTemplatesTab() {
-  const templates = useNoteTemplates();
-  const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState(EMPTY_FORM);
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const { isHospitalAdmin } = usePortal();
+  const templatesQuery = useNoteTemplates();
+  const [search, setSearch] = useState("");
+  const [showCreate, setShowCreate] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  const submitCreate = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!form.title.trim() || !form.body.trim()) return;
-    addNoteTemplate(form.title.trim(), form.body.trim());
-    setForm(EMPTY_FORM);
-    setShowForm(false);
-  };
+  const templates = templatesQuery.data?.results ?? [];
+  const rows = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return q
+      ? templates.filter((t) => t.title.toLowerCase().includes(q))
+      : templates;
+  }, [templates, search]);
 
   return (
     <>
-      <p className="mc-alert mc-alert-notice" style={{ marginBottom: 18 }}>
-        <AlertTriangle size={15} strokeWidth={2} aria-hidden />
-        Not yet connected to the server — templates here aren&apos;t saved and
-        will be gone on reload. This is a preview of the screen, waiting on a
-        backend note-template catalogue.
-      </p>
-
       <Card>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "flex-end",
-            padding: "14px 20px 0",
-          }}
-        >
-          <button className="mc-btn" onClick={() => setShowForm(true)}>
-            <Plus size={15} strokeWidth={2} aria-hidden />
-            Add template
-          </button>
-        </div>
-
-        {templates.length === 0 ? (
-          <CardBody>
-            <EmptyState
-              icon={<FileText size={20} strokeWidth={1.9} aria-hidden />}
-              title="No templates yet"
-              text="Templates created here show up in the template picker on the Log a Contact form — but only on this browser, since nothing is saved to the server yet."
-            />
-          </CardBody>
-        ) : (
-          <div className="mc-rows">
-            {templates.map((t, index) => (
-              <TemplateRow
-                key={t.id}
-                template={t}
-                index={index}
-                editing={editingId === t.id}
-                expanded={expandedId === t.id}
-                onToggleExpand={() =>
-                  setExpandedId(expandedId === t.id ? null : t.id)
-                }
-                onStartEdit={() => setEditingId(t.id)}
-                onStopEdit={() => setEditingId(null)}
-                onSave={(title, body) => updateNoteTemplate(t.id, title, body)}
-                onDelete={() => deleteNoteTemplate(t.id)}
-              />
-            ))}
-          </div>
-        )}
-      </Card>
-
-      <Modal
-        open={showForm}
-        onClose={() => setShowForm(false)}
-        title="Add template"
-        subtitle="Reusable note text every clinician can reuse while logging a contact"
-        icon={<FileText size={17} strokeWidth={2} aria-hidden />}
-        tinted
-      >
-        <form onSubmit={submitCreate}>
-          <div style={{ marginBottom: 16 }}>
-            <label className="mc-label" htmlFor="new-template-title">
-              Title <span className="mc-req">*</span>
-            </label>
-            <input
-              id="new-template-title"
-              className="mc-input"
-              required
-              value={form.title}
-              onChange={(e) => setForm({ ...form, title: e.target.value })}
-              placeholder="e.g. Missed Appointment Follow-up"
-            />
-          </div>
-          <div>
-            <label className="mc-label" htmlFor="new-template-body">
-              Body <span className="mc-req">*</span>
-            </label>
-            <textarea
-              id="new-template-body"
-              className="mc-input"
-              rows={4}
-              required
-              style={{ resize: "vertical" }}
-              value={form.body}
-              onChange={(e) => setForm({ ...form, body: e.target.value })}
-              placeholder="The reusable text itself"
-            />
-          </div>
-
+        {templatesQuery.isSuccess && (
           <div
             style={{
-              background: "var(--c-teal-wash)",
-              margin: "20px -20px -20px",
-              padding: "14px 20px",
-              borderTop: "1px solid var(--c-border-soft)",
               display: "flex",
               alignItems: "center",
-              gap: 12,
+              justifyContent: "space-between",
+              gap: 10,
+              flexWrap: "wrap",
+              padding: "14px 20px 0",
             }}
           >
-            <button
-              type="button"
-              className="mc-btn-ghost"
-              style={{ marginLeft: "auto" }}
-              onClick={() => setShowForm(false)}
-            >
-              Cancel
-            </button>
-            <button type="submit" className="mc-btn">
-              <Plus size={15} strokeWidth={2} aria-hidden />
-              Add template
-            </button>
+            <div style={{ position: "relative", maxWidth: 320, flex: 1 }}>
+              <Search
+                size={14}
+                strokeWidth={2}
+                aria-hidden
+                style={{
+                  position: "absolute",
+                  left: 10,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  opacity: 0.5,
+                }}
+              />
+              <input
+                className="mc-input"
+                style={{ paddingLeft: 30 }}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search templates…"
+                aria-label="Search templates"
+              />
+            </div>
+
+            {isHospitalAdmin && (
+              <button className="mc-btn" onClick={() => setShowCreate(true)}>
+                <Plus size={15} strokeWidth={2} aria-hidden />
+                Add template
+              </button>
+            )}
           </div>
-        </form>
-      </Modal>
+        )}
+
+        {templatesQuery.isPending && (
+          <CardBody>
+            <div className="mc-rows">
+              <RowSkeleton count={3} variant="plain" />
+            </div>
+          </CardBody>
+        )}
+
+        {templatesQuery.isError && (
+          <CardBody>
+            <EmptyState
+              icon={<AlertCircle size={20} strokeWidth={1.9} aria-hidden />}
+              title="Couldn't load templates"
+              text="This is a problem reaching the server, not an empty list. Refresh to try again."
+            />
+          </CardBody>
+        )}
+
+        {templatesQuery.isSuccess &&
+          (rows.length === 0 ? (
+            <CardBody>
+              <EmptyState
+                icon={<FileText size={20} strokeWidth={1.9} aria-hidden />}
+                title={
+                  templates.length === 0
+                    ? "No templates yet"
+                    : "No templates match"
+                }
+                text={
+                  templates.length === 0
+                    ? "Templates created here show up in the template picker on the Log a Contact form, for every clinician at this hospital."
+                    : "Try a different search term."
+                }
+              />
+            </CardBody>
+          ) : (
+            <div className="mc-rows" style={{ padding: "14px 20px 20px" }}>
+              {rows.map((t) => (
+                <TemplateRow
+                  key={t.id}
+                  template={t}
+                  canManage={isHospitalAdmin}
+                  expanded={expandedId === t.id}
+                  onToggleExpand={() =>
+                    setExpandedId(expandedId === t.id ? null : t.id)
+                  }
+                />
+              ))}
+            </div>
+          ))}
+      </Card>
+
+      <TemplateFormModal
+        open={showCreate}
+        onClose={() => setShowCreate(false)}
+      />
     </>
   );
 }
 
 function TemplateRow({
   template,
-  index,
-  editing,
+  canManage,
   expanded,
   onToggleExpand,
-  onStartEdit,
-  onStopEdit,
-  onSave,
-  onDelete,
 }: {
   template: NoteTemplate;
-  index: number;
-  editing: boolean;
+  canManage: boolean;
   expanded: boolean;
   onToggleExpand: () => void;
-  onStartEdit: () => void;
-  onStopEdit: () => void;
-  onSave: (title: string, body: string) => void;
-  onDelete: () => void;
 }) {
-  const [title, setTitle] = useState(template.title);
-  const [body, setBody] = useState(template.body);
-  const long = template.body.length > 140;
-
-  if (editing) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 6 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mc-card"
-        style={{ padding: 14, background: "var(--c-ground)" }}
-      >
-        <div>
-          <label className="mc-label" htmlFor={`tpl-title-${template.id}`}>
-            Title
-          </label>
-          <input
-            id={`tpl-title-${template.id}`}
-            className="mc-input"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-          />
-        </div>
-        <div style={{ marginTop: 12 }}>
-          <label className="mc-label" htmlFor={`tpl-body-${template.id}`}>
-            Body
-          </label>
-          <textarea
-            id={`tpl-body-${template.id}`}
-            className="mc-input"
-            rows={3}
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-          />
-        </div>
-        <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-          <button
-            type="button"
-            className="mc-btn-ghost mc-btn-sm"
-            onClick={onStopEdit}
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            className="mc-btn mc-btn-sm"
-            disabled={!title.trim() || !body.trim()}
-            onClick={() => {
-              onSave(title.trim(), body.trim());
-              onStopEdit();
-            }}
-          >
-            Save changes
-          </button>
-        </div>
-      </motion.div>
-    );
-  }
+  const [showEdit, setShowEdit] = useState(false);
+  const [showDelete, setShowDelete] = useState(false);
+  const long = template.content.length > 140;
 
   return (
-    <motion.div
+    <div
       className="mc-row"
       style={{ cursor: "pointer", flexWrap: "wrap" }}
-      initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2, delay: Math.min(index, 8) * 0.03 }}
       onClick={onToggleExpand}
     >
       <div className="mc-row-main">
         <div className="mc-row-title">{template.title}</div>
         <div className="mc-row-meta">
           {expanded || !long
-            ? template.body
-            : `${template.body.slice(0, 140)}…`}
+            ? template.content
+            : `${template.content.slice(0, 140)}…`}
           {long && (
             <button
               type="button"
@@ -281,25 +205,240 @@ function TemplateRow({
           )}
         </div>
         <div className="mc-row-meta" style={{ marginTop: 4 }}>
-          {timeAgo(template.updatedAt)}
+          {template.updated_by_name
+            ? `${template.updated_by_name} · ${timeAgo(template.updated_at)}`
+            : timeAgo(template.updated_at)}
         </div>
       </div>
-      <div className="mc-row-actions" onClick={(e) => e.stopPropagation()}>
+      {canManage && (
+        <div onClick={(e) => e.stopPropagation()}>
+          <ActionMenu label="Template actions">
+            <ActionMenuItem
+              icon={<Pencil size={13} strokeWidth={2} aria-hidden />}
+              label="Edit"
+              onClick={() => setShowEdit(true)}
+            />
+            <ActionMenuItem
+              icon={<Trash2 size={13} strokeWidth={2} aria-hidden />}
+              label="Delete"
+              danger
+              onClick={() => setShowDelete(true)}
+            />
+          </ActionMenu>
+        </div>
+      )}
+
+      <TemplateFormModal
+        open={showEdit}
+        onClose={() => setShowEdit(false)}
+        template={template}
+      />
+      <DeleteTemplateModal
+        open={showDelete}
+        onClose={() => setShowDelete(false)}
+        template={template}
+      />
+    </div>
+  );
+}
+
+function TemplateFormModal({
+  open,
+  onClose,
+  template,
+}: {
+  open: boolean;
+  onClose: () => void;
+  template?: NoteTemplate;
+}) {
+  const { org } = usePortal();
+  const createTemplate = useCreateNoteTemplate();
+  const updateTemplate = useUpdateNoteTemplate();
+  const isEdit = !!template;
+
+  const [form, setForm] = useState({
+    title: template?.title ?? "",
+    content: template?.content ?? "",
+  });
+  const [error, setError] = useState<string | null>(null);
+
+  const [wasOpen, setWasOpen] = useState(open);
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) {
+      setForm({
+        title: template?.title ?? "",
+        content: template?.content ?? "",
+      });
+      setError(null);
+    }
+  }
+
+  const pending = createTemplate.isPending || updateTemplate.isPending;
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    try {
+      if (isEdit) {
+        await updateTemplate.mutateAsync({
+          templateId: template.id,
+          input: { title: form.title, content: form.content },
+        });
+      } else {
+        await createTemplate.mutateAsync({
+          title: form.title,
+          content: form.content,
+          organization: org.id,
+        });
+      }
+      onClose();
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Could not save this template."
+      );
+    }
+  };
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={isEdit ? "Edit template" : "Add template"}
+      subtitle="Reusable note text every clinician can reuse while logging a contact"
+      icon={<FileText size={17} strokeWidth={2} aria-hidden />}
+      tinted
+    >
+      <form onSubmit={submit}>
+        <div style={{ marginBottom: 16 }}>
+          <label className="mc-label" htmlFor="template-title">
+            Title <span className="mc-req">*</span>
+          </label>
+          <input
+            id="template-title"
+            className="mc-input"
+            required
+            value={form.title}
+            onChange={(e) => setForm({ ...form, title: e.target.value })}
+            placeholder="e.g. Missed Appointment Follow-up"
+          />
+        </div>
+        <div>
+          <label className="mc-label" htmlFor="template-content">
+            Content <span className="mc-req">*</span>
+          </label>
+          <textarea
+            id="template-content"
+            className="mc-input"
+            rows={4}
+            required
+            style={{ resize: "vertical" }}
+            value={form.content}
+            onChange={(e) => setForm({ ...form, content: e.target.value })}
+            placeholder="The reusable text itself"
+          />
+        </div>
+
+        {error && (
+          <p className="mc-alert mc-alert-error" style={{ marginTop: 16 }}>
+            <AlertCircle size={15} strokeWidth={2} aria-hidden />
+            {error}
+          </p>
+        )}
+
+        <div
+          style={{
+            background: "var(--c-teal-wash)",
+            margin: "20px -20px -20px",
+            padding: "14px 20px",
+            borderTop: "1px solid var(--c-border-soft)",
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+          }}
+        >
+          <button
+            type="button"
+            className="mc-btn-ghost"
+            style={{ marginLeft: "auto" }}
+            onClick={onClose}
+            disabled={pending}
+          >
+            Cancel
+          </button>
+          <button type="submit" className="mc-btn" disabled={pending}>
+            <Plus size={15} strokeWidth={2} aria-hidden />
+            {pending ? "Saving…" : isEdit ? "Save changes" : "Add template"}
+          </button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+function DeleteTemplateModal({
+  open,
+  onClose,
+  template,
+}: {
+  open: boolean;
+  onClose: () => void;
+  template: NoteTemplate;
+}) {
+  const deleteTemplate = useDeleteNoteTemplate();
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Delete template"
+      subtitle={template.title}
+    >
+      <p className="mc-hint">
+        This removes the template from the picker on the Log a Contact form.
+        Notes already logged from this template keep their own text — nothing
+        references this entry.
+      </p>
+
+      {deleteTemplate.isError && (
+        <p className="mc-alert mc-alert-error" style={{ marginTop: 12 }}>
+          {deleteTemplate.error instanceof Error
+            ? deleteTemplate.error.message
+            : "Could not delete this template."}
+        </p>
+      )}
+
+      <div
+        className="mc-card-foot"
+        style={{
+          padding: "12px 0 0",
+          marginTop: 16,
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+        }}
+      >
         <button
           type="button"
-          className="mc-btn-ghost mc-btn-sm"
-          onClick={onStartEdit}
+          className="mc-btn-ghost"
+          style={{ marginLeft: "auto" }}
+          onClick={onClose}
+          disabled={deleteTemplate.isPending}
         >
-          <Pencil size={13} strokeWidth={2} aria-hidden /> Edit
+          Cancel
         </button>
         <button
           type="button"
-          className="mc-btn-ghost mc-btn-sm mc-btn-danger"
-          onClick={onDelete}
+          className="mc-btn"
+          style={{ background: "var(--c-high)" }}
+          disabled={deleteTemplate.isPending}
+          onClick={() =>
+            deleteTemplate.mutate(template.id, { onSuccess: onClose })
+          }
         >
-          <Trash2 size={13} strokeWidth={2} aria-hidden /> Delete
+          {deleteTemplate.isPending ? "Deleting…" : "Delete"}
         </button>
       </div>
-    </motion.div>
+    </Modal>
   );
 }

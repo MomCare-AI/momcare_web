@@ -1,5 +1,6 @@
 import { authFetch, authJson } from "@/core/api/authFetch";
 import type {
+  ClinicalTag,
   ClinicalTagListResponse,
   CombinedMonitoringInput,
   MonitoringNote,
@@ -105,6 +106,30 @@ export async function deleteNote(noteId: string): Promise<void> {
 
 export function listClinicalTags() {
   return authJson<ClinicalTagListResponse>("/api/clinical-tags/");
+}
+
+/** `POST /api/clinical-tags/` — curating the catalogue directly, hospital
+ *  admins only (the server enforces this; ad-hoc tags typed inline while
+ *  logging a note go through a different, unrestricted path — see
+ *  `services.get_or_create_tags`, reached via `TagSpec`'s `{name}` variant
+ *  on the combined monitoring endpoint, not this one). Exactly one of
+ *  `organization`/`location` must be set. */
+export async function createClinicalTag(input: {
+  name: string;
+  color?: string | null;
+  organization?: string;
+  location?: string;
+}): Promise<ClinicalTag> {
+  const res = await authFetch("/api/clinical-tags/", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  const body = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new Error(firstError(body) ?? "Could not add this tag.");
+  }
+  return body as ClinicalTag;
 }
 
 export function searchPatientNotes(

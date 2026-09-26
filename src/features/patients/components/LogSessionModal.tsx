@@ -9,7 +9,7 @@ import {
   useLogContact,
 } from "@/features/monitoring-notes/hooks/useMonitoringNotes";
 import type { TagSpec } from "@/features/monitoring-notes/types";
-import { useNoteTemplates } from "@/features/note-templates/useNoteTemplates";
+import { useNoteTemplates } from "@/features/note-templates/hooks/useNoteTemplates";
 import { Modal } from "@/shared/ui/Modal";
 import { TagChip } from "@/shared/ui/TagChip";
 
@@ -54,7 +54,8 @@ export function LogSessionModal({
 }: Props) {
   const logContact = useLogContact(patientId);
   const tagsQuery = useClinicalTags();
-  const noteTemplates = useNoteTemplates();
+  const templatesQuery = useNoteTemplates();
+  const noteTemplates = templatesQuery.data?.results ?? [];
   const locationsQuery = useLocations();
 
   // `GET /api/clinical-tags/` (visible_clinical_tags) returns org-wide tags
@@ -120,7 +121,7 @@ export function LogSessionModal({
 
   const applyTemplate = (templateId: string) => {
     const tpl = noteTemplates.find((t) => t.id === templateId);
-    if (tpl) setForm((f) => ({ ...f, note: tpl.body }));
+    if (tpl) setForm((f) => ({ ...f, note: tpl.content }));
   };
 
   const submit = async (e: React.FormEvent) => {

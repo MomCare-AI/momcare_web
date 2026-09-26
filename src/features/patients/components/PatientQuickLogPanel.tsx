@@ -1,20 +1,20 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { AlertCircle, Clock, Plus } from "lucide-react";
+import { AlertCircle, Clock, Plus, X } from "lucide-react";
 
 import { useLocations } from "@/features/locations/hooks/useLocations";
+import { CreateTagModal } from "@/features/monitoring-notes/components/CreateTagModal";
 import {
   useClinicalTags,
   useLogContact,
 } from "@/features/monitoring-notes/hooks/useMonitoringNotes";
 import type {
-  ClinicalTag,
   CombinedMonitoringInput,
   TagSpec,
 } from "@/features/monitoring-notes/types";
+import { useNoteTemplates } from "@/features/note-templates/hooks/useNoteTemplates";
 import { Card, CardBody, CardHeader } from "@/shared/ui/Card";
-import { TagChip } from "@/shared/ui/TagChip";
 
 function pad(n: number): string {
   return String(n).padStart(2, "0");
@@ -30,10 +30,10 @@ interface Props {
  * platform's own Readings-tab side panel. Its own live timer, independent
  * from `PatientHeaderBanner`'s — two self-contained stopwatches rather than
  * threading shared timer state through both, which would need lifting it up
- * to the page level for a feature this narrow. Note Template has no
- * MomCare data (no template catalogue backend exists yet — see
- * `NoteTemplatesTab.tsx`'s own placeholder), so it's shown disabled with the
- * same "not yet connected" honesty as that tab, not silently dropped.
+ * to the page level for a feature this narrow. Note Template is wired to the
+ * real `/api/note-templates/` catalogue (same `useNoteTemplates` hook
+ * `LogSessionModal.tsx` uses) — hidden entirely when the hospital hasn't
+ * created any yet, rather than shown disabled.
  * Everything else (tags, note text, call-outcome flags) reuses the same
  * `useLogContact`/`useClinicalTags` hooks `MonitoringNotesPanel.tsx` already
  * uses — one real save path, not a second one.
@@ -46,7 +46,7 @@ export function PatientQuickLogPanel({
   const [running, setRunning] = useState(true);
   const [note, setNote] = useState("");
   const [pendingTags, setPendingTags] = useState<TagSpec[]>([]);
-  const [tagDraft, setTagDraft] = useState("");
+  const [showCreateTag, setShowCreateTag] = useState(false);
   const [leftVoicemail, setLeftVoicemail] = useState(false);
   const [twoWayCommunication, setTwoWayCommunication] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,6 +56,8 @@ export function PatientQuickLogPanel({
   const tagsQuery = useClinicalTags();
   const locationsQuery = useLocations();
   const logContact = useLogContact(patientId);
+  const templatesQuery = useNoteTemplates();
+  const noteTemplates = templatesQuery.data?.results ?? [];
 
   // Same fix as LogSessionModal: `GET /api/clinical-tags/` returns every
   // location's tags a hospital admin can see, but the combined-monitoring
@@ -79,22 +81,27 @@ export function PatientQuickLogPanel({
     };
   }, [running]);
 
-  const toggleTag = (tag: ClinicalTag) => {
+  const selectExistingTag = (tagId: string) => {
+    if (!tagId) return;
     setPendingTags((tags) =>
-      tags.some((t) => "id" in t && t.id === tag.id)
-        ? tags.filter((t) => !("id" in t && t.id === tag.id))
-        : [...tags, { id: tag.id }]
+      tags.some((t) => "id" in t && t.id === tagId)
+        ? tags
+        : [...tags, { id: tagId }]
     );
   };
 
-  const addDraftTag = () => {
-    const name = tagDraft.trim();
-    if (!name) return;
-    if (!pendingTags.some((t) => "name" in t && t.name === name)) {
-      setPendingTags((tags) => [...tags, { name }]);
-    }
-    setTagDraft("");
+  const removeTag = (index: number) => {
+    setPendingTags((tags) => tags.filter((_, i) => i !== index));
   };
+
+  const tagLabel = (spec: TagSpec): string =>
+    "id" in spec
+      ? (visibleTags.find((t) => t.id === spec.id)?.name ?? "Tag")
+      : spec.name;
+
+  const selectableTags = visibleTags.filter(
+    (t) => !pendingTags.some((p) => "id" in p && p.id === t.id)
+  );
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -242,21 +249,35 @@ export function PatientQuickLogPanel({
             style={{ marginBottom: 14 }}
           />
 
-          <label className="mc-label" htmlFor="quicklog-template">
-            NOTE TEMPLATE
-          </label>
-          <select
-            id="quicklog-template"
-            className="mc-input"
-            disabled
-            style={{ marginBottom: 4 }}
-          >
-            <option>Select note template</option>
-          </select>
-          <p className="mc-hint" style={{ marginBottom: 14 }}>
-            Not yet connected — no template catalogue exists yet (see the Notes
-            tab in System Governance).
-          </p>
+          {noteTemplates.length > 0 && (
+            <>
+              <label className="mc-label" htmlFor="quicklog-template">
+                NOTE TEMPLATE
+              </label>
+              <select
+                id="quicklog-template"
+                className="mc-input"
+                defaultValue=""
+                style={{ marginBottom: 14 }}
+                onChange={(e) => {
+                  const tpl = noteTemplates.find(
+                    (t) => t.id === e.target.value
+                  );
+                  if (tpl) setNote(tpl.content);
+                  e.target.value = "";
+                }}
+              >
+                <option value="" disabled>
+                  Select note template
+                </option>
+                {noteTemplates.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.title}
+                  </option>
+                ))}
+              </select>
+            </>
+          )}
 
           <label className="mc-label" htmlFor="quicklog-note">
             NOTES
@@ -271,48 +292,38 @@ export function PatientQuickLogPanel({
             style={{ marginBottom: 10 }}
           />
 
-          {visibleTags.length > 0 && (
-            <div
-              style={{
-                display: "flex",
-                flexWrap: "wrap",
-                gap: 6,
-                marginBottom: 8,
-              }}
-            >
-              {visibleTags.map((tag) => (
-                <TagChip
-                  key={tag.id}
-                  label={tag.name}
-                  active={pendingTags.some((t) => "id" in t && t.id === tag.id)}
-                  onClick={() => toggleTag(tag)}
-                />
-              ))}
-            </div>
-          )}
-          <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
-            <input
+          <label className="mc-label" htmlFor="quicklog-tag-select">
+            TAGS
+          </label>
+          <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+            <select
+              id="quicklog-tag-select"
               className="mc-input"
-              value={tagDraft}
-              onChange={(e) => setTagDraft(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  addDraftTag();
-                }
-              }}
-              placeholder="Type a tag and press Enter"
-            />
+              value=""
+              disabled={selectableTags.length === 0}
+              onChange={(e) => selectExistingTag(e.target.value)}
+            >
+              <option value="" disabled>
+                {selectableTags.length > 0
+                  ? "Select a tag to add"
+                  : "No more tags to add"}
+              </option>
+              {selectableTags.map((tag) => (
+                <option key={tag.id} value={tag.id}>
+                  {tag.name}
+                </option>
+              ))}
+            </select>
             <button
               type="button"
               className="mc-btn-ghost mc-btn-sm"
-              onClick={addDraftTag}
+              onClick={() => setShowCreateTag(true)}
             >
               <Plus size={13} strokeWidth={2} aria-hidden />
               Add Tag
             </button>
           </div>
-          {pendingTags.filter((t) => "name" in t).length > 0 && (
+          {pendingTags.length > 0 && (
             <div
               style={{
                 display: "flex",
@@ -321,13 +332,35 @@ export function PatientQuickLogPanel({
                 marginBottom: 14,
               }}
             >
-              {pendingTags
-                .filter((t): t is { name: string } => "name" in t)
-                .map((t) => (
-                  <span key={t.name} className="mc-badge mc-badge-info">
-                    {t.name}
-                  </span>
-                ))}
+              {pendingTags.map((t, i) => (
+                <span
+                  key={"id" in t ? t.id : `${t.name}-${i}`}
+                  className="mc-badge mc-badge-info"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                  }}
+                >
+                  {tagLabel(t)}
+                  <button
+                    type="button"
+                    aria-label={`Remove ${tagLabel(t)}`}
+                    onClick={() => removeTag(i)}
+                    style={{
+                      display: "grid",
+                      placeItems: "center",
+                      border: "none",
+                      background: "transparent",
+                      cursor: "pointer",
+                      padding: 0,
+                      color: "inherit",
+                    }}
+                  >
+                    <X size={11} strokeWidth={2.5} aria-hidden />
+                  </button>
+                </span>
+              ))}
             </div>
           )}
 
@@ -382,6 +415,13 @@ export function PatientQuickLogPanel({
           </div>
         </form>
       </CardBody>
+
+      <CreateTagModal
+        open={showCreateTag}
+        onClose={() => setShowCreateTag(false)}
+        patientLocationId={patientLocationId}
+        onCreated={(tag) => setPendingTags((tags) => [...tags, tag])}
+      />
     </Card>
   );
 }

@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
+  createClinicalTag,
   deleteNote,
   deleteSession,
   getPatientMonitoring,
@@ -49,6 +50,21 @@ export function useClinicalTags() {
     queryKey: monitoringNotesKeys.tags,
     queryFn: listClinicalTags,
     staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useCreateClinicalTag() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: {
+      name: string;
+      color?: string | null;
+      organization?: string;
+      location?: string;
+    }) => createClinicalTag(input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: monitoringNotesKeys.tags });
+    },
   });
 }
 
