@@ -92,27 +92,28 @@ export function PatientHeaderBanner({
   ].filter(Boolean) as string[];
 
   return (
-    <div className="mc-hero" style={{ marginBottom: 18 }}>
+    <div className="mc-hero" style={{ marginBottom: 18, padding: "12px 18px" }}>
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
+          alignItems: "center",
           gap: 20,
           flexWrap: "wrap",
           position: "relative",
           zIndex: 1,
         }}
       >
-        <div style={{ display: "flex", gap: 14 }}>
-          <InitialsAvatar name={patient.full_name} size={48} />
+        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+          <InitialsAvatar name={patient.full_name} size={38} />
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <h1 className="mc-h1" style={{ marginBottom: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <h1 className="mc-h1" style={{ marginBottom: 0, fontSize: 16 }}>
                 {patient.full_name}
               </h1>
               {current && (
                 <>
-                  <span className="mc-ga">
+                  <span className="mc-ga" style={{ fontSize: 12 }}>
                     {current.gestational_age_display}
                   </span>
                   <span
@@ -128,18 +129,22 @@ export function PatientHeaderBanner({
               style={{
                 display: "flex",
                 flexWrap: "wrap",
-                gap: "4px 16px",
-                marginTop: 6,
+                alignItems: "center",
+                rowGap: 3,
+                columnGap: 14,
+                marginTop: 3,
+                fontSize: 12,
               }}
             >
               {[age, patient.gender].filter(Boolean).join(" · ") && (
-                <span>
-                  <User
-                    size={12}
-                    strokeWidth={2}
-                    aria-hidden
-                    style={{ verticalAlign: -1, marginRight: 3 }}
-                  />
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                  }}
+                >
+                  <User size={11} strokeWidth={2} aria-hidden />
                   {[age, patient.gender].filter(Boolean).join(" · ")}
                 </span>
               )}
@@ -149,119 +154,111 @@ export function PatientHeaderBanner({
                 </span>
               )}
               {patient.date_of_birth && (
-                <span>
-                  <Calendar
-                    size={12}
-                    strokeWidth={2}
-                    aria-hidden
-                    style={{ verticalAlign: -1, marginRight: 3 }}
-                  />
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                  }}
+                >
+                  <Calendar size={11} strokeWidth={2} aria-hidden />
                   DOB: {new Date(patient.date_of_birth).toLocaleDateString()}
                 </span>
               )}
               {patient.phone && (
-                <span>
-                  <Phone
-                    size={12}
-                    strokeWidth={2}
-                    aria-hidden
-                    style={{ verticalAlign: -1, marginRight: 3 }}
-                  />
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                  }}
+                >
+                  <Phone size={11} strokeWidth={2} aria-hidden />
                   {patient.phone}
                 </span>
               )}
               {patient.location_name && (
-                <span>
-                  <MapPin
-                    size={12}
-                    strokeWidth={2}
-                    aria-hidden
-                    style={{ verticalAlign: -1, marginRight: 3 }}
-                  />
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                  }}
+                >
+                  <MapPin size={11} strokeWidth={2} aria-hidden />
                   {patient.location_name}
                 </span>
               )}
               <span>
                 Enrolled {new Date(patient.created_at).toLocaleDateString()}
               </span>
+              {careTeam.length > 0 && (
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                  }}
+                >
+                  <Stethoscope size={11} strokeWidth={2} aria-hidden />
+                  {careTeam.join(" · ")}
+                </span>
+              )}
             </div>
-            {careTeam.length > 0 && (
-              <div
-                className="mc-sub"
-                style={{
-                  marginTop: 4,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 5,
-                }}
-              >
-                <Stethoscope
-                  size={12}
-                  strokeWidth={2}
-                  aria-hidden
-                  style={{ flexShrink: 0 }}
-                />
-                {careTeam.join(" · ")}
-              </div>
-            )}
           </div>
         </div>
 
-        <div style={{ textAlign: "right" }}>
-          <div
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span
+            className="mc-kpi-value"
             style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              justifyContent: "flex-end",
+              fontSize: 15,
+              fontVariantNumeric: "tabular-nums",
+              background: "var(--c-card)",
+              border: "1px solid var(--c-border-soft)",
+              borderRadius: 999,
+              padding: "4px 12px",
+            }}
+            title="Time on this patient — saves as a logged contact on Notes"
+          >
+            {formatClock(seconds)}
+          </span>
+          <button
+            type="button"
+            className="mc-btn-ghost mc-btn-sm"
+            aria-label={running ? "Pause timer" : "Start timer"}
+            onClick={() => setRunning((r) => !r)}
+          >
+            {running ? (
+              <Pause size={14} strokeWidth={2} />
+            ) : (
+              <Play size={14} strokeWidth={2} />
+            )}
+          </button>
+          <button
+            type="button"
+            className="mc-btn-ghost mc-btn-sm"
+            aria-label="Reset timer"
+            disabled={seconds === 0 && !running}
+            onClick={() => {
+              setRunning(false);
+              setSeconds(0);
             }}
           >
-            <span
-              className="mc-kpi-value"
-              style={{ fontSize: 20, fontVariantNumeric: "tabular-nums" }}
-            >
-              {formatClock(seconds)}
-            </span>
-            <button
-              type="button"
-              className="mc-btn-ghost mc-btn-sm"
-              aria-label={running ? "Pause timer" : "Start timer"}
-              onClick={() => setRunning((r) => !r)}
-            >
-              {running ? (
-                <Pause size={14} strokeWidth={2} />
-              ) : (
-                <Play size={14} strokeWidth={2} />
-              )}
-            </button>
-            <button
-              type="button"
-              className="mc-btn-ghost mc-btn-sm"
-              aria-label="Reset timer"
-              disabled={seconds === 0 && !running}
-              onClick={() => {
-                setRunning(false);
-                setSeconds(0);
-              }}
-            >
-              <RotateCcw size={14} strokeWidth={2} />
-            </button>
-            <button
-              type="button"
-              className="mc-btn mc-btn-sm"
-              disabled={seconds === 0}
-              onClick={() => {
-                setRunning(false);
-                setShowLogModal(true);
-              }}
-            >
-              <Save size={13} strokeWidth={2} aria-hidden />
-              Save
-            </button>
-          </div>
-          <div className="mc-hint" style={{ marginTop: 4 }}>
-            Time on this patient — saves as a logged contact on Notes
-          </div>
+            <RotateCcw size={14} strokeWidth={2} />
+          </button>
+          <button
+            type="button"
+            className="mc-btn mc-btn-sm"
+            disabled={seconds === 0}
+            onClick={() => {
+              setRunning(false);
+              setShowLogModal(true);
+            }}
+          >
+            <Save size={13} strokeWidth={2} aria-hidden />
+            Save
+          </button>
         </div>
       </div>
 

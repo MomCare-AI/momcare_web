@@ -42,6 +42,7 @@ import {
 const CHART_COLOURS = {
   primary: "#4662e8",
   secondary: "#8a9aa3",
+  heartRate: "#d65f58",
   grid: "#e8eef0",
   axis: "#607582",
   moderate: "#c98a2e",
@@ -115,11 +116,38 @@ interface Props {
   readings: VitalReading[];
   metric: VitalMetric;
   height?: number;
+  /** Overlays heart rate as a third line on the blood pressure chart —
+   *  matches the reference platform's own combined Systolic/Diastolic/
+   *  Heart Rate view. Only meaningful for `metric: "blood_pressure"`, and
+   *  only offered there: heart rate's numeric range (roughly 60–160 bpm) is
+   *  close enough to blood pressure's (roughly 80–200 mmHg) to share one
+   *  axis without misrepresenting either — temperature, glucose and
+   *  haemoglobin are not (single digits to hundreds apart), so combining
+   *  every vital onto one axis would just be a graph that lies about scale,
+   *  not a real "all vitals" view. */
+  showHeartRate?: boolean;
+  /** Which lines are actually drawn, for the checkbox row below the chart
+   *  to toggle. Defaults to every line visible. */
+  visibleLines?: {
+    systolic?: boolean;
+    diastolic?: boolean;
+    heartRate?: boolean;
+  };
 }
 
-export function VitalsChart({ readings, metric, height = 260 }: Props) {
+export function VitalsChart({
+  readings,
+  metric,
+  height = 260,
+  showHeartRate = false,
+  visibleLines,
+}: Props) {
   const spec = VITAL_METRICS.find((m) => m.metric === metric);
   const allThresholds = useMemo(() => THRESHOLDS[metric] ?? [], [metric]);
+  const combineHeartRate = showHeartRate && metric === "blood_pressure";
+  const showSystolic = visibleLines?.systolic ?? true;
+  const showDiastolic = visibleLines?.diastolic ?? true;
+  const showHeartRateLine = visibleLines?.heartRate ?? true;
 
   const data = useMemo(() => {
     if (!spec) return [];
@@ -133,12 +161,21 @@ export function VitalsChart({ readings, metric, height = 260 }: Props) {
           secondary: spec.secondaryField
             ? vitalValue(r, spec.secondaryField)
             : null,
+          heartRate: combineHeartRate ? vitalValue(r, "heart_rate") : null,
         }))
         // An event that did not measure this vital is not a zero — dropping
         // the point leaves a gap, which is the honest shape of the data.
-        .filter((d) => d.value !== null)
+        // In combined mode a reading with only a heart rate (no BP that
+        // day) still belongs on the chart, so the drop condition widens to
+        // "measured nothing shown here" rather than "missing the primary
+        // vital alone."
+        .filter((d) =>
+          combineHeartRate
+            ? d.value !== null || d.secondary !== null || d.heartRate !== null
+            : d.value !== null
+        )
     );
-  }, [readings, spec]);
+  }, [readings, spec, combineHeartRate]);
 
   /**
    * The axis is stretched to keep the nearest threshold in view even when
@@ -151,7 +188,7 @@ export function VitalsChart({ readings, metric, height = 260 }: Props) {
       return { domain: [0, 1] as [number, number], thresholds: [] };
 
     const values = data.flatMap((d) =>
-      d.secondary === null ? [d.value!] : [d.value!, d.secondary]
+      [d.value, d.secondary, d.heartRate].filter((v): v is number => v !== null)
     );
     const dataMin = Math.min(...values);
     const dataMax = Math.max(...values);
@@ -216,7 +253,7 @@ export function VitalsChart({ readings, metric, height = 260 }: Props) {
         <Tooltip
           labelFormatter={(t) => new Date(Number(t)).toLocaleString()}
           formatter={(value, name) => [
-            `${Number(value).toFixed(1)} ${spec.unit}`,
+            `${Number(value).toFixed(1)} ${name === "Heart Rate" ? "bpm" : spec.unit}`,
             String(name),
           ]}
           contentStyle={{
@@ -241,17 +278,19 @@ export function VitalsChart({ readings, metric, height = 260 }: Props) {
           />
         ))}
 
-        <Line
-          type="monotone"
-          dataKey="value"
-          name={isBloodPressure ? "Systolic" : spec.label}
-          stroke={CHART_COLOURS.primary}
-          strokeWidth={2}
-          dot={false}
-          connectNulls={false}
-          isAnimationActive={false}
-        />
-        {isBloodPressure && (
+        {(!isBloodPressure || showSystolic) && (
+          <Line
+            type="monotone"
+            dataKey="value"
+            name={isBloodPressure ? "Systolic" : spec.label}
+            stroke={CHART_COLOURS.primary}
+            strokeWidth={2}
+            dot={false}
+            connectNulls={false}
+            isAnimationActive={false}
+          />
+        )}
+        {isBloodPressure && showDiastolic && (
           <Line
             type="monotone"
             dataKey="secondary"
@@ -263,7 +302,21 @@ export function VitalsChart({ readings, metric, height = 260 }: Props) {
             isAnimationActive={false}
           />
         )}
-        {isBloodPressure && <Legend wrapperStyle={{ fontSize: 12 }} />}
+        {combineHeartRate && showHeartRateLine && (
+          <Line
+            type="monotone"
+            dataKey="heartRate"
+            name="Heart Rate"
+            stroke={CHART_COLOURS.heartRate}
+            strokeWidth={2}
+            dot={false}
+            connectNulls={false}
+            isAnimationActive={false}
+          />
+        )}
+        {(isBloodPressure || combineHeartRate) && (
+          <Legend wrapperStyle={{ fontSize: 12 }} />
+        )}
       </LineChart>
     </ResponsiveContainer>
   );

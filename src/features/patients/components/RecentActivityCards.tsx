@@ -1,20 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import { Clock, FileText, Plus } from "lucide-react";
+import { Clock, FileText, Pencil, Plus, Trash2 } from "lucide-react";
 
+import { usePortal } from "@/app/(portal)/dashboard/layout";
 import { usePatientMonitoring } from "@/features/monitoring-notes/hooks/useMonitoringNotes";
+import { NoteDeleteModal } from "@/features/monitoring-notes/components/NoteDeleteModal";
+import { NoteEditModal } from "@/features/monitoring-notes/components/NoteEditModal";
+import { SessionDeleteModal } from "@/features/monitoring-notes/components/SessionDeleteModal";
+import { SessionEditModal } from "@/features/monitoring-notes/components/SessionEditModal";
+import type {
+  MonitoringNote,
+  MonitoringSession,
+} from "@/features/monitoring-notes/types";
+import { formatDateTime } from "@/shared/lib/formatDateTime";
 import { Card, CardBody, CardHeader } from "@/shared/ui/Card";
+import { InitialsAvatar } from "@/shared/ui/InitialsAvatar";
+import { TintedIconButton } from "@/shared/ui/TintedIconButton";
 import { LogSessionModal } from "./LogSessionModal";
-
-function timeAgo(iso: string): string {
-  const minutes = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
-  if (minutes < 1) return "just now";
-  if (minutes < 60) return `${minutes} min ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.floor(hours / 24)}d ago`;
-}
 
 interface Props {
   patientId: string;
@@ -39,12 +42,16 @@ export function RecentActivityCards({
   patientLocationName,
   onOpenNotes,
 }: Props) {
+  const { user, isHospitalAdmin } = usePortal();
   const monitoringQuery = usePatientMonitoring(patientId);
   const entries = monitoringQuery.data?.results ?? [];
   const notes = entries.filter((e) => e.note).slice(0, 5);
   const sessions = entries.filter((e) => e.session).slice(0, 5);
   const totalFormatted = monitoringQuery.data?.totals.total_formatted;
   const [showLogModal, setShowLogModal] = useState(false);
+
+  const canEdit = (addedById: string) =>
+    isHospitalAdmin || addedById === user.id;
 
   return (
     <div className="mc-grid-even">
@@ -85,19 +92,22 @@ export function RecentActivityCards({
           ) : notes.length === 0 ? (
             <div className="mc-hint">No notes logged yet this month.</div>
           ) : (
-            <div className="mc-rows">
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 8,
+                maxHeight: 300,
+                overflowY: "auto",
+              }}
+            >
               {notes.map((entry, i) => (
-                <div key={i} className="mc-row" style={{ padding: "10px 0" }}>
-                  <div className="mc-row-main">
-                    <div className="mc-row-title">
-                      {entry.note!.added_by_name}
-                    </div>
-                    <div className="mc-row-meta">{entry.note!.note}</div>
-                    <div className="mc-row-meta" style={{ marginTop: 2 }}>
-                      {timeAgo(entry.recorded_at)}
-                    </div>
-                  </div>
-                </div>
+                <NoteCard
+                  key={i}
+                  patientId={patientId}
+                  note={entry.note!}
+                  canEdit={canEdit(entry.note!.added_by)}
+                />
               ))}
             </div>
           )}
@@ -154,25 +164,23 @@ export function RecentActivityCards({
           ) : sessions.length === 0 ? (
             <div className="mc-hint">No sessions logged yet this month.</div>
           ) : (
-            <div className="mc-rows">
-              {sessions.map((entry, i) => {
-                const mins = Math.round(entry.session!.duration_seconds / 60);
-                return (
-                  <div key={i} className="mc-row" style={{ padding: "10px 0" }}>
-                    <div className="mc-row-main">
-                      <div className="mc-row-title">
-                        {entry.session!.added_by_name}
-                      </div>
-                      <div className="mc-row-meta">
-                        {mins < 1 ? "under a minute" : `${mins} min`}
-                      </div>
-                      <div className="mc-row-meta" style={{ marginTop: 2 }}>
-                        {timeAgo(entry.recorded_at)}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 8,
+                maxHeight: 300,
+                overflowY: "auto",
+              }}
+            >
+              {sessions.map((entry, i) => (
+                <SessionCard
+                  key={i}
+                  patientId={patientId}
+                  session={entry.session!}
+                  canEdit={canEdit(entry.session!.added_by)}
+                />
+              ))}
             </div>
           )}
         </CardBody>
@@ -183,6 +191,209 @@ export function RecentActivityCards({
         patientLocationName={patientLocationName}
         open={showLogModal}
         onClose={() => setShowLogModal(false)}
+      />
+    </div>
+  );
+}
+
+function NoteCard({
+  patientId,
+  note,
+  canEdit,
+}: {
+  patientId: string;
+  note: MonitoringNote;
+  canEdit: boolean;
+}) {
+  const [showEdit, setShowEdit] = useState(false);
+  const [showDelete, setShowDelete] = useState(false);
+
+  return (
+    <div
+      className="mc-card"
+      style={{
+        padding: "10px 12px",
+        boxShadow: "var(--shadow-card)",
+        border: "1px solid var(--c-border-soft)",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: 10,
+        }}
+      >
+        <div
+          style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}
+        >
+          <InitialsAvatar name={note.added_by_name || "?"} size={26} />
+          <div style={{ minWidth: 0 }}>
+            <div className="mc-row-title" style={{ fontSize: 13.5 }}>
+              {note.added_by_name}
+            </div>
+            <div
+              className="mc-row-meta"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 4,
+                whiteSpace: "nowrap",
+              }}
+            >
+              <Clock size={10} strokeWidth={2.2} aria-hidden />
+              {formatDateTime(note.recorded_at)}
+            </div>
+          </div>
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            flexShrink: 0,
+          }}
+        >
+          {note.tags.map((tag) => (
+            <span key={tag.id} className="mc-badge mc-badge-neutral">
+              {tag.name}
+            </span>
+          ))}
+          {canEdit && (
+            <>
+              <TintedIconButton
+                icon={<Pencil size={12} strokeWidth={2.2} aria-hidden />}
+                tone="brand"
+                label="Edit note"
+                onClick={() => setShowEdit(true)}
+              />
+              <TintedIconButton
+                icon={<Trash2 size={12} strokeWidth={2.2} aria-hidden />}
+                tone="danger"
+                label="Delete note"
+                onClick={() => setShowDelete(true)}
+              />
+            </>
+          )}
+        </div>
+      </div>
+
+      <p
+        className="mc-pair-value"
+        style={{ marginTop: 6, fontSize: 13.5, whiteSpace: "pre-wrap" }}
+      >
+        {note.note}
+      </p>
+
+      <NoteEditModal
+        patientId={patientId}
+        note={note}
+        open={showEdit}
+        onClose={() => setShowEdit(false)}
+      />
+      <NoteDeleteModal
+        patientId={patientId}
+        note={note}
+        open={showDelete}
+        onClose={() => setShowDelete(false)}
+      />
+    </div>
+  );
+}
+
+function formatDuration(totalSeconds: number): string {
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = totalSeconds % 60;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${pad(h)}:${pad(m)}:${pad(s)}`;
+}
+
+function SessionCard({
+  patientId,
+  session,
+  canEdit,
+}: {
+  patientId: string;
+  session: MonitoringSession;
+  canEdit: boolean;
+}) {
+  const [showEdit, setShowEdit] = useState(false);
+  const [showDelete, setShowDelete] = useState(false);
+
+  return (
+    <div
+      className="mc-card"
+      style={{
+        padding: "10px 12px",
+        boxShadow: "var(--shadow-card)",
+        border: "1px solid var(--c-border-soft)",
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        gap: 10,
+      }}
+    >
+      <div
+        style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}
+      >
+        <InitialsAvatar name={session.added_by_name || "?"} size={26} />
+        <div style={{ minWidth: 0 }}>
+          <div className="mc-row-title" style={{ fontSize: 13.5 }}>
+            {session.added_by_name}
+          </div>
+          <div
+            className="mc-row-meta"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+              whiteSpace: "nowrap",
+            }}
+          >
+            <Clock size={10} strokeWidth={2.2} aria-hidden />
+            {formatDateTime(session.recorded_at)}
+          </div>
+        </div>
+      </div>
+
+      <div
+        style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}
+      >
+        <span className="mc-badge mc-badge-neutral">
+          {formatDuration(session.duration_seconds)}
+        </span>
+        {canEdit && (
+          <>
+            <TintedIconButton
+              icon={<Pencil size={12} strokeWidth={2.2} aria-hidden />}
+              tone="brand"
+              label="Edit session"
+              onClick={() => setShowEdit(true)}
+            />
+            <TintedIconButton
+              icon={<Trash2 size={12} strokeWidth={2.2} aria-hidden />}
+              tone="danger"
+              label="Delete session"
+              onClick={() => setShowDelete(true)}
+            />
+          </>
+        )}
+      </div>
+
+      <SessionEditModal
+        patientId={patientId}
+        session={session}
+        open={showEdit}
+        onClose={() => setShowEdit(false)}
+      />
+      <SessionDeleteModal
+        patientId={patientId}
+        session={session}
+        open={showDelete}
+        onClose={() => setShowDelete(false)}
       />
     </div>
   );

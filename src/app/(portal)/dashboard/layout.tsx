@@ -11,7 +11,6 @@ import { useRouter } from "next/navigation";
 import { usePathname } from "next/navigation";
 import {
   BarChart3,
-  BellRing,
   LayoutDashboard,
   Search,
   ShieldCheck,
@@ -98,8 +97,12 @@ export function usePortal(): PortalValue {
 const NAV: NavItem[] = [
   { href: "/dashboard", label: "Clinical Overview", Icon: LayoutDashboard },
   { href: "/dashboard/lookup", label: "Quick Lookup", Icon: Search },
-  { href: "/dashboard/alerts", label: "Alerts", Icon: BellRing },
   { href: "/dashboard/devices", label: "Devices", Icon: Watch },
+  {
+    href: "/dashboard/account-insights",
+    label: "Account Insights",
+    Icon: UserCog,
+  },
   {
     href: "/dashboard/reports",
     label: "Executive Dashboard",
@@ -109,11 +112,6 @@ const NAV: NavItem[] = [
     href: "/dashboard/governance",
     label: "System Governance",
     Icon: ShieldCheck,
-  },
-  {
-    href: "/dashboard/account-insights",
-    label: "Account Insights",
-    Icon: UserCog,
   },
 ];
 

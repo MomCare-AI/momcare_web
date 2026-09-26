@@ -5,18 +5,20 @@ import {
   AlertTriangle,
   Brain,
   Download,
+  Expand,
   List,
   LineChart as LineChartIcon,
   Plus,
-  X,
 } from "lucide-react";
 
 import {
   useReadings,
   useRiskHistory,
 } from "@/features/monitoring/hooks/useMonitoring";
+import { RiskPanel } from "@/features/monitoring/components/RiskPanel";
+import { ScoreResult } from "@/features/monitoring/components/ScoreVitalsForm";
 import { VitalsChart } from "@/features/monitoring/components/VitalsChart";
-import { ManualReadingForm } from "@/features/monitoring/components/VitalsPanel";
+import { AddReadingModal } from "./AddReadingModal";
 import { PatientQuickLogPanel } from "./PatientQuickLogPanel";
 import {
   VITAL_METRICS,
@@ -27,6 +29,7 @@ import {
 } from "@/features/monitoring/types";
 import { Card, CardBody, CardHeader } from "@/shared/ui/Card";
 import { EmptyState } from "@/shared/ui/EmptyState";
+import { Modal } from "@/shared/ui/Modal";
 import { Select } from "@/shared/ui/Select";
 
 type Range = "2d" | "1w" | "1m" | "3m" | "6m";
@@ -115,8 +118,14 @@ function downloadCsv(csv: string, filename: string) {
 
 interface Props {
   patientId: string;
+  patientLocationName?: string;
   pregnancyId: string;
   patientName: string;
+  /** Only a clinician may review an assessment — the server enforces it
+   *  too. Threaded through to the `RiskPanel` rendered below the chart,
+   *  now that the AI Risk Assessment tab is gone and this is its only
+   *  home. */
+  canVerifyRisk?: boolean;
 }
 
 /**
@@ -132,13 +141,22 @@ interface Props {
  */
 export function PatientReadingsPanel({
   patientId,
+  patientLocationName,
   pregnancyId,
   patientName,
+  canVerifyRisk = true,
 }: Props) {
   const [range, setRange] = useState<Range>("1m");
   const [metric, setMetric] = useState<VitalMetric>("blood_pressure");
   const [view, setView] = useState<"chart" | "table">("chart");
   const [showAdd, setShowAdd] = useState(false);
+  const [showChartModal, setShowChartModal] = useState(false);
+  // Only meaningful for the Blood Pressure chart — see VitalsChart's own
+  // comment on why Heart Rate is the one vital combined with it, not every
+  // vital regardless of scale.
+  const [showSystolic, setShowSystolic] = useState(true);
+  const [showDiastolic, setShowDiastolic] = useState(true);
+  const [showHeartRateLine, setShowHeartRateLine] = useState(true);
 
   const readingsQuery = useReadings(pregnancyId);
   const riskQuery = useRiskHistory(pregnancyId);
@@ -256,28 +274,13 @@ export function PatientReadingsPanel({
                 <button
                   type="button"
                   className="mc-btn mc-btn-sm"
-                  onClick={() => setShowAdd((v) => !v)}
+                  onClick={() => setShowAdd(true)}
                 >
-                  {showAdd ? (
-                    <X size={13} strokeWidth={2} aria-hidden />
-                  ) : (
-                    <Plus size={13} strokeWidth={2} aria-hidden />
-                  )}
+                  <Plus size={13} strokeWidth={2} aria-hidden />
                   Add Reading
                 </button>
               </div>
             </CardHeader>
-
-            {showAdd && (
-              <CardBody
-                style={{ borderBottom: "1px solid var(--c-border-soft)" }}
-              >
-                <ManualReadingForm
-                  pregnancyId={pregnancyId}
-                  onDone={() => setShowAdd(false)}
-                />
-              </CardBody>
-            )}
 
             {isPending ? (
               <CardBody>Loading readings…</CardBody>
@@ -289,8 +292,68 @@ export function PatientReadingsPanel({
                 />
               </CardBody>
             ) : view === "chart" ? (
-              <CardBody>
-                <VitalsChart readings={filteredReadings} metric={metric} />
+              <CardBody style={{ position: "relative" }}>
+                <button
+                  type="button"
+                  className="mc-btn-ghost mc-btn-sm"
+                  aria-label="Expand chart"
+                  title="Expand chart"
+                  onClick={() => setShowChartModal(true)}
+                  style={{
+                    position: "absolute",
+                    top: 10,
+                    right: 10,
+                    zIndex: 1,
+                  }}
+                >
+                  <Expand size={13} strokeWidth={2} aria-hidden />
+                </button>
+                <VitalsChart
+                  readings={filteredReadings}
+                  metric={metric}
+                  showHeartRate={metric === "blood_pressure"}
+                  visibleLines={{
+                    systolic: showSystolic,
+                    diastolic: showDiastolic,
+                    heartRate: showHeartRateLine,
+                  }}
+                />
+                {metric === "blood_pressure" && (
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: 18,
+                      marginTop: 14,
+                      paddingTop: 14,
+                      borderTop: "1px solid var(--c-border-soft)",
+                    }}
+                  >
+                    <label style={{ display: "flex", gap: 6, fontSize: 13 }}>
+                      <input
+                        type="checkbox"
+                        checked={showSystolic}
+                        onChange={(e) => setShowSystolic(e.target.checked)}
+                      />
+                      Systolic
+                    </label>
+                    <label style={{ display: "flex", gap: 6, fontSize: 13 }}>
+                      <input
+                        type="checkbox"
+                        checked={showDiastolic}
+                        onChange={(e) => setShowDiastolic(e.target.checked)}
+                      />
+                      Diastolic
+                    </label>
+                    <label style={{ display: "flex", gap: 6, fontSize: 13 }}>
+                      <input
+                        type="checkbox"
+                        checked={showHeartRateLine}
+                        onChange={(e) => setShowHeartRateLine(e.target.checked)}
+                      />
+                      Heart Rate
+                    </label>
+                  </div>
+                )}
               </CardBody>
             ) : (
               <div className="mc-dtable-wrap">
@@ -395,6 +458,24 @@ export function PatientReadingsPanel({
               </CardBody>
             </Card>
           )}
+
+          {riskQuery.data?.current && (
+            <Card>
+              <CardHeader>
+                <div>
+                  <div className="mc-card-title">AI Risk Assessment</div>
+                  <div className="mc-card-sub">
+                    The latest score on this pregnancy&apos;s record
+                  </div>
+                </div>
+              </CardHeader>
+              <CardBody>
+                <ScoreResult assessment={riskQuery.data.current} compact />
+              </CardBody>
+            </Card>
+          )}
+
+          <RiskPanel pregnancyId={pregnancyId} canVerify={canVerifyRisk} />
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
@@ -421,9 +502,85 @@ export function PatientReadingsPanel({
             </CardBody>
           </Card>
 
-          <PatientQuickLogPanel patientId={patientId} />
+          <PatientQuickLogPanel
+            patientId={patientId}
+            patientLocationName={patientLocationName}
+          />
         </div>
       </div>
+
+      <Modal
+        open={showChartModal}
+        onClose={() => setShowChartModal(false)}
+        title="Reading Chart"
+      >
+        {filteredReadings.length === 0 ? (
+          <EmptyState
+            title="No readings in this range"
+            text="Try a wider time range, or record one above."
+          />
+        ) : (
+          <>
+            <VitalsChart
+              readings={filteredReadings}
+              metric={metric}
+              height={340}
+              showHeartRate={metric === "blood_pressure"}
+              visibleLines={{
+                systolic: showSystolic,
+                diastolic: showDiastolic,
+                heartRate: showHeartRateLine,
+              }}
+            />
+            {categoryBreakdown.length > 0 && (
+              <div style={{ marginTop: 20 }}>
+                <div className="mc-card-title" style={{ marginBottom: 4 }}>
+                  Average {spec.label.toLowerCase()} category
+                </div>
+                <div className="mc-card-sub" style={{ marginBottom: 12 }}>
+                  Based on {categoryBreakdown.reduce((s, c) => s + c.count, 0)}{" "}
+                  assessed reading
+                  {categoryBreakdown.reduce((s, c) => s + c.count, 0) === 1
+                    ? ""
+                    : "s"}{" "}
+                  in this range
+                </div>
+                <div className="mc-riskbars">
+                  {categoryBreakdown.map((c) => (
+                    <div key={c.label} className="mc-riskbar-row">
+                      <span className="mc-riskbar-tag">
+                        <span
+                          className="mc-riskbar-dot"
+                          style={{ background: categoryTone(c.label) }}
+                          aria-hidden
+                        />
+                        {c.label}
+                      </span>
+                      <div className="mc-riskbar-track">
+                        <div
+                          className="mc-riskbar-fill"
+                          style={{
+                            width: `${c.pct}%`,
+                            background: categoryTone(c.label),
+                          }}
+                        />
+                      </div>
+                      <span className="mc-riskbar-count">{c.pct}%</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </Modal>
+
+      <AddReadingModal
+        pregnancyId={pregnancyId}
+        patientName={patientName}
+        open={showAdd}
+        onClose={() => setShowAdd(false)}
+      />
     </>
   );
 }

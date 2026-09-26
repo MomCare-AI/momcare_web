@@ -11,6 +11,7 @@ import {
 import type { TagSpec } from "@/features/monitoring-notes/types";
 import { useNoteTemplates } from "@/features/note-templates/useNoteTemplates";
 import { Modal } from "@/shared/ui/Modal";
+import { TagChip } from "@/shared/ui/TagChip";
 
 function toLocalDateTimeValue(d: Date): string {
   const pad = (n: number) => String(n).padStart(2, "0");
@@ -265,27 +266,14 @@ export function LogSessionModal({
                 marginBottom: 8,
               }}
             >
-              {visibleTags.map((tag) => {
-                const active = pendingTags.some(
-                  (t) => "id" in t && t.id === tag.id
-                );
-                return (
-                  <button
-                    key={tag.id}
-                    type="button"
-                    className="mc-badge mc-badge-neutral"
-                    style={{
-                      cursor: "pointer",
-                      border: active
-                        ? "1.5px solid var(--c-brand)"
-                        : "1.5px solid transparent",
-                    }}
-                    onClick={() => toggleTag(tag.id)}
-                  >
-                    {tag.name}
-                  </button>
-                );
-              })}
+              {visibleTags.map((tag) => (
+                <TagChip
+                  key={tag.id}
+                  label={tag.name}
+                  active={pendingTags.some((t) => "id" in t && t.id === tag.id)}
+                  onClick={() => toggleTag(tag.id)}
+                />
+              ))}
             </div>
           )}
           <div style={{ display: "flex", gap: 8 }}>

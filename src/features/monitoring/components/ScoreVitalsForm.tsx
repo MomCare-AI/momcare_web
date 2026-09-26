@@ -19,21 +19,23 @@ import { Pair } from "@/shared/ui/Pair";
 interface Props {
   pregnancyId: string;
   patientName: string;
+  onRecorded?: () => void;
 }
 
 /**
- * Score a set of vitals through the model and see what comes back.
- *
- * This is the doctor-facing entry point to the model: type in a set of
- * vitals, submit, and the level the model actually returned is shown right
- * here — not buried in a chart or a second click away.
- *
- * It writes a real reading. There is no dry-run endpoint, and inventing one
- * on the client would score something the patient's record does not
- * contain — so the vitals entered here become part of the record, and the
- * result shown is the one the alerting layer acted on.
+ * The reusable core of "record a reading, then show what the model made of
+ * it" — shared by the AI Risk Assessment tab's own "Score vitals" card and
+ * the Readings tab's "Add Reading" popup, so there is one scoring path and
+ * one result display, not two that could drift apart. It writes a real
+ * reading; there is no dry-run endpoint, so the vitals entered here become
+ * part of the record and the result shown is the one the alerting layer
+ * acted on.
  */
-export function RiskAssessmentInput({ pregnancyId, patientName }: Props) {
+export function ScoreVitalsForm({
+  pregnancyId,
+  patientName,
+  onRecorded,
+}: Props) {
   const [values, setValues] = useState<Partial<Record<NumericVital, string>>>(
     {}
   );
@@ -71,6 +73,7 @@ export function RiskAssessmentInput({ pregnancyId, patientName }: Props) {
       }
       setValues({});
       setResult(risk.current);
+      onRecorded?.();
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Could not score these vitals."
@@ -79,77 +82,79 @@ export function RiskAssessmentInput({ pregnancyId, patientName }: Props) {
   };
 
   return (
-    <section className="mc-card">
-      <div className="mc-card-head">
-        <div>
-          <div className="mc-card-title">Score vitals</div>
-          <div className="mc-card-sub">
-            Enter a set of vitals for {patientName} and see what the model makes
-            of them.
-          </div>
+    <>
+      <p className="mc-alert mc-alert-notice" style={{ marginBottom: 16 }}>
+        <AlertTriangle size={14} strokeWidth={2} aria-hidden />
+        This records a real reading on {patientName}&rsquo;s chart — the same as
+        entering vitals from the Vitals card. There is no test mode.
+      </p>
+
+      <form onSubmit={handleSubmit}>
+        <div className="mc-formgrid">
+          {VITAL_FIELDS.map(({ field, label, unit, step, placeholder }) => (
+            <div key={field}>
+              <label className="mc-label" htmlFor={`riskinput-${field}`}>
+                {label} <span className="mc-unit">({unit})</span>
+              </label>
+              <input
+                id={`riskinput-${field}`}
+                className="mc-input"
+                type="number"
+                step={step}
+                value={values[field] ?? ""}
+                onChange={(e) => set(field, e.target.value)}
+                placeholder={placeholder}
+              />
+            </div>
+          ))}
         </div>
-      </div>
 
-      <div className="mc-card-body">
-        <p className="mc-alert mc-alert-notice" style={{ marginBottom: 16 }}>
-          <AlertTriangle size={14} strokeWidth={2} aria-hidden />
-          This records a real reading on {patientName}&rsquo;s chart — the same
-          as entering vitals from the Vitals card. There is no test mode.
-        </p>
+        {error && (
+          <p className="mc-alert mc-alert-error">
+            <AlertTriangle size={14} strokeWidth={2} aria-hidden />
+            {error}
+          </p>
+        )}
 
-        <form onSubmit={handleSubmit}>
-          <div className="mc-formgrid">
-            {VITAL_FIELDS.map(({ field, label, unit, step, placeholder }) => (
-              <div key={field}>
-                <label className="mc-label" htmlFor={`riskinput-${field}`}>
-                  {label} <span className="mc-unit">({unit})</span>
-                </label>
-                <input
-                  id={`riskinput-${field}`}
-                  className="mc-input"
-                  type="number"
-                  step={step}
-                  value={values[field] ?? ""}
-                  onChange={(e) => set(field, e.target.value)}
-                  placeholder={placeholder}
-                />
-              </div>
-            ))}
-          </div>
+        <button type="submit" className="mc-btn" disabled={record.isPending}>
+          <Brain size={14} strokeWidth={2} aria-hidden />
+          {record.isPending ? "Scoring…" : "Record and score"}
+        </button>
+      </form>
 
-          {error && (
-            <p className="mc-alert mc-alert-error">
-              <AlertTriangle size={14} strokeWidth={2} aria-hidden />
-              {error}
-            </p>
-          )}
-
-          <button type="submit" className="mc-btn" disabled={record.isPending}>
-            <Brain size={14} strokeWidth={2} aria-hidden />
-            {record.isPending ? "Scoring…" : "Record and score"}
-          </button>
-        </form>
-
-        {result && <ScoreResult assessment={result} />}
-      </div>
-    </section>
+      {result && <ScoreResult assessment={result} />}
+    </>
   );
 }
 
-function ScoreResult({ assessment }: { assessment: RiskAssessment }) {
+export function ScoreResult({
+  assessment,
+  compact = false,
+}: {
+  assessment: RiskAssessment;
+  /** Drops the top border/spacing and "Result" title meant for sitting
+   *  below a form — used when this renders as its own card body instead. */
+  compact?: boolean;
+}) {
   const categories = assessmentCategories(assessment);
 
   return (
     <div
-      style={{
-        marginTop: 24,
-        paddingTop: 20,
-        borderTop: "1px solid var(--c-border-soft)",
-      }}
+      style={
+        compact
+          ? undefined
+          : {
+              marginTop: 24,
+              paddingTop: 20,
+              borderTop: "1px solid var(--c-border-soft)",
+            }
+      }
     >
-      <div className="mc-card-title" style={{ marginBottom: 14 }}>
-        Result
-      </div>
+      {!compact && (
+        <div className="mc-card-title" style={{ marginBottom: 14 }}>
+          Result
+        </div>
+      )}
 
       <div className="mc-pairs" style={{ marginBottom: 16 }}>
         <div>

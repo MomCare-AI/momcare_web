@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { AlertCircle, Clock, Plus } from "lucide-react";
 
+import { useLocations } from "@/features/locations/hooks/useLocations";
 import {
   useClinicalTags,
   useLogContact,
@@ -13,6 +14,7 @@ import type {
   TagSpec,
 } from "@/features/monitoring-notes/types";
 import { Card, CardBody, CardHeader } from "@/shared/ui/Card";
+import { TagChip } from "@/shared/ui/TagChip";
 
 function pad(n: number): string {
   return String(n).padStart(2, "0");
@@ -20,6 +22,7 @@ function pad(n: number): string {
 
 interface Props {
   patientId: string;
+  patientLocationName?: string;
 }
 
 /**
@@ -35,7 +38,10 @@ interface Props {
  * `useLogContact`/`useClinicalTags` hooks `MonitoringNotesPanel.tsx` already
  * uses — one real save path, not a second one.
  */
-export function PatientQuickLogPanel({ patientId }: Props) {
+export function PatientQuickLogPanel({
+  patientId,
+  patientLocationName,
+}: Props) {
   const [seconds, setSeconds] = useState(0);
   const [running, setRunning] = useState(true);
   const [note, setNote] = useState("");
@@ -48,7 +54,22 @@ export function PatientQuickLogPanel({ patientId }: Props) {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const tagsQuery = useClinicalTags();
+  const locationsQuery = useLocations();
   const logContact = useLogContact(patientId);
+
+  // Same fix as LogSessionModal: `GET /api/clinical-tags/` returns every
+  // location's tags a hospital admin can see, but the combined-monitoring
+  // endpoint only accepts an org-wide tag or one scoped to *this patient's*
+  // own location — picking any other location's tag 400s with "Tag with id
+  // ... does not exist." Filtered down to match the real submit-time scope.
+  const patientLocationId = patientLocationName
+    ? locationsQuery.data?.results.find((l) => l.name === patientLocationName)
+        ?.id
+    : undefined;
+  const visibleTags = (tagsQuery.data?.results ?? []).filter(
+    (t) =>
+      !patientLocationName || !t.location || t.location === patientLocationId
+  );
 
   useEffect(() => {
     if (!running) return;
@@ -250,7 +271,7 @@ export function PatientQuickLogPanel({ patientId }: Props) {
             style={{ marginBottom: 10 }}
           />
 
-          {tagsQuery.data && tagsQuery.data.results.length > 0 && (
+          {visibleTags.length > 0 && (
             <div
               style={{
                 display: "flex",
@@ -259,27 +280,14 @@ export function PatientQuickLogPanel({ patientId }: Props) {
                 marginBottom: 8,
               }}
             >
-              {tagsQuery.data.results.map((tag) => {
-                const active = pendingTags.some(
-                  (t) => "id" in t && t.id === tag.id
-                );
-                return (
-                  <button
-                    key={tag.id}
-                    type="button"
-                    className="mc-badge mc-badge-neutral"
-                    style={{
-                      cursor: "pointer",
-                      border: active
-                        ? "1.5px solid var(--c-teal)"
-                        : "1.5px solid transparent",
-                    }}
-                    onClick={() => toggleTag(tag)}
-                  >
-                    {tag.name}
-                  </button>
-                );
-              })}
+              {visibleTags.map((tag) => (
+                <TagChip
+                  key={tag.id}
+                  label={tag.name}
+                  active={pendingTags.some((t) => "id" in t && t.id === tag.id)}
+                  onClick={() => toggleTag(tag)}
+                />
+              ))}
             </div>
           )}
           <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>

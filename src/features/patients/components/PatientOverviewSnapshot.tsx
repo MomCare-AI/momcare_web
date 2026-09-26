@@ -7,6 +7,7 @@ import {
   useDevices,
   useReadings,
 } from "@/features/monitoring/hooks/useMonitoring";
+import { VITAL_METRICS, latestForMetric } from "@/features/monitoring/types";
 import { AiSummaryCard } from "./AiSummaryCard";
 import { Card, CardBody, CardHeader } from "@/shared/ui/Card";
 
@@ -43,9 +44,79 @@ export function PatientOverviewSnapshot({ pregnancyId }: Props) {
     [devicesQuery.data, pregnancyId]
   );
 
+  const readings = readingsQuery.data?.results ?? [];
+
   return (
     <div className="mc-grid-even">
       <AiSummaryCard />
+
+      <Card>
+        <CardHeader>
+          <div>
+            <div className="mc-card-title">
+              <Activity
+                size={15}
+                strokeWidth={1.9}
+                style={{ verticalAlign: -2, marginRight: 6 }}
+                aria-hidden
+              />
+              Vitals Snapshot
+            </div>
+            <div className="mc-card-sub">
+              {VITAL_METRICS.length} metrics tracked
+            </div>
+          </div>
+        </CardHeader>
+        <CardBody>
+          {readingsQuery.isPending ? (
+            <div className="mc-hint">Loading…</div>
+          ) : (
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(3, 1fr)",
+                gap: 10,
+              }}
+            >
+              {VITAL_METRICS.map(({ metric, label, unit }) => {
+                const latest = latestForMetric(readings, metric);
+                return (
+                  <div
+                    key={metric}
+                    style={{
+                      border: "1px solid var(--c-border-soft)",
+                      borderRadius: "var(--r-control)",
+                      padding: "10px 12px",
+                    }}
+                  >
+                    <div
+                      className="mc-pair-label"
+                      style={{ textTransform: "uppercase" }}
+                    >
+                      {label}
+                    </div>
+                    <div className="mc-pair-value" style={{ fontSize: 20 }}>
+                      {latest
+                        ? latest.secondary === null
+                          ? latest.value
+                          : `${latest.value}/${latest.secondary}`
+                        : "—"}
+                    </div>
+                    {latest && (
+                      <div
+                        className="mc-hint"
+                        style={{ color: "var(--c-teal)" }}
+                      >
+                        {unit}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardBody>
+      </Card>
 
       <Card>
         <CardHeader>

@@ -2,26 +2,18 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
-import {
-  AlertCircle,
-  ChevronLeft,
-  ChevronRight,
-  Clock,
-  Pencil,
-  Plus,
-  Search,
-  Trash2,
-} from "lucide-react";
+import { AlertCircle, Clock, Pencil, Plus, Search, Trash2 } from "lucide-react";
 
 import { usePortal } from "@/app/(portal)/dashboard/layout";
+import { NoteDeleteModal } from "@/features/monitoring-notes/components/NoteDeleteModal";
+import { NoteEditModal } from "@/features/monitoring-notes/components/NoteEditModal";
+import { SessionEditModal } from "@/features/monitoring-notes/components/SessionEditModal";
 import {
   useClinicalTags,
   useDeleteNote,
   useDeleteSession,
   usePatientMonitoring,
   useSearchPatientNotes,
-  useUpdateNote,
-  useUpdateSession,
 } from "@/features/monitoring-notes/hooks/useMonitoringNotes";
 import type {
   MonitoringNote,
@@ -31,7 +23,9 @@ import type {
 import { formatDateTime } from "@/shared/lib/formatDateTime";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { InitialsAvatar } from "@/shared/ui/InitialsAvatar";
+import { Modal } from "@/shared/ui/Modal";
 import { RowSkeleton } from "@/shared/ui/RowSkeleton";
+import { TintedIconButton } from "@/shared/ui/TintedIconButton";
 import { LogSessionModal } from "./LogSessionModal";
 
 /** ~350ms after the last keystroke, not on every keystroke. */
@@ -44,21 +38,6 @@ function useDebouncedValue<T>(value: T, delayMs: number): T {
   return debounced;
 }
 
-const MONTH_NAMES = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-];
-
 export function MonitoringNotesPanel({
   patientId,
   patientLocationName,
@@ -67,9 +46,6 @@ export function MonitoringNotesPanel({
   patientLocationName?: string;
 }) {
   const { user, isHospitalAdmin } = usePortal();
-  const now = new Date();
-  const [year, setYear] = useState(now.getFullYear());
-  const [month, setMonth] = useState(now.getMonth() + 1);
   const [showLogModal, setShowLogModal] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [tagFilter, setTagFilter] = useState("");
@@ -78,7 +54,7 @@ export function MonitoringNotesPanel({
   // A tag-only filter (no typed text) activates search mode on its own.
   const searchActive = Boolean(debouncedSearch.trim() || tagFilter);
 
-  const timeline = usePatientMonitoring(patientId, year, month);
+  const timeline = usePatientMonitoring(patientId);
   const searchResults = useSearchPatientNotes(patientId, {
     search: debouncedSearch.trim(),
     tagId: tagFilter,
@@ -87,12 +63,6 @@ export function MonitoringNotesPanel({
 
   const canEdit = (addedById: string) =>
     isHospitalAdmin || addedById === user.id;
-
-  const goToMonth = (delta: number) => {
-    const d = new Date(year, month - 1 + delta, 1);
-    setYear(d.getFullYear());
-    setMonth(d.getMonth() + 1);
-  };
 
   const entries = timeline.data?.results ?? [];
   const totalFormatted = timeline.data?.totals.total_formatted;
@@ -163,48 +133,20 @@ export function MonitoringNotesPanel({
           />
         ) : (
           <>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                marginBottom: 16,
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <button
-                  type="button"
-                  className="mc-btn-ghost mc-btn-sm"
-                  onClick={() => goToMonth(-1)}
-                  aria-label="Previous month"
-                >
-                  <ChevronLeft size={14} strokeWidth={2} aria-hidden />
-                </button>
-                <span
-                  style={{
-                    fontWeight: 700,
-                    minWidth: 130,
-                    textAlign: "center",
-                  }}
-                >
-                  {MONTH_NAMES[month - 1]} {year}
-                </span>
-                <button
-                  type="button"
-                  className="mc-btn-ghost mc-btn-sm"
-                  onClick={() => goToMonth(1)}
-                  aria-label="Next month"
-                >
-                  <ChevronRight size={14} strokeWidth={2} aria-hidden />
-                </button>
-              </div>
-              {totalFormatted && (
+            {totalFormatted && (
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  marginBottom: 12,
+                }}
+              >
                 <span className="mc-badge mc-badge-neutral">
                   <Clock size={12} strokeWidth={2.2} aria-hidden />{" "}
-                  {totalFormatted} logged
+                  {totalFormatted} logged this month
                 </span>
-              )}
-            </div>
+              </div>
+            )}
 
             {timeline.isPending && (
               <div className="mc-rows">
@@ -313,13 +255,16 @@ function SearchResultRow({
   note: MonitoringNote;
   canEdit: boolean;
 }) {
-  const [editing, setEditing] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
+  const [showDelete, setShowDelete] = useState(false);
 
   return (
     <motion.div
+      className="mc-card"
       style={{
-        padding: "16px 0",
-        borderBottom: "1px solid var(--c-border-soft)",
+        padding: "10px 12px",
+        marginBottom: 8,
+        border: "1px solid var(--c-border-soft)",
       }}
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
@@ -328,79 +273,111 @@ function SearchResultRow({
         style={{
           display: "flex",
           justifyContent: "space-between",
-          alignItems: "flex-start",
-          gap: 12,
+          alignItems: "center",
+          gap: 10,
         }}
       >
-        <div style={{ display: "flex", gap: 10 }}>
-          <InitialsAvatar name={note.added_by_name || "?"} size={34} />
-          <div>
-            <div className="mc-row-title">{note.added_by_name}</div>
-            <div className="mc-row-meta">
-              <Clock
-                size={11}
-                strokeWidth={2.2}
-                aria-hidden
-                style={{ verticalAlign: -1, marginRight: 3 }}
-              />
+        <div
+          style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}
+        >
+          <InitialsAvatar name={note.added_by_name || "?"} size={26} />
+          <div style={{ minWidth: 0 }}>
+            <div className="mc-row-title" style={{ fontSize: 13.5 }}>
+              {note.added_by_name}
+            </div>
+            <div
+              className="mc-row-meta"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 4,
+                whiteSpace: "nowrap",
+              }}
+            >
+              <Clock size={10} strokeWidth={2.2} aria-hidden />
               {formatDateTime(note.recorded_at)}
             </div>
           </div>
         </div>
-        {canEdit && (
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <IconButton
-              icon={<Pencil size={13} strokeWidth={2.2} aria-hidden />}
-              tone="brand"
-              label="Edit note"
-              onClick={() => setEditing((v) => !v)}
-            />
-            <DeleteButton patientId={patientId} noteId={note.id} />
-          </div>
-        )}
-      </div>
 
-      <div style={{ marginTop: 8, marginLeft: 44 }}>
-        <p
-          className="mc-pair-value"
-          style={{ whiteSpace: "pre-wrap", margin: 0 }}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            flexShrink: 0,
+          }}
         >
-          {note.note}
-        </p>
-        {(note.left_voicemail || note.two_way_communication) && (
-          <span
-            className="mc-badge mc-badge-info"
-            style={{ marginTop: 6, display: "inline-flex" }}
-          >
-            {note.left_voicemail ? "Left voicemail" : "Reached her"}
-          </span>
-        )}
-        {note.tags.length > 0 && (
-          <div
-            style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}
-          >
-            {note.tags.map((tag) => (
-              <span key={tag.id} className="mc-badge mc-badge-neutral">
-                {tag.name}
-              </span>
-            ))}
-          </div>
-        )}
+          {note.tags.map((tag) => (
+            <span key={tag.id} className="mc-badge mc-badge-neutral">
+              {tag.name}
+            </span>
+          ))}
+          {canEdit && (
+            <>
+              <TintedIconButton
+                icon={<Pencil size={12} strokeWidth={2.2} aria-hidden />}
+                tone="brand"
+                label="Edit note"
+                onClick={() => setShowEdit(true)}
+              />
+              <TintedIconButton
+                icon={<Trash2 size={12} strokeWidth={2.2} aria-hidden />}
+                tone="danger"
+                label="Delete note"
+                onClick={() => setShowDelete(true)}
+              />
+            </>
+          )}
+        </div>
       </div>
 
-      {editing && (
-        <div style={{ marginTop: 10, marginLeft: 44 }}>
-          <NoteEditForm
-            patientId={patientId}
-            note={note}
-            onDone={() => setEditing(false)}
-          />
-        </div>
+      <p
+        className="mc-pair-value"
+        style={{ marginTop: 6, fontSize: 13.5, whiteSpace: "pre-wrap" }}
+      >
+        {note.note}
+      </p>
+      {(note.left_voicemail || note.two_way_communication) && (
+        <span
+          className="mc-badge mc-badge-info"
+          style={{ marginTop: 4, display: "inline-flex" }}
+        >
+          {note.left_voicemail ? "Left voicemail" : "Reached her"}
+        </span>
       )}
+
+      <NoteEditModal
+        patientId={patientId}
+        note={note}
+        open={showEdit}
+        onClose={() => setShowEdit(false)}
+      />
+      <NoteDeleteModal
+        patientId={patientId}
+        note={note}
+        open={showDelete}
+        onClose={() => setShowDelete(false)}
+      />
     </motion.div>
   );
 }
 
+function formatDuration(totalSeconds: number): string {
+  const m = Math.floor(totalSeconds / 60);
+  const s = totalSeconds % 60;
+  return s > 0 ? `${m}m ${s}s` : `${m} min`;
+}
+
+/**
+ * One row per timeline entry. A combined "log a contact" can carry a session
+ * (duration) and/or a note (text/tags) together — rather than two separate
+ * pencils for the two halves, there is one Edit action per row: it opens the
+ * note editor when a note exists (the richer, more commonly edited half),
+ * and the duration badge itself becomes a small button opening the session
+ * editor whenever a session is also attached. One Delete action removes
+ * whichever of the two this entry actually has, behind one confirm popup.
+ */
 function TimelineRow({
   entry,
   patientId,
@@ -412,14 +389,20 @@ function TimelineRow({
 }) {
   const { session, note } = entry;
   const person = session?.added_by_name || note?.added_by_name || "";
-  const [editingSession, setEditingSession] = useState(false);
-  const [editingNote, setEditingNote] = useState(false);
+  const [showSessionEdit, setShowSessionEdit] = useState(false);
+  const [showNoteEdit, setShowNoteEdit] = useState(false);
+  const [showDelete, setShowDelete] = useState(false);
+
+  const owner = note ?? session;
+  const rowCanEdit = Boolean(owner && canEdit(owner.added_by));
 
   return (
     <motion.div
+      className="mc-card"
       style={{
-        padding: "16px 0",
-        borderBottom: "1px solid var(--c-border-soft)",
+        padding: "10px 12px",
+        marginBottom: 8,
+        border: "1px solid var(--c-border-soft)",
       }}
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
@@ -428,284 +411,226 @@ function TimelineRow({
         style={{
           display: "flex",
           justifyContent: "space-between",
-          alignItems: "flex-start",
-          gap: 12,
+          alignItems: "center",
+          gap: 10,
         }}
       >
-        <div style={{ display: "flex", gap: 10 }}>
-          <InitialsAvatar name={person || "?"} size={34} />
-          <div>
-            <div className="mc-row-title">{person}</div>
-            <div className="mc-row-meta">
-              <Clock
-                size={11}
-                strokeWidth={2.2}
-                aria-hidden
-                style={{ verticalAlign: -1, marginRight: 3 }}
-              />
+        <div
+          style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}
+        >
+          <InitialsAvatar name={person || "?"} size={26} />
+          <div style={{ minWidth: 0 }}>
+            <div className="mc-row-title" style={{ fontSize: 13.5 }}>
+              {person}
+            </div>
+            <div
+              className="mc-row-meta"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 4,
+                whiteSpace: "nowrap",
+              }}
+            >
+              <Clock size={10} strokeWidth={2.2} aria-hidden />
               {formatDateTime(entry.recorded_at)}
             </div>
           </div>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          {session && (
-            <span className="mc-badge mc-badge-neutral">
-              {Math.round(session.duration_seconds / 60)} min
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            flexShrink: 0,
+          }}
+        >
+          {note?.tags.map((tag) => (
+            <span key={tag.id} className="mc-badge mc-badge-neutral">
+              {tag.name}
             </span>
-          )}
-          {session && canEdit(session.added_by) && (
-            <IconButton
-              icon={<Pencil size={13} strokeWidth={2.2} aria-hidden />}
-              tone="brand"
-              label="Edit duration"
-              onClick={() => setEditingSession((v) => !v)}
-            />
-          )}
-          {note && canEdit(note.added_by) && (
-            <IconButton
-              icon={<Pencil size={13} strokeWidth={2.2} aria-hidden />}
-              tone="brand"
-              label="Edit note"
-              onClick={() => setEditingNote((v) => !v)}
-            />
-          )}
-          {(session || note) && canEdit((session ?? note)!.added_by) && (
-            <DeleteButton
-              patientId={patientId}
-              sessionId={session?.id}
-              noteId={note?.id}
-            />
+          ))}
+          {session &&
+            (rowCanEdit ? (
+              <button
+                type="button"
+                className="mc-badge mc-badge-neutral"
+                style={{ cursor: "pointer", border: "none" }}
+                title="Edit duration"
+                onClick={() => setShowSessionEdit(true)}
+              >
+                {formatDuration(session.duration_seconds)}
+              </button>
+            ) : (
+              <span className="mc-badge mc-badge-neutral">
+                {formatDuration(session.duration_seconds)}
+              </span>
+            ))}
+          {rowCanEdit && (
+            <>
+              {note && (
+                <TintedIconButton
+                  icon={<Pencil size={12} strokeWidth={2.2} aria-hidden />}
+                  tone="brand"
+                  label="Edit note"
+                  onClick={() => setShowNoteEdit(true)}
+                />
+              )}
+              <TintedIconButton
+                icon={<Trash2 size={12} strokeWidth={2.2} aria-hidden />}
+                tone="danger"
+                label={
+                  session && note
+                    ? "Delete entry"
+                    : note
+                      ? "Delete note"
+                      : "Delete session"
+                }
+                onClick={() => setShowDelete(true)}
+              />
+            </>
           )}
         </div>
       </div>
 
       {note && (
-        <div style={{ marginTop: 8, marginLeft: 44 }}>
+        <>
           <p
             className="mc-pair-value"
-            style={{ whiteSpace: "pre-wrap", margin: 0 }}
+            style={{ marginTop: 6, fontSize: 13.5, whiteSpace: "pre-wrap" }}
           >
             {note.note}
           </p>
           {(note.left_voicemail || note.two_way_communication) && (
             <span
               className="mc-badge mc-badge-info"
-              style={{ marginTop: 6, display: "inline-flex" }}
+              style={{ marginTop: 4, display: "inline-flex" }}
             >
               {note.left_voicemail ? "Left voicemail" : "Reached her"}
             </span>
           )}
-          {note.tags.length > 0 && (
-            <div
-              style={{
-                display: "flex",
-                flexWrap: "wrap",
-                gap: 6,
-                marginTop: 8,
-              }}
-            >
-              {note.tags.map((tag) => (
-                <span key={tag.id} className="mc-badge mc-badge-neutral">
-                  {tag.name}
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
+        </>
       )}
 
-      {session && editingSession && (
-        <div style={{ marginTop: 10, marginLeft: 44 }}>
-          <SessionEditForm
-            patientId={patientId}
-            session={session}
-            onDone={() => setEditingSession(false)}
-          />
-        </div>
+      {session && (
+        <SessionEditModal
+          patientId={patientId}
+          session={session}
+          open={showSessionEdit}
+          onClose={() => setShowSessionEdit(false)}
+        />
       )}
-
-      {note && editingNote && (
-        <div style={{ marginTop: 10, marginLeft: 44 }}>
-          <NoteEditForm
-            patientId={patientId}
-            note={note}
-            onDone={() => setEditingNote(false)}
-          />
-        </div>
+      {note && (
+        <NoteEditModal
+          patientId={patientId}
+          note={note}
+          open={showNoteEdit}
+          onClose={() => setShowNoteEdit(false)}
+        />
       )}
+      <EntryDeleteModal
+        patientId={patientId}
+        session={session}
+        note={note}
+        recordedAt={entry.recorded_at}
+        personName={person}
+        open={showDelete}
+        onClose={() => setShowDelete(false)}
+      />
     </motion.div>
   );
 }
 
-function IconButton({
-  icon,
-  tone,
-  label,
-  onClick,
-  disabled,
-}: {
-  icon: React.ReactNode;
-  tone: "brand" | "danger";
-  label: string;
-  onClick: () => void;
-  disabled?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      title={label}
-      disabled={disabled}
-      onClick={onClick}
-      style={{
-        display: "grid",
-        placeItems: "center",
-        width: 30,
-        height: 30,
-        borderRadius: "var(--r-control)",
-        border: "none",
-        cursor: disabled ? "default" : "pointer",
-        color: tone === "danger" ? "var(--c-high-text)" : "var(--c-teal)",
-        background:
-          tone === "danger" ? "var(--c-high-soft)" : "var(--c-teal-wash)",
-        opacity: disabled ? 0.6 : 1,
-      }}
-    >
-      {icon}
-    </button>
-  );
-}
-
-function DeleteButton({
+/**
+ * One confirm popup for a timeline row's Delete action — removes whichever
+ * of the session/note the entry actually carries (a combined "log a
+ * contact" can have both, and both belong to the one entry a reader sees on
+ * screen, so one confirm should clear the whole row rather than leaving a
+ * dangling half behind).
+ */
+function EntryDeleteModal({
   patientId,
-  sessionId,
-  noteId,
+  session,
+  note,
+  recordedAt,
+  personName,
+  open,
+  onClose,
 }: {
   patientId: string;
-  sessionId?: string;
-  noteId?: string;
+  session: MonitoringSession | null;
+  note: MonitoringNote | null;
+  recordedAt: string;
+  personName: string;
+  open: boolean;
+  onClose: () => void;
 }) {
   const delSession = useDeleteSession(patientId);
   const delNote = useDeleteNote(patientId);
   const pending = delSession.isPending || delNote.isPending;
+  const error = delSession.error ?? delNote.error;
+
+  const confirm = async () => {
+    if (session) await delSession.mutateAsync(session.id);
+    if (note) await delNote.mutateAsync(note.id);
+    onClose();
+  };
 
   return (
-    <IconButton
-      icon={<Trash2 size={13} strokeWidth={2.2} aria-hidden />}
-      tone="danger"
-      label={sessionId ? "Delete session" : "Delete note"}
-      disabled={pending}
-      onClick={() => {
-        if (sessionId) delSession.mutate(sessionId);
-        if (noteId) delNote.mutate(noteId);
-      }}
-    />
-  );
-}
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Delete entry"
+      subtitle="This action can't be undone"
+      icon={<Trash2 size={17} strokeWidth={2} aria-hidden />}
+      tinted
+    >
+      <p className="mc-hint" style={{ margin: 0 }}>
+        The entry by <strong>{personName || "this staff member"}</strong> from{" "}
+        <strong>{formatDateTime(recordedAt)}</strong> will be permanently
+        removed from this patient&apos;s record.
+      </p>
 
-function SessionEditForm({
-  patientId,
-  session,
-  onDone,
-}: {
-  patientId: string;
-  session: MonitoringSession;
-  onDone: () => void;
-}) {
-  const [minutes, setMinutes] = useState(
-    String(Math.round(session.duration_seconds / 60))
-  );
-  const update = useUpdateSession(patientId);
-
-  return (
-    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-      <input
-        className="mc-input"
-        type="number"
-        min="1"
-        style={{ width: 90 }}
-        value={minutes}
-        onChange={(e) => setMinutes(e.target.value)}
-      />
-      <button
-        type="button"
-        className="mc-btn-ghost mc-btn-sm"
-        onClick={onDone}
-        disabled={update.isPending}
-      >
-        Cancel
-      </button>
-      <button
-        type="button"
-        className="mc-btn mc-btn-sm"
-        disabled={update.isPending || !Number(minutes)}
-        onClick={() =>
-          update.mutate(
-            {
-              sessionId: session.id,
-              input: { duration_seconds: Math.round(Number(minutes) * 60) },
-            },
-            { onSuccess: onDone }
-          )
-        }
-      >
-        {update.isPending ? "Saving…" : "Save duration"}
-      </button>
-    </div>
-  );
-}
-
-function NoteEditForm({
-  patientId,
-  note,
-  onDone,
-}: {
-  patientId: string;
-  note: MonitoringNote;
-  onDone: () => void;
-}) {
-  const [text, setText] = useState(note.note);
-  const update = useUpdateNote(patientId);
-
-  return (
-    <div>
-      <textarea
-        className="mc-input"
-        rows={2}
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-      />
-      {update.isError && (
-        <p className="mc-alert mc-alert-error" style={{ marginTop: 8 }}>
-          {update.error instanceof Error
-            ? update.error.message
-            : "Could not save this note."}
+      {error && (
+        <p className="mc-alert mc-alert-error" style={{ marginTop: 12 }}>
+          {error instanceof Error
+            ? error.message
+            : "Could not delete this entry."}
         </p>
       )}
-      <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+
+      <div
+        style={{
+          background: "var(--c-teal-wash)",
+          margin: "20px -20px -20px",
+          padding: "14px 20px",
+          borderTop: "1px solid var(--c-border-soft)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "flex-end",
+          gap: 10,
+        }}
+      >
         <button
           type="button"
-          className="mc-btn-ghost mc-btn-sm"
-          onClick={onDone}
-          disabled={update.isPending}
+          className="mc-btn-ghost"
+          onClick={onClose}
+          disabled={pending}
         >
           Cancel
         </button>
         <button
           type="button"
-          className="mc-btn mc-btn-sm"
-          disabled={update.isPending || !text.trim()}
-          onClick={() =>
-            update.mutate(
-              { noteId: note.id, input: { note: text.trim() } },
-              { onSuccess: onDone }
-            )
-          }
+          className="mc-btn"
+          style={{ background: "var(--c-high)" }}
+          disabled={pending}
+          onClick={confirm}
         >
-          {update.isPending ? "Saving…" : "Save note"}
+          <Trash2 size={14} strokeWidth={2} aria-hidden />
+          {pending ? "Deleting…" : "Delete"}
         </button>
       </div>
-    </div>
+    </Modal>
   );
 }

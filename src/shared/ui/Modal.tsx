@@ -35,18 +35,34 @@ export function Modal({
 }: Props) {
   const reduceMotion = useReducedMotion();
   const panelRef = useRef<HTMLDivElement>(null);
+  const bodyRef = useRef<HTMLDivElement>(null);
   const openerRef = useRef<Element | null>(null);
+  // Callers pass a fresh inline `() => setShow(false)` on every render, so
+  // this ref (not the prop itself) is what the effect below reads — keeping
+  // `onClose` out of the dependency array below. Without this, any
+  // unrelated re-render (a react-query refetch, a sibling state update)
+  // reruns the effect and steals focus straight back to the Close button
+  // mid-keystroke, which is what made every field in every popup here
+  // appear to stop accepting input after one character.
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
 
   useEffect(() => {
     if (!open) return;
 
     openerRef.current = document.activeElement;
-    panelRef.current
+    // Scoped to the body, never the header — the header's own Close button
+    // is a `<button>` that sits earlier in DOM order than any body field,
+    // so an unscoped query here would always focus it instead of the
+    // intended first input.
+    bodyRef.current
       ?.querySelector<HTMLElement>("input,select,textarea,button")
       ?.focus();
 
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape") onCloseRef.current();
     };
     document.addEventListener("keydown", onKey);
 
@@ -58,7 +74,7 @@ export function Modal({
       document.body.style.overflow = previousOverflow;
       if (openerRef.current instanceof HTMLElement) openerRef.current.focus();
     };
-  }, [open, onClose]);
+  }, [open]);
 
   return (
     <AnimatePresence>
@@ -131,7 +147,9 @@ export function Modal({
                   <X size={16} strokeWidth={2} aria-hidden />
                 </button>
               </div>
-              <div className="mc-modal-body">{children}</div>
+              <div className="mc-modal-body" ref={bodyRef}>
+                {children}
+              </div>
             </motion.div>
           </div>
         </>

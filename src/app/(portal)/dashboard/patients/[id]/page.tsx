@@ -27,9 +27,6 @@ import {
 } from "@/features/patients/types";
 import { useSecondaryProviders } from "@/features/secondary-providers/hooks/useSecondaryProviders";
 import { formatDate } from "@/shared/lib/formatDateTime";
-import { RiskPanel } from "@/features/monitoring/components/RiskPanel";
-import { RiskAssessmentInput } from "@/features/monitoring/components/RiskAssessmentInput";
-import { VitalsPanel } from "@/features/monitoring/components/VitalsPanel";
 import { MonitoringNotesPanel } from "@/features/patients/components/MonitoringNotesPanel";
 import { ExitNoteModal } from "@/features/patients/components/ExitNoteModal";
 import { PatientDevicesPanel } from "@/features/patients/components/PatientDevicesPanel";
@@ -45,20 +42,11 @@ import { usePortal } from "../../layout";
 import { usePageTitle } from "@/hooks/usePageTitle";
 
 type Tab =
-  | "overview"
-  | "readings"
-  | "risk"
-  | "pregnancy"
-  | "notes"
-  | "devices"
-  | "documents"
-  | "history";
+  "overview" | "readings" | "notes" | "devices" | "documents" | "history";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "overview", label: "Overview" },
   { id: "readings", label: "Readings" },
-  { id: "risk", label: "AI Risk Assessment" },
-  { id: "pregnancy", label: "Pregnancy" },
   { id: "notes", label: "Clinical Notes" },
   { id: "devices", label: "Devices" },
   { id: "documents", label: "Documents" },
@@ -194,12 +182,103 @@ export default function PatientProfilePage({
         <>
           <PatientOverviewSnapshot pregnancyId={current?.id ?? null} />
 
-          {current && <VitalsPanel pregnancyId={current.id} />}
-
           <RecentActivityCards
             patientId={patient.id}
             patientLocationName={patient.location_name}
             onOpenNotes={() => setTab("notes")}
+          />
+
+          <section className="mc-card">
+            <div className="mc-card-head">
+              <div className="mc-card-title">Current pregnancy</div>
+            </div>
+            {current ? (
+              <div className="mc-card-body">
+                <div className="mc-pairs">
+                  <Pair
+                    label="Gestational age"
+                    value={current.gestational_age_display}
+                  />
+                  <Pair
+                    label="Estimated delivery"
+                    value={formatDate(current.edd)}
+                  />
+                  <Pair
+                    label="Dating method"
+                    value={current.edd_source_display}
+                  />
+                  <Pair
+                    label="Last menstrual period"
+                    value={formatDate(current.lmp)}
+                  />
+                  <Pair
+                    label="Gravida / Para"
+                    value={
+                      current.gravida !== null || current.para !== null
+                        ? `G${current.gravida ?? "?"} P${current.para ?? "?"}`
+                        : ""
+                    }
+                  />
+                </div>
+
+                <div style={{ marginTop: 22 }}>
+                  <div className="mc-card-title" style={{ marginBottom: 10 }}>
+                    Obstetric history
+                  </div>
+                  <div className="mc-risklist">
+                    {RISK_FACTORS.map(({ field, label }) => {
+                      const answer = current[field];
+                      return (
+                        <div key={field} className="mc-riskrow">
+                          <span className="mc-riskrow-label">{label}</span>
+                          <span
+                            className={`mc-badge mc-badge-${
+                              answer === "yes"
+                                ? "high"
+                                : answer === "no"
+                                  ? "stable"
+                                  : "neutral"
+                            }`}
+                          >
+                            {answer === "yes"
+                              ? "Yes"
+                              : answer === "no"
+                                ? "No"
+                                : "Not asked"}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {current.notes && (
+                  <div style={{ marginTop: 20 }}>
+                    <div className="mc-pair-label">Notes</div>
+                    <p className="mc-pair-value">{current.notes}</p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <EmptyState
+                icon={<Activity size={20} strokeWidth={1.9} aria-hidden />}
+                title="No active pregnancy"
+                text="Past pregnancies, if any, are listed under History."
+              />
+            )}
+          </section>
+
+          {current && (
+            <CareTeamEditor
+              patientId={patient.id}
+              pregnancy={current}
+              canWrite={canManageCareTeam}
+            />
+          )}
+
+          <SecondaryProviderEditor
+            patient={patient}
+            canWrite={canManageCareTeam}
           />
         </>
       )}
@@ -208,8 +287,10 @@ export default function PatientProfilePage({
         (current ? (
           <PatientReadingsPanel
             patientId={patient.id}
+            patientLocationName={patient.location_name}
             pregnancyId={current.id}
             patientName={patient.full_name}
+            canVerifyRisk={isClinician}
           />
         ) : (
           <div className="mc-card">
@@ -219,124 +300,6 @@ export default function PatientProfilePage({
             />
           </div>
         ))}
-
-      {tab === "risk" && (
-        <>
-          {current ? (
-            <>
-              <RiskAssessmentInput
-                pregnancyId={current.id}
-                patientName={patient.full_name}
-              />
-              <RiskPanel pregnancyId={current.id} canVerify={isClinician} />
-            </>
-          ) : (
-            <div className="mc-card">
-              <EmptyState
-                title="No active pregnancy"
-                text="Risk assessment needs an active pregnancy to score against."
-              />
-            </div>
-          )}
-        </>
-      )}
-
-      {tab === "pregnancy" && (
-        <section className="mc-card">
-          <div className="mc-card-head">
-            <div className="mc-card-title">Current pregnancy</div>
-          </div>
-          {current ? (
-            <div className="mc-card-body">
-              <div className="mc-pairs">
-                <Pair
-                  label="Gestational age"
-                  value={current.gestational_age_display}
-                />
-                <Pair
-                  label="Estimated delivery"
-                  value={formatDate(current.edd)}
-                />
-                <Pair
-                  label="Dating method"
-                  value={current.edd_source_display}
-                />
-                <Pair
-                  label="Last menstrual period"
-                  value={formatDate(current.lmp)}
-                />
-                <Pair
-                  label="Gravida / Para"
-                  value={
-                    current.gravida !== null || current.para !== null
-                      ? `G${current.gravida ?? "?"} P${current.para ?? "?"}`
-                      : ""
-                  }
-                />
-              </div>
-
-              <div style={{ marginTop: 22 }}>
-                <div className="mc-card-title" style={{ marginBottom: 10 }}>
-                  Obstetric history
-                </div>
-                <div className="mc-risklist">
-                  {RISK_FACTORS.map(({ field, label }) => {
-                    const answer = current[field];
-                    return (
-                      <div key={field} className="mc-riskrow">
-                        <span className="mc-riskrow-label">{label}</span>
-                        <span
-                          className={`mc-badge mc-badge-${
-                            answer === "yes"
-                              ? "high"
-                              : answer === "no"
-                                ? "stable"
-                                : "neutral"
-                          }`}
-                        >
-                          {answer === "yes"
-                            ? "Yes"
-                            : answer === "no"
-                              ? "No"
-                              : "Not asked"}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {current.notes && (
-                <div style={{ marginTop: 20 }}>
-                  <div className="mc-pair-label">Notes</div>
-                  <p className="mc-pair-value">{current.notes}</p>
-                </div>
-              )}
-            </div>
-          ) : (
-            <EmptyState
-              icon={<Activity size={20} strokeWidth={1.9} aria-hidden />}
-              title="No active pregnancy"
-              text="Past pregnancies, if any, are listed under History."
-            />
-          )}
-        </section>
-      )}
-
-      {tab === "pregnancy" && current && (
-        <CareTeamEditor
-          patientId={patient.id}
-          pregnancy={current}
-          canWrite={canManageCareTeam}
-        />
-      )}
-
-      {tab === "pregnancy" && (
-        <SecondaryProviderEditor
-          patient={patient}
-          canWrite={canManageCareTeam}
-        />
-      )}
 
       {tab === "notes" && (
         <MonitoringNotesPanel
