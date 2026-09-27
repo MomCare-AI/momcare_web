@@ -74,17 +74,8 @@ export function SecondaryProvidersTab() {
     <>
       <Card>
         {providersQuery.isSuccess && (
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: 10,
-              flexWrap: "wrap",
-              padding: "14px 20px 0",
-            }}
-          >
-            <div style={{ position: "relative", maxWidth: 320, flex: 1 }}>
+          <div className="mc-table-toolbar">
+            <div className="mc-table-toolbar-search">
               <Search
                 size={14}
                 strokeWidth={2}

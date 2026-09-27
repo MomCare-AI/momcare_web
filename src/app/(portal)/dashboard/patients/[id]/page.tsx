@@ -109,7 +109,7 @@ export default function PatientProfilePage({
 
   return (
     <>
-      <div style={{ marginBottom: 14 }}>
+      <div className="mc-head" style={{ marginBottom: 14 }}>
         <BackButton
           onBeforeBack={() => {
             if (timerSeconds > 0) {
@@ -133,7 +133,7 @@ export default function PatientProfilePage({
       />
 
       {justEnrolled && (
-        <p className="mc-alert mc-alert-success">
+        <p className="mc-alert mc-alert-success" style={{ marginBottom: 16 }}>
           <CheckCircle2 size={15} strokeWidth={2} aria-hidden />
           {patient.full_name} enrolled — medical record number{" "}
           <strong>{patient.mrn}</strong>.

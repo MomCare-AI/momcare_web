@@ -26,15 +26,7 @@ export function GovernanceStatsHeader() {
 
   return (
     <Card style={{ marginBottom: 18 }}>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 14,
-          flexWrap: "wrap",
-          padding: "12px 18px",
-        }}
-      >
+      <div className="mc-card-head" style={{ alignItems: "center" }}>
         <span className="mc-empty-icon" style={{ flexShrink: 0 }}>
           <Building2 size={17} strokeWidth={1.9} aria-hidden />
         </span>
@@ -50,14 +42,7 @@ export function GovernanceStatsHeader() {
           )}
         </div>
 
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 14,
-            marginLeft: "auto",
-          }}
-        >
+        <div className="mc-gov-stats-group">
           <InlineStat value={org.location_count} label="Locations" />
           <StatDivider />
           <InlineStat value={org.staff_count} label="Staff" />

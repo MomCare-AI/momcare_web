@@ -49,13 +49,7 @@ export default function DevicesPage() {
 
   return (
     <>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "flex-end",
-          marginBottom: 14,
-        }}
-      >
+      <div className="mc-actions" style={{ justifyContent: "flex-end" }}>
         <button
           type="button"
           className="mc-btn mc-btn-sm"
@@ -203,7 +197,7 @@ function RegisterForm({ onDone }: { onDone: () => void }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="mc-card" style={{ padding: 20 }}>
+    <form onSubmit={handleSubmit} className="mc-card mc-card-body">
       <div className="mc-formgrid">
         <div>
           <label className="mc-label" htmlFor="serial">
@@ -241,7 +235,7 @@ function RegisterForm({ onDone }: { onDone: () => void }) {
           {(register.error as Error).message}
         </p>
       )}
-      <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+      <div className="mc-actions" style={{ marginTop: 14 }}>
         <button
           type="submit"
           className="mc-btn mc-btn-sm"

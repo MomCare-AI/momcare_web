@@ -67,7 +67,7 @@ export function RiskPanel({ pregnancyId, canVerify = true }: Props) {
               : "Decision support, reviewed by a clinician"}
           </div>
         </div>
-        <div className="mc-row-actions">
+        <div className="mc-actions">
           {/* final_risk_level, not risk_level: this is the level the
               alerting layer acted on, so it is the only honest badge. */}
           {current && <RiskBadge level={current.final_risk_level} />}

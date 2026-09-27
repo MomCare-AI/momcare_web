@@ -263,7 +263,7 @@ export default function SettingsPage() {
             </p>
           )}
 
-          <div className="mc-card-foot">
+          <div className="mc-actions" style={{ marginTop: 14 }}>
             <button type="submit" className="mc-btn" disabled={saving || done}>
               {saving ? "Changing…" : "Change password"}
             </button>
@@ -355,7 +355,7 @@ function ConfidenceThresholdCard({ org }: { org: OrgSummary }) {
           <p className="mc-alert mc-alert-success">Threshold saved.</p>
         )}
 
-        <div className="mc-row-actions" style={{ marginTop: 14 }}>
+        <div className="mc-actions" style={{ marginTop: 14 }}>
           <button type="submit" className="mc-btn" disabled={update.isPending}>
             {update.isPending ? "Saving…" : "Save threshold"}
           </button>

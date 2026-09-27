@@ -83,7 +83,7 @@ export function WorkflowActivityBanner({
   return (
     <div className="mc-hero" style={{ padding: "18px 20px" }}>
       <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
-        <div style={{ flex: "1 1 320px" }}>
+        <div style={{ flex: "1 1 280px", minWidth: 0 }}>
           <div
             style={{
               fontSize: 11,
@@ -112,7 +112,7 @@ export function WorkflowActivityBanner({
                   border: `1px solid ${activeTab === t.id ? "var(--c-teal)" : "var(--c-border-soft)"}`,
                   borderRadius: "var(--r-control)",
                   padding: "9px 14px",
-                  minWidth: 150,
+                  minWidth: 120,
                   cursor: "pointer",
                   textAlign: "left",
                 }}
@@ -144,7 +144,7 @@ export function WorkflowActivityBanner({
           </div>
         </div>
 
-        <div style={{ flex: "1 1 320px" }}>
+        <div style={{ flex: "1 1 280px", minWidth: 0 }}>
           <div
             style={{
               fontSize: 11,
@@ -179,7 +179,7 @@ export function WorkflowActivityBanner({
                   border: "1px dashed var(--c-border-soft)",
                   borderRadius: "var(--r-control)",
                   padding: "9px 14px",
-                  minWidth: 150,
+                  minWidth: 120,
                   opacity: 0.7,
                 }}
               >

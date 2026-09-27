@@ -149,15 +149,8 @@ export function PatientsTable({
 
   return (
     <>
-      <div
-        style={{
-          padding: "14px 20px 0",
-          display: "flex",
-          gap: 10,
-          flexWrap: "wrap",
-        }}
-      >
-        <div style={{ position: "relative", maxWidth: 340, flex: "1 1 260px" }}>
+      <div className="mc-table-toolbar">
+        <div className="mc-table-toolbar-search">
           <Search
             size={14}
             strokeWidth={2}

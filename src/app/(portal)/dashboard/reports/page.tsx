@@ -193,7 +193,7 @@ function ClinicalOverviewTab() {
 
   return (
     <>
-      <div style={{ display: "flex", marginBottom: 14 }}>
+      <div className="mc-actions" style={{ justifyContent: "flex-end" }}>
         <ExportButton
           rows={patients}
           filename="clinical-overview"
@@ -279,12 +279,7 @@ function ClinicalOverviewTab() {
             </div>
           </section>
 
-          <div
-            className="mc-fullstack"
-            style={{
-              gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))",
-            }}
-          >
+          <div className="mc-grid-even">
             <Card>
               <CardHeader>
                 <div className="mc-card-title">Enrollment trend</div>
@@ -389,12 +384,7 @@ function ClinicalOverviewTab() {
             </div>
           </section>
 
-          <div
-            className="mc-fullstack"
-            style={{
-              gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))",
-            }}
-          >
+          <div className="mc-grid-even">
             <Card>
               <CardHeader>
                 <div className="mc-card-title">Monthly compliance</div>
@@ -463,7 +453,7 @@ function CareTeamTab({ isHospitalAdmin }: { isHospitalAdmin: boolean }) {
 
   return (
     <>
-      <div style={{ display: "flex", marginBottom: 14 }}>
+      <div className="mc-actions" style={{ justifyContent: "flex-end" }}>
         <ExportButton
           rows={staff}
           filename="care-team"
@@ -585,7 +575,7 @@ function AlertsTab() {
 
   return (
     <>
-      <div style={{ display: "flex", marginBottom: 14 }}>
+      <div className="mc-actions" style={{ justifyContent: "flex-end" }}>
         <ExportButton
           rows={live}
           filename="live-alerts"

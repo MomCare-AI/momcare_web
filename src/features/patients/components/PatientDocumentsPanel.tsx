@@ -167,8 +167,8 @@ export function PatientDocumentsPanel({
               readings recorded within that time frame
             </div>
           </div>
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <div style={{ width: 150 }}>
+          <div className="mc-actions">
+            <div style={{ width: "100%", maxWidth: 150 }}>
               <Select
                 aria-label="Date range"
                 value={range}
@@ -227,8 +227,8 @@ export function PatientDocumentsPanel({
               monthly activity summary
             </div>
           </div>
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <div style={{ width: 140 }}>
+          <div className="mc-actions">
+            <div style={{ width: "100%", maxWidth: 140 }}>
               <Select
                 aria-label="Month"
                 value={month}
@@ -237,7 +237,7 @@ export function PatientDocumentsPanel({
                 options={MONTH_OPTIONS}
               />
             </div>
-            <div style={{ width: 100 }}>
+            <div style={{ width: "100%", maxWidth: 100 }}>
               <Select
                 aria-label="Year"
                 value={year}

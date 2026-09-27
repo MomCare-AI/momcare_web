@@ -212,8 +212,8 @@ export function PatientReadingsPanel({
                   {RANGE_OPTIONS.find((r) => r.value === range)?.label}
                 </div>
               </div>
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                <div style={{ width: 130 }}>
+              <div className="mc-actions">
+                <div style={{ width: "100%", maxWidth: 130 }}>
                   <Select
                     aria-label="Time range"
                     value={range}
@@ -225,7 +225,7 @@ export function PatientReadingsPanel({
                     }))}
                   />
                 </div>
-                <div style={{ width: 170 }}>
+                <div style={{ width: "100%", maxWidth: 170 }}>
                   <Select
                     aria-label="Vital"
                     value={metric}
@@ -237,11 +237,11 @@ export function PatientReadingsPanel({
                     }))}
                   />
                 </div>
-                <div className="mc-tabs" style={{ marginBottom: 0 }}>
+                <div className="mc-segmented">
                   <button
                     type="button"
-                    className="mc-tab"
-                    aria-current={view === "chart" ? "page" : undefined}
+                    className="mc-segment"
+                    aria-pressed={view === "chart"}
                     onClick={() => setView("chart")}
                     aria-label="Chart view"
                   >
@@ -249,8 +249,8 @@ export function PatientReadingsPanel({
                   </button>
                   <button
                     type="button"
-                    className="mc-tab"
-                    aria-current={view === "table" ? "page" : undefined}
+                    className="mc-segment"
+                    aria-pressed={view === "table"}
                     onClick={() => setView("table")}
                     aria-label="Table view"
                   >

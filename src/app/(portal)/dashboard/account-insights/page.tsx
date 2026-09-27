@@ -80,20 +80,11 @@ export default function AccountInsightsPage() {
 
   return (
     <>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginBottom: 18,
-          flexWrap: "wrap",
-          gap: 10,
-        }}
-      >
-        <h1 className="mc-page-title" style={{ margin: 0 }}>
+      <div className="mc-head">
+        <h1 className="mc-h1" style={{ margin: 0 }}>
           Staff Audit Report
         </h1>
-        <div style={{ width: 200 }}>
+        <div style={{ width: "100%", maxWidth: 200 }}>
           <Select
             value={period}
             onChange={(v) => setPeriod(v as AuditPeriodCode)}
@@ -125,17 +116,15 @@ export default function AccountInsightsPage() {
       {staffQuery.isSuccess && staff.length > 0 && activeMember && (
         <>
           <Card style={{ marginBottom: 18 }}>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 14,
-                flexWrap: "wrap",
-                padding: "16px 20px",
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div className="mc-card-head">
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  minWidth: 0,
+                }}
+              >
                 <InitialsAvatar
                   name={activeMember.full_name || activeMember.email}
                   size={44}
@@ -156,7 +145,7 @@ export default function AccountInsightsPage() {
                 </div>
               </div>
 
-              <div style={{ width: 260 }}>
+              <div style={{ width: "100%", maxWidth: 260 }}>
                 <Select
                   value={activeStaffId ?? ""}
                   onChange={(v) => setStaffId(v)}

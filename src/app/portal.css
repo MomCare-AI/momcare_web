@@ -987,6 +987,7 @@ a.mc-kpi:hover {
    narrow middle column fighting a sidebar for room. */
 .mc-fullstack {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 18px;
   margin-bottom: 18px;
 }
@@ -1771,21 +1772,47 @@ select.mc-input {
   }
 }
 
+/* ── Shared responsive layout classes ──────────────────────────────────── */
+.mc-gov-stats-group {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+
+.mc-table-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 14px 20px 0;
+}
+
+.mc-table-toolbar-search {
+  position: relative;
+  max-width: 340px;
+  flex: 1 1 260px;
+}
+
 /* Mobile tier: no permanent sidebar at all — the drawer takes over
    entirely, triggered by the header's hamburger. */
 @media (max-width: 859px) {
+  /* ── Shell ── */
   .mc-sidebar[data-variant="desktop"] {
     display: none;
   }
   .mc-appheader {
     padding: 0 16px;
-    gap: 12px;
+    gap: 10px;
+    height: 56px;
   }
   .mc-burger {
     display: grid;
     place-items: center;
-    width: 36px;
-    height: 36px;
+    width: 44px;
+    height: 44px;
     border-radius: var(--r-control);
     border: 1px solid var(--c-border);
     background: var(--c-card);
@@ -1795,6 +1822,234 @@ select.mc-input {
   }
   .mc-page {
     padding: 20px 16px 48px;
+  }
+  .mc-navsearch {
+    width: auto;
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* ── Headings ── */
+  .mc-h1 {
+    font-size: 20px;
+  }
+  .mc-head {
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .mc-head-aside {
+    text-align: left;
+  }
+
+  /* ── Org banner ── */
+  .mc-org {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .mc-org-right {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* ── Hero ── */
+  .mc-hero {
+    padding: 18px 16px;
+    margin-bottom: 16px;
+  }
+
+  /* ── Cards ── */
+  .mc-card-head {
+    padding: 14px 16px;
+  }
+  .mc-card-body {
+    padding: 14px 16px;
+  }
+  .mc-card-foot {
+    flex-wrap: wrap;
+  }
+
+  /* ── KPIs ── */
+  .mc-kpis {
+    gap: 12px;
+  }
+  .mc-kpi {
+    padding: 12px 14px;
+  }
+
+  /* ── Tabs ── */
+  .mc-tabs {
+    scrollbar-width: none;
+  }
+  .mc-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* ── Subnav ── */
+  .mc-subnav {
+    top: 56px;
+    height: auto;
+    padding: 8px 0;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .mc-subnav-trail {
+    width: 100%;
+  }
+  .mc-subnav-tabs {
+    width: 100%;
+    overflow-x: auto;
+    border-bottom: 1px solid var(--c-border);
+  }
+  .mc-subnav-aside {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  /* ── Grids ── */
+  .mc-grid-even {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* ── Actions ── */
+  .mc-actions {
+    gap: 8px;
+  }
+
+  /* ── Tables ── */
+  .mc-dtable,
+  .mc-dtable tbody,
+  .mc-dtable tr {
+    display: block;
+    width: 100%;
+  }
+  .mc-dtable thead {
+    display: none;
+  }
+  .mc-dtable-wrap {
+    overflow-x: visible;
+  }
+  .mc-dtable-row {
+    background: var(--c-card);
+    border: 1px solid var(--c-border-soft);
+    border-radius: var(--r-card);
+    margin-bottom: 12px;
+    padding: 8px 0;
+  }
+  .mc-dtable-row:last-child {
+    margin-bottom: 0;
+  }
+  .mc-dtable td {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border-bottom: none;
+    white-space: normal;
+  }
+
+  /* ── Toolbar ── */
+  .mc-table-toolbar {
+    padding: 12px 16px 0;
+  }
+  .mc-table-toolbar-search {
+    max-width: 100%;
+    flex: 1 1 100%;
+  }
+  .mc-gov-stats-group {
+    margin-left: 0;
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  /* ── Forms ── */
+  .mc-formgrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* ── Pairs ── */
+  .mc-pairs {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* ── Vitals ── */
+  .mc-vitals-row {
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  }
+  .mc-vital {
+    padding: 12px 14px;
+  }
+  .mc-vital-value {
+    font-size: 18px;
+  }
+
+  /* ── Modal ── */
+  .mc-modal-wrap {
+    padding: 12px;
+  }
+  .mc-modal-head {
+    padding: 14px 16px;
+  }
+  .mc-modal-body {
+    padding: 14px 16px;
+  }
+
+  /* ── Donut ── */
+  .mc-donut-wrap {
+    justify-content: center;
+  }
+  .mc-riskbar-row {
+    grid-template-columns: 80px 1fr 26px;
+  }
+
+  /* ── Empty states ── */
+  .mc-empty {
+    padding: 24px 16px;
+  }
+
+  /* ── Queue ── */
+  .mc-queue-row {
+    gap: 10px;
+  }
+}
+
+/* ── Small mobile tier: tighter spacing for ≤480px screens ──────────── */
+@media (max-width: 480px) {
+  .mc-page {
+    padding: 16px 12px 40px;
+  }
+  .mc-appheader {
+    padding: 0 12px;
+  }
+  .mc-kpis {
+    grid-template-columns: 1fr;
+  }
+  .mc-hero {
+    padding: 14px 12px;
+  }
+  .mc-card-head {
+    padding: 12px;
+  }
+  .mc-card-body {
+    padding: 12px;
+  }
+  .mc-table-toolbar {
+    padding: 10px 12px 0;
+  }
+  .mc-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  .mc-actions,
+  .mc-card-foot {
+    flex-direction: column;
+  }
+  .mc-actions .mc-badge,
+  .mc-card-foot .mc-btn-ghost {
+    width: 100%;
+    text-align: center;
+    justify-content: center;
   }
 }
 
@@ -2693,6 +2948,7 @@ a.mc-kpi:hover,
   width: 100%;
   border-collapse: collapse;
   font-size: 13.5px;
+  min-width: max-content;
 }
 .mc-dtable th {
   text-align: left;
