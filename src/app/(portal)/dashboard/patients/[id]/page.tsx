@@ -4,7 +4,6 @@ import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
-  Activity,
   AlertCircle,
   AlertTriangle,
   ArrowLeft,
@@ -20,7 +19,6 @@ import {
   useUpdatePregnancy,
 } from "@/features/patients/hooks/usePatients";
 import {
-  RISK_FACTORS,
   pregnancyTone,
   type PatientDetail,
   type Pregnancy,
@@ -37,7 +35,6 @@ import { PatientReadingsPanel } from "@/features/patients/components/PatientRead
 import { RecentActivityCards } from "@/features/patients/components/RecentActivityCards";
 import { BackButton } from "@/shared/ui/BackButton";
 import { EmptyState } from "@/shared/ui/EmptyState";
-import { Pair } from "@/shared/ui/Pair";
 import { usePortal } from "../../layout";
 import { usePageTitle } from "@/hooks/usePageTitle";
 
@@ -187,86 +184,6 @@ export default function PatientProfilePage({
             patientLocationName={patient.location_name}
             onOpenNotes={() => setTab("notes")}
           />
-
-          <section className="mc-card">
-            <div className="mc-card-head">
-              <div className="mc-card-title">Current pregnancy</div>
-            </div>
-            {current ? (
-              <div className="mc-card-body">
-                <div className="mc-pairs">
-                  <Pair
-                    label="Gestational age"
-                    value={current.gestational_age_display}
-                  />
-                  <Pair
-                    label="Estimated delivery"
-                    value={formatDate(current.edd)}
-                  />
-                  <Pair
-                    label="Dating method"
-                    value={current.edd_source_display}
-                  />
-                  <Pair
-                    label="Last menstrual period"
-                    value={formatDate(current.lmp)}
-                  />
-                  <Pair
-                    label="Gravida / Para"
-                    value={
-                      current.gravida !== null || current.para !== null
-                        ? `G${current.gravida ?? "?"} P${current.para ?? "?"}`
-                        : ""
-                    }
-                  />
-                </div>
-
-                <div style={{ marginTop: 22 }}>
-                  <div className="mc-card-title" style={{ marginBottom: 10 }}>
-                    Obstetric history
-                  </div>
-                  <div className="mc-risklist">
-                    {RISK_FACTORS.map(({ field, label }) => {
-                      const answer = current[field];
-                      return (
-                        <div key={field} className="mc-riskrow">
-                          <span className="mc-riskrow-label">{label}</span>
-                          <span
-                            className={`mc-badge mc-badge-${
-                              answer === "yes"
-                                ? "high"
-                                : answer === "no"
-                                  ? "stable"
-                                  : "neutral"
-                            }`}
-                          >
-                            {answer === "yes"
-                              ? "Yes"
-                              : answer === "no"
-                                ? "No"
-                                : "Not asked"}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {current.notes && (
-                  <div style={{ marginTop: 20 }}>
-                    <div className="mc-pair-label">Notes</div>
-                    <p className="mc-pair-value">{current.notes}</p>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <EmptyState
-                icon={<Activity size={20} strokeWidth={1.9} aria-hidden />}
-                title="No active pregnancy"
-                text="Past pregnancies, if any, are listed under History."
-              />
-            )}
-          </section>
 
           {current && (
             <CareTeamEditor
