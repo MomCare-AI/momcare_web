@@ -71,6 +71,24 @@ borders, 12–14px radii, Lucide icons (**never emoji**), tabular numerals,
   find out" are opposite messages to a clinician.
 - **AI output is always labelled** decision support, never diagnosis.
 
+## Working efficiently in this codebase
+
+Small/medium tasks (a single-file fix, a CSS/layout tweak, a small component
+change): locate the target file, read only what's directly relevant, make
+the smallest correct change, run the smallest relevant check, stop. Don't
+scan the repo, read unrelated files, or re-read files already inspected in
+the same task.
+
+Frontend-only by default — don't inspect or run `../backend` unless the
+task genuinely can't be resolved without checking an API contract.
+
+No subagents for single-file changes, CSS/layout fixes, small bug fixes, or
+locating a known symbol. Use `Grep`/`Glob` directly instead.
+
+Verification matches the change size — a CSS tweak gets a typecheck, not a
+full `vitest run`; a shared-component change gets the full suite. Don't
+run the full suite by default for a small fix.
+
 ## Commands
 
 ```bash
