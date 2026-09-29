@@ -101,13 +101,14 @@ function matchesRule(patient: PatientListItem, rule: FilterRule): boolean {
  * "what you see is the whole filterable set" model instead of two different
  * ones on the same page.
  *
- * Column-by-column honesty: `/api/patients/` (`PatientListSerializer`) has
- * no care-team names, no last-reading date, no last-contact date and no
- * monthly monitoring-time aggregate — those render as "—" on purpose rather
- * than a fabricated value, until a bulk endpoint for them exists. Device is
- * the one addition that's genuinely wireable today: `/api/devices/` already
- * returns `assigned_pregnancy`, which joins straight onto this table's own
- * `pregnancy_id` column, so it's fetched once here and looked up per row.
+ * Column-by-column honesty: care-team names, last-reading, last-contact and
+ * monthly monitoring-time all come straight off `/api/patients/`
+ * (`PatientListSerializer`'s enrichment fields) and render "—" only when
+ * that field is genuinely null (nobody assigned, no reading yet) — never a
+ * fabricated value. Device is the one column not on that serializer:
+ * `/api/devices/` returns `assigned_pregnancy`, which joins straight onto
+ * this table's own `pregnancy_id` column, so it's fetched once here and
+ * looked up per row.
  *
  * No column is sortable — `/api/patients/` has no `ordering=` param, so a
  * client-side sort would silently only reorder whatever's currently loaded.
@@ -240,26 +241,64 @@ export function PatientsTable({
                       </Link>
                     </td>
                     <td>
-                      {patient.pregnancy_status === "active" ? (
-                        <RiskBadge level={patient.risk_level} />
-                      ) : patient.pregnancy_status ? (
-                        <span
-                          className={`mc-badge mc-badge-${pregnancyTone(patient.pregnancy_status)}`}
-                        >
-                          No active pregnancy
-                        </span>
-                      ) : (
-                        <span className="mc-badge mc-badge-neutral">
-                          No pregnancy recorded
-                        </span>
-                      )}
+                      <div
+                        style={{
+                          display: "flex",
+                          flexWrap: "wrap",
+                          gap: 6,
+                          alignItems: "center",
+                        }}
+                      >
+                        {patient.pregnancy_status === "active" ? (
+                          <RiskBadge level={patient.risk_level} />
+                        ) : patient.pregnancy_status ? (
+                          <span
+                            className={`mc-badge mc-badge-${pregnancyTone(patient.pregnancy_status)}`}
+                          >
+                            No active pregnancy
+                          </span>
+                        ) : (
+                          <span className="mc-badge mc-badge-neutral">
+                            No pregnancy recorded
+                          </span>
+                        )}
+                        {patient.statuses.map((s) => (
+                          <span
+                            key={s.name}
+                            title={s.description || undefined}
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              padding: "2px 9px",
+                              borderRadius: 999,
+                              fontSize: 12,
+                              fontWeight: 600,
+                              color: s.color,
+                              background: `${s.color}1a`,
+                              border: `1px solid ${s.color}55`,
+                            }}
+                          >
+                            {s.name}
+                          </span>
+                        ))}
+                      </div>
                     </td>
                     <td>{patient.gestational_age_display || "—"}</td>
-                    <td className="mc-dtable-sub">—</td>
-                    <td className="mc-dtable-sub">—</td>
-                    <td className="mc-dtable-sub">—</td>
-                    <td className="mc-dtable-sub">—</td>
-                    <td className="mc-dtable-sub">—</td>
+                    <td className="mc-dtable-sub">
+                      {patient.care_manager_name || "—"}
+                    </td>
+                    <td className="mc-dtable-sub">
+                      {patient.provider_name || "—"}
+                    </td>
+                    <td className="mc-dtable-sub">
+                      {patient.last_reading_display || "—"}
+                    </td>
+                    <td className="mc-dtable-sub">
+                      {patient.last_monitoring_contact_display || "—"}
+                    </td>
+                    <td className="mc-dtable-sub">
+                      {patient.monitoring_time_display || "—"}
+                    </td>
                     <td>
                       {device ? (
                         <span className="mc-badge mc-badge-neutral">

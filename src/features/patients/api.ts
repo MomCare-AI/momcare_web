@@ -1,9 +1,13 @@
 import { authFetch, authJson } from "@/core/api/authFetch";
 
 import type {
+  AISummary,
+  DashboardKpis,
   Paginated,
   PatientDetail,
   PatientListItem,
+  PatientStatusEntry,
+  PatientStatusListResponse,
   PatientUpdateInput,
   Pregnancy,
   PregnancyUpdateInput,
@@ -73,6 +77,69 @@ export function listWorklist(assignedToMe = false) {
 
 export function getPatient(id: string) {
   return authJson<PatientDetail>(`/api/patients/${id}/`);
+}
+
+export function getDashboardKpis() {
+  return authJson<DashboardKpis>(`/api/patients/dashboard-kpis/`);
+}
+
+/**
+ * `null` means "no summary generated yet" (404 — the enrollment trigger
+ * hasn't run, or this is a very new patient) -- a real, expected state,
+ * not an error. Anything else that fails is a genuine error and throws,
+ * same as every other read in this file.
+ */
+export async function getAISummary(
+  patientId: string
+): Promise<AISummary | null> {
+  const res = await authFetch(`/api/patients/${patientId}/ai-summary/`);
+  if (res.status === 404) return null;
+  const body = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new Error(body?.detail ?? "Could not load the AI summary.");
+  }
+  return body as AISummary;
+}
+
+export async function listPatientStatuses(
+  patientId: string
+): Promise<PatientStatusEntry[]> {
+  const { results } = await authJson<PatientStatusListResponse>(
+    `/api/patients/${patientId}/statuses/`
+  );
+  return results;
+}
+
+export interface PatientStatusInput {
+  name: string;
+  description?: string;
+  color: string;
+}
+
+export async function addPatientStatus(
+  patientId: string,
+  input: PatientStatusInput
+): Promise<PatientStatusEntry> {
+  const res = await authFetch(`/api/patients/${patientId}/statuses/`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new Error(firstError(data) ?? "Could not log this status.");
+  }
+  return data as PatientStatusEntry;
+}
+
+export async function removePatientStatus(statusId: string): Promise<void> {
+  const res = await authFetch(`/api/patient-statuses/${statusId}/`, {
+    method: "DELETE",
+  });
+  if (!res.ok && res.status !== 204) {
+    const data = await res.json().catch(() => null);
+    throw new Error(firstError(data) ?? "Could not remove this status.");
+  }
 }
 
 export async function updatePatient(

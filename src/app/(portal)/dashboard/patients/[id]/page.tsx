@@ -31,7 +31,9 @@ import { PatientDevicesPanel } from "@/features/patients/components/PatientDevic
 import { PatientDocumentsPanel } from "@/features/patients/components/PatientDocumentsPanel";
 import { PatientHeaderBanner } from "@/features/patients/components/PatientHeaderBanner";
 import { PatientOverviewSnapshot } from "@/features/patients/components/PatientOverviewSnapshot";
+import { AISummaryPanel } from "@/features/patients/components/AISummaryPanel";
 import { PatientReadingsPanel } from "@/features/patients/components/PatientReadingsPanel";
+import { PatientStatusesPanel } from "@/features/patients/components/PatientStatusesPanel";
 import { RecentActivityCards } from "@/features/patients/components/RecentActivityCards";
 import { BackButton } from "@/shared/ui/BackButton";
 import { EmptyState } from "@/shared/ui/EmptyState";
@@ -185,6 +187,8 @@ export default function PatientProfilePage({
             onOpenNotes={() => setTab("notes")}
           />
 
+          <AISummaryPanel patientId={patient.id} />
+
           {current && (
             <CareTeamEditor
               patientId={patient.id}
@@ -195,6 +199,11 @@ export default function PatientProfilePage({
 
           <SecondaryProviderEditor
             patient={patient}
+            canWrite={canManageCareTeam}
+          />
+
+          <PatientStatusesPanel
+            patientId={patient.id}
             canWrite={canManageCareTeam}
           />
         </>

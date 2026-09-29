@@ -97,6 +97,21 @@ export interface PatientListItem {
   /** Null means never assessed — which the list must not render as "stable". */
   risk_level: RiskLevel | null;
   risk_assessed_at: string | null;
+  /** Null when nobody is assigned to that role — render as "—", never blank. */
+  provider_name: string | null;
+  nurse_name: string | null;
+  care_manager_name: string | null;
+  last_reading_at: string | null;
+  last_reading_display: string | null;
+  last_monitoring_contact_at: string | null;
+  last_monitoring_contact_display: string | null;
+  monitoring_seconds_this_month: number;
+  monitoring_time_display: string;
+  /** Currently-active custom statuses (the org's own Statuses catalogue,
+   *  see governance/components/StatusLabelsTab.tsx) logged on this
+   *  patient — each entry carries its own name/description/color, not a
+   *  reference back to the catalogue row. */
+  statuses: { name: string; description: string; color: string }[];
   is_active: boolean;
   created_at: string;
 }
@@ -179,6 +194,66 @@ export interface WorklistPatient {
 }
 
 export type WorklistResponse = Paginated<WorklistPatient>;
+
+/**
+ * A status logged against a patient at a point in time
+ * (`core/monitoring/models.py::PatientStatus`). Free-text `name`/
+ * `description`/`color` copied at creation time from the org's Statuses
+ * catalogue (`StatusLabel`, see features/statuses) — not a live reference
+ * to it, so deleting or editing a catalogue entry never changes a status
+ * already logged on a patient. The same name can be logged again later —
+ * a status can recur over the months a pregnancy spans.
+ */
+export interface PatientStatusEntry {
+  id: string;
+  patient: string;
+  patient_name: string;
+  pregnancy: string | null;
+  name: string;
+  description: string;
+  color: string;
+  added_by: string;
+  added_by_name: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export type PatientStatusListResponse = Paginated<PatientStatusEntry>;
+
+/**
+ * `GET /api/patients/{id}/ai-summary/` — the cached row only, never
+ * generated on demand. There is deliberately no "regenerate" endpoint to
+ * call from here; see backend/docs/design/2026-09-27-ai-summary-design.md's
+ * Triggers section for the only four paths that ever refresh this.
+ */
+export interface AISummary {
+  content: string;
+  generated_at: string;
+  model_used: string;
+}
+
+/**
+ * The single Dashboard KPIs surface (`GET /api/patients/dashboard-kpis/`) —
+ * total/active/inactive roster, pending join requests, and the same
+ * risk-review/care-activity conditions the Worklist/Attention Queue filter
+ * by, so this can never disagree with what those screens show. Scoped by
+ * the same roster filters (location/assigned_to=me) as the patient list.
+ */
+export interface DashboardKpis {
+  total_patients: number;
+  active_patients: number;
+  inactive_patients: number;
+  pending_join_requests: number;
+  workflow: {
+    risk_review: number;
+    low_confidence: number;
+  };
+  care_activities: {
+    monitoring_follow_up: number;
+    unseen_readings: number;
+    reading_reminder: number;
+  };
+}
 
 export const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 

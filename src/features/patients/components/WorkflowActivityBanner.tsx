@@ -1,14 +1,7 @@
 "use client";
 
-import {
-  AlertTriangle,
-  Eye,
-  FileClock,
-  ListChecks,
-  Timer,
-  UserCheck,
-  Users,
-} from "lucide-react";
+import { Eye, ListChecks, Timer, UserCheck, Users, Bell } from "lucide-react";
+import type { DashboardKpis } from "../types";
 
 type ListTab = "patients" | "worklist" | "requests";
 
@@ -25,17 +18,24 @@ interface Props {
   patientsCount: number;
   worklistCount: number;
   requestsCount: number;
+  /** From GET /api/patients/dashboard-kpis/ — undefined while loading or on
+   *  error, in which case the tiles show "—" rather than a fabricated 0. */
+  careActivities?: DashboardKpis["care_activities"];
 }
 
 /**
  * Restyled from the reference platform's own "Workflow" + "Care Activity"
  * tile rows. Workflow is real data — the exact same Patients/Worklist/Join
  * Requests counts Phase 5 already built as a plain tab strip, just given
- * the reference's tinted-banner, clickable-tile look here instead. Care
- * Activity has no MomCare aggregate anywhere, hospital-wide — not even
- * partial data — so those three tiles are deliberately inert placeholders,
- * per direct discussion with the user, same shell precedent as the Devices/
- * Documents/AI Summary placeholders already built this session.
+ * the reference's tinted-banner, clickable-tile look here instead.
+ * Care Activity is now real data too, backed by
+ * GET /api/patients/dashboard-kpis/'s `care_activities` (monitoring
+ * follow-up, unseen readings, reading reminder) — this replaced the
+ * "Coming soon" placeholder tiles that shipped before that endpoint
+ * existed. "Out of Range Readings" was renamed to "Reading Reminder" to
+ * match what the endpoint actually reports — MomCare has no aggregate for
+ * out-of-range vitals hospital-wide, and labelling a reminder-to-record
+ * count as "out of range" would misrepresent it.
  */
 export function WorkflowActivityBanner({
   activeTab,
@@ -43,6 +43,7 @@ export function WorkflowActivityBanner({
   patientsCount,
   worklistCount,
   requestsCount,
+  careActivities,
 }: Props) {
   const workflowTiles: WorkflowTile[] = [
     {
@@ -65,18 +66,25 @@ export function WorkflowActivityBanner({
     },
   ];
 
-  const careActivityTiles = [
-    {
-      label: "Out of Range Readings",
-      icon: <AlertTriangle size={16} strokeWidth={1.9} aria-hidden />,
-    },
+  const careActivityTiles: {
+    label: string;
+    value?: number;
+    icon: React.ReactNode;
+  }[] = [
     {
       label: "Monitoring Follow-up",
+      value: careActivities?.monitoring_follow_up,
       icon: <Timer size={16} strokeWidth={1.9} aria-hidden />,
     },
     {
       label: "Unseen Readings",
+      value: careActivities?.unseen_readings,
       icon: <Eye size={16} strokeWidth={1.9} aria-hidden />,
+    },
+    {
+      label: "Reading Reminder",
+      value: careActivities?.reading_reminder,
+      icon: <Bell size={16} strokeWidth={1.9} aria-hidden />,
     },
   ];
 
@@ -159,13 +167,6 @@ export function WorkflowActivityBanner({
             }}
           >
             Care Activity
-            <span
-              className="mc-badge mc-badge-neutral"
-              style={{ fontSize: 10 }}
-            >
-              <FileClock size={10} strokeWidth={2.2} aria-hidden />
-              Coming soon
-            </span>
           </div>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             {careActivityTiles.map((t) => (
@@ -176,29 +177,26 @@ export function WorkflowActivityBanner({
                   alignItems: "center",
                   gap: 10,
                   background: "var(--c-card)",
-                  border: "1px dashed var(--c-border-soft)",
+                  border: "1px solid var(--c-border-soft)",
                   borderRadius: "var(--r-control)",
                   padding: "9px 14px",
                   minWidth: 120,
-                  opacity: 0.7,
                 }}
               >
-                <span
-                  className="mc-kpi-icon"
-                  style={{ color: "var(--c-faint)" }}
-                >
-                  {t.icon}
-                </span>
+                <span className="mc-kpi-icon">{t.icon}</span>
                 <span>
                   <div
                     style={{
                       fontSize: 17,
                       fontWeight: 700,
-                      color: "var(--c-faint)",
+                      color:
+                        t.value === undefined
+                          ? "var(--c-faint)"
+                          : "var(--c-ink)",
                       lineHeight: 1,
                     }}
                   >
-                    —
+                    {t.value ?? "—"}
                   </div>
                   <div
                     style={{

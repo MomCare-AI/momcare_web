@@ -4,15 +4,21 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { SessionExpiredError } from "@/core/api/authFetch";
 import {
+  addPatientStatus,
   enrolPatient,
+  getAISummary,
+  getDashboardKpis,
   getPatient,
   listClinicians,
   listPatients,
+  listPatientStatuses,
   listPregnancies,
   listWorklist,
+  removePatientStatus,
   updatePatient,
   updatePregnancy,
   type EnrolmentInput,
+  type PatientStatusInput,
 } from "../api";
 import type { PatientUpdateInput, PregnancyUpdateInput } from "../types";
 
@@ -34,6 +40,11 @@ export const patientKeys = {
   clinicians: ["clinicians"] as const,
   worklist: (assignedToMe: boolean) =>
     [...patientKeys.all, "worklist", assignedToMe] as const,
+  dashboardKpis: ["patients", "dashboard-kpis"] as const,
+  statuses: (patientId: string) =>
+    [...patientKeys.all, "statuses", patientId] as const,
+  aiSummary: (patientId: string) =>
+    [...patientKeys.all, "ai-summary", patientId] as const,
 };
 
 /** An expired session is not a data error — the caller must redirect, not retry. */
@@ -67,6 +78,55 @@ export function useWorklist(assignedToMe = false) {
   return useQuery({
     queryKey: patientKeys.worklist(assignedToMe),
     queryFn: () => listWorklist(assignedToMe),
+    retry: retryUnlessSessionExpired,
+  });
+}
+
+export function useDashboardKpis() {
+  return useQuery({
+    queryKey: patientKeys.dashboardKpis,
+    queryFn: getDashboardKpis,
+    retry: retryUnlessSessionExpired,
+  });
+}
+
+export function usePatientStatuses(patientId: string) {
+  return useQuery({
+    queryKey: patientKeys.statuses(patientId),
+    queryFn: () => listPatientStatuses(patientId),
+    retry: retryUnlessSessionExpired,
+  });
+}
+
+export function useAddPatientStatus(patientId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: PatientStatusInput) =>
+      addPatientStatus(patientId, input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: patientKeys.statuses(patientId),
+      });
+    },
+  });
+}
+
+export function useRemovePatientStatus(patientId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (statusId: string) => removePatientStatus(statusId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: patientKeys.statuses(patientId),
+      });
+    },
+  });
+}
+
+export function useAISummary(patientId: string) {
+  return useQuery({
+    queryKey: patientKeys.aiSummary(patientId),
+    queryFn: () => getAISummary(patientId),
     retry: retryUnlessSessionExpired,
   });
 }

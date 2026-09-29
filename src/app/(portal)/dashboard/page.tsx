@@ -25,6 +25,7 @@ import { PatientsTable } from "@/features/patients/components/PatientsTable";
 import { WorkflowActivityBanner } from "@/features/patients/components/WorkflowActivityBanner";
 import { WorklistPanel } from "@/features/patients/components/WorklistPanel";
 import {
+  useDashboardKpis,
   usePatientList,
   useWorklist,
 } from "@/features/patients/hooks/usePatients";
@@ -94,6 +95,7 @@ export default function OverviewPage() {
   );
   const worklist = useWorklist(assignedToMe);
   const joinRequests = useJoinRequests("pending");
+  const dashboardKpis = useDashboardKpis();
 
   const initialSearch = useSearchParams().get("search") ?? "";
   // page_size=100: the whole hospital's list fetched once, so Search and
@@ -133,6 +135,7 @@ export default function OverviewPage() {
         patientsCount={listCount}
         worklistCount={worklist.data?.count ?? 0}
         requestsCount={joinRequests.data?.count ?? 0}
+        careActivities={dashboardKpis.data?.care_activities}
       />
 
       {isHospitalAdmin && (
