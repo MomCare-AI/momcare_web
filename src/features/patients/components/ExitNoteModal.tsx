@@ -1,9 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { AlertCircle, FileText } from "lucide-react";
+import { AlertCircle, FileText, Sparkles } from "lucide-react";
 
-import { useLogContact } from "@/features/monitoring-notes/hooks/useMonitoringNotes";
+import {
+  useEnhanceNoteText,
+  useLogContact,
+} from "@/features/monitoring-notes/hooks/useMonitoringNotes";
 import { Modal } from "@/shared/ui/Modal";
 
 function formatClock(totalSeconds: number): string {
@@ -42,6 +45,7 @@ export function ExitNoteModal({
   onDone,
 }: Props) {
   const logContact = useLogContact(patientId);
+  const enhance = useEnhanceNoteText();
   const [note, setNote] = useState("");
   const [leftVoicemail, setLeftVoicemail] = useState(false);
   const [twoWayCommunication, setTwoWayCommunication] = useState(false);
@@ -57,6 +61,18 @@ export function ExitNoteModal({
       setError(null);
     }
   }
+
+  const runEnhance = async () => {
+    setError(null);
+    try {
+      const enhanced = await enhance.mutateAsync(note.trim());
+      setNote(enhanced);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Could not enhance this note."
+      );
+    }
+  };
 
   const save = async (withNote: boolean) => {
     setError(null);
@@ -103,15 +119,31 @@ export function ExitNoteModal({
           <div className="mc-label" style={{ margin: 0 }}>
             Note
           </div>
-          <span
-            style={{
-              fontSize: 12,
-              fontWeight: 700,
-              color: "var(--c-teal)",
-            }}
-          >
-            Live: {formatClock(seconds)}
-          </span>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <button
+              type="button"
+              className="mc-link"
+              disabled={enhance.isPending || !note.trim()}
+              onClick={runEnhance}
+            >
+              <Sparkles
+                size={13}
+                strokeWidth={2}
+                aria-hidden
+                style={{ verticalAlign: "-2px", marginRight: 4 }}
+              />
+              {enhance.isPending ? "Enhancing…" : "Enhance wording"}
+            </button>
+            <span
+              style={{
+                fontSize: 12,
+                fontWeight: 700,
+                color: "var(--c-teal)",
+              }}
+            >
+              Live: {formatClock(seconds)}
+            </span>
+          </div>
         </div>
         <textarea
           className="mc-input"

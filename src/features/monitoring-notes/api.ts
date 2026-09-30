@@ -104,6 +104,28 @@ export async function deleteNote(noteId: string): Promise<void> {
   }
 }
 
+/**
+ * Wording-only AI assist for a note already being drafted — never tied to a
+ * patient or a saved record, and never called automatically. Distinct from
+ * the AI Summary feature (which writes new prose from structured data);
+ * this only polishes text someone already wrote. Optional, and can be used
+ * as many times as the staff member wants before they actually save.
+ */
+export async function enhanceNoteText(text: string): Promise<string> {
+  const res = await authFetch("/api/monitoring-notes/enhance/", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text }),
+  });
+  const body = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new Error(
+      firstError(body) ?? "Could not enhance this note right now. Try again."
+    );
+  }
+  return (body as { enhanced_text: string }).enhanced_text;
+}
+
 export function listClinicalTags() {
   return authJson<ClinicalTagListResponse>("/api/clinical-tags/");
 }

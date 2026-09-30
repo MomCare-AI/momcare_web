@@ -6,6 +6,7 @@ import {
   createClinicalTag,
   deleteNote,
   deleteSession,
+  enhanceNoteText,
   getPatientMonitoring,
   listClinicalTags,
   logContact,
@@ -101,6 +102,15 @@ function useInvalidateTimeline(patientId: string) {
       queryKey: ["monitoring-notes", "search", patientId],
     });
   };
+}
+
+/** Stateless — no patient scope, no cache to invalidate. Each call is its
+ *  own independent request; nothing here is saved until the ordinary log/
+ *  update-note action runs. */
+export function useEnhanceNoteText() {
+  return useMutation({
+    mutationFn: (text: string) => enhanceNoteText(text),
+  });
 }
 
 export function useLogContact(patientId: string) {

@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { AlertCircle, Clock, Plus } from "lucide-react";
+import { AlertCircle, Clock, Plus, Sparkles } from "lucide-react";
 
 import { useLocations } from "@/features/locations/hooks/useLocations";
 import {
   useClinicalTags,
+  useEnhanceNoteText,
   useLogContact,
 } from "@/features/monitoring-notes/hooks/useMonitoringNotes";
 import type { TagSpec } from "@/features/monitoring-notes/types";
@@ -53,6 +54,7 @@ export function LogSessionModal({
   onSaved,
 }: Props) {
   const logContact = useLogContact(patientId);
+  const enhance = useEnhanceNoteText();
   const tagsQuery = useClinicalTags();
   const templatesQuery = useNoteTemplates();
   const noteTemplates = templatesQuery.data?.results ?? [];
@@ -122,6 +124,18 @@ export function LogSessionModal({
   const applyTemplate = (templateId: string) => {
     const tpl = noteTemplates.find((t) => t.id === templateId);
     if (tpl) setForm((f) => ({ ...f, note: tpl.content }));
+  };
+
+  const runEnhance = async () => {
+    setError(null);
+    try {
+      const enhanced = await enhance.mutateAsync(form.note.trim());
+      setForm((f) => ({ ...f, note: enhanced }));
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Could not enhance this note."
+      );
+    }
   };
 
   const submit = async (e: React.FormEvent) => {
@@ -246,7 +260,32 @@ export function LogSessionModal({
         )}
 
         <div style={{ marginBottom: 16 }}>
-          <div className="mc-label">Notes</div>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: 6,
+            }}
+          >
+            <div className="mc-label" style={{ margin: 0 }}>
+              Notes
+            </div>
+            <button
+              type="button"
+              className="mc-link"
+              disabled={enhance.isPending || !form.note.trim()}
+              onClick={runEnhance}
+            >
+              <Sparkles
+                size={13}
+                strokeWidth={2}
+                aria-hidden
+                style={{ verticalAlign: "-2px", marginRight: 4 }}
+              />
+              {enhance.isPending ? "Enhancing…" : "Enhance wording"}
+            </button>
+          </div>
           <textarea
             className="mc-input"
             rows={3}
