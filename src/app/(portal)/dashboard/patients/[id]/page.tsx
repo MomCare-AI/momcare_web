@@ -79,7 +79,8 @@ export default function PatientProfilePage({
   usePageTitle(patient?.full_name ?? "Patient");
 
   useEffect(() => {
-    if (error instanceof SessionExpiredError) router.replace("/login");
+    if (error instanceof SessionExpiredError)
+      router.replace("/login?expired=1");
   }, [error, router]);
 
   if (patientQuery.isPending)
@@ -188,24 +189,6 @@ export default function PatientProfilePage({
             patientId={patient.id}
             patientLocationName={patient.location_name}
             onOpenNotes={() => setTab("notes")}
-          />
-
-          {current && (
-            <CareTeamEditor
-              patientId={patient.id}
-              pregnancy={current}
-              canWrite={canManageCareTeam}
-            />
-          )}
-
-          <SecondaryProviderEditor
-            patient={patient}
-            canWrite={canManageCareTeam}
-          />
-
-          <PatientStatusesPanel
-            patientId={patient.id}
-            canWrite={canManageCareTeam}
           />
         </>
       )}
