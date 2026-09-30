@@ -7,7 +7,13 @@
  * optional at onboarding (patients/migrations/0012).
  */
 
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import EnrolPatientPage from "./page";
@@ -66,9 +72,15 @@ function setup({
  * input, not an associated <label for>, so getByLabelText can't reach
  * these — a real accessibility gap, flagged separately rather than fixed
  * here. This walks from the label text to the control beside it instead.
+ *
+ * Scoped to the form panel (data-testid="enroll-form-panel"), not the whole
+ * page: the live preview beside the form repeats the same label text
+ * ("First name", "Last name", ...) next to its own read-only values, so an
+ * unscoped query matches both and throws on ambiguity.
  */
 function fieldInput(labelPattern: RegExp): HTMLElement {
-  const label = screen.getByText(labelPattern);
+  const panel = screen.getByTestId("enroll-form-panel");
+  const label = within(panel).getByText(labelPattern);
   const control = label.parentElement?.querySelector("input, select, textarea");
   if (!control)
     throw new Error(`No control found next to label ${labelPattern}`);
@@ -85,10 +97,18 @@ function checkConsent() {
   fireEvent.click(screen.getByLabelText(/has consented to MomCare/));
 }
 
+/** Steps through the wizard — Identity & Contact is step one, so each call
+ *  advances one step past it. Navigation itself is never gated on a step's
+ *  own fields being filled; only the final submit validates. */
+function clickContinue() {
+  fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+}
+
 describe("EnrolPatientPage", () => {
   it("defaults every risk factor to Unknown, never No — nobody asked is not the same as no", () => {
     setup();
     render(<EnrolPatientPage />);
+    clickContinue(); // Identity & Contact -> Pregnancy & Care Team
 
     const unknownButtons = screen
       .getAllByRole("button", { pressed: true })
@@ -102,7 +122,9 @@ describe("EnrolPatientPage", () => {
     render(<EnrolPatientPage />);
 
     fillRequired();
-    fireEvent.click(screen.getByLabelText("Record a pregnancy now"));
+    clickContinue(); // Identity & Contact -> Pregnancy & Care Team
+    fireEvent.click(screen.getByLabelText("Record a pregnancy now")); // off
+    clickContinue(); // -> Consent
     const submit = screen.getByRole("button", {
       name: /Enrol patient/,
     }) as HTMLButtonElement;
@@ -119,8 +141,10 @@ describe("EnrolPatientPage", () => {
     render(<EnrolPatientPage />);
 
     fillRequired();
+    clickContinue();
+    fireEvent.click(screen.getByLabelText("Record a pregnancy now")); // off
+    clickContinue();
     checkConsent();
-    fireEvent.click(screen.getByLabelText("Record a pregnancy now"));
     fireEvent.click(screen.getByRole("button", { name: /Enrol patient/ }));
 
     await vi.waitFor(() => expect(mutateAsync).toHaveBeenCalled());
@@ -133,6 +157,8 @@ describe("EnrolPatientPage", () => {
     render(<EnrolPatientPage />);
 
     fillRequired();
+    clickContinue(); // Pregnancy & Care Team — leave dates blank
+    clickContinue(); // Consent — the only step the submit button renders on
     fireEvent.click(screen.getByRole("button", { name: /Enrol patient/ }));
 
     await screen.findByText(
@@ -146,7 +172,9 @@ describe("EnrolPatientPage", () => {
     render(<EnrolPatientPage />);
 
     fillRequired();
-    fireEvent.click(screen.getByLabelText("Record a pregnancy now"));
+    clickContinue();
+    fireEvent.click(screen.getByLabelText("Record a pregnancy now")); // off
+    clickContinue();
     fireEvent.click(screen.getByRole("button", { name: /Enrol patient/ }));
 
     await vi.waitFor(() => expect(mutateAsync).toHaveBeenCalled());
@@ -159,9 +187,11 @@ describe("EnrolPatientPage", () => {
     render(<EnrolPatientPage />);
 
     fillRequired();
+    clickContinue();
     fireEvent.change(fieldInput(/^Last menstrual period/), {
       target: { value: "2026-06-01" },
     });
+    clickContinue();
     fireEvent.click(screen.getByRole("button", { name: /Enrol patient/ }));
 
     await vi.waitFor(() => expect(mutateAsync).toHaveBeenCalled());
@@ -175,6 +205,7 @@ describe("EnrolPatientPage", () => {
     render(<EnrolPatientPage />);
 
     fillRequired();
+    clickContinue();
     fireEvent.change(fieldInput(/^Last menstrual period/), {
       target: { value: "2026-06-01" },
     });
@@ -185,6 +216,7 @@ describe("EnrolPatientPage", () => {
     ) as HTMLElement;
     fireEvent.click(yesInGroup);
 
+    clickContinue();
     fireEvent.click(screen.getByRole("button", { name: /Enrol patient/ }));
 
     await vi.waitFor(() => expect(mutateAsync).toHaveBeenCalled());
@@ -198,12 +230,14 @@ describe("EnrolPatientPage", () => {
   it("warns when no provider is assigned, since nobody would be the accountable lead", () => {
     setup();
     render(<EnrolPatientPage />);
+    clickContinue();
     screen.getByText(/Without a provider, nobody is the accountable lead/);
   });
 
   it("clears the no-provider warning once one is selected", () => {
     setup();
     render(<EnrolPatientPage />);
+    clickContinue();
 
     fireEvent.change(screen.getByLabelText("Provider"), {
       target: { value: "c1" },
@@ -221,6 +255,7 @@ describe("EnrolPatientPage", () => {
       ],
     });
     render(<EnrolPatientPage />);
+    clickContinue();
 
     const providerSelect = screen.getByLabelText(
       "Provider"
@@ -238,6 +273,7 @@ describe("EnrolPatientPage", () => {
   it("tells the hospital to add staff first when none exist yet", () => {
     setup({ clinicians: [] });
     render(<EnrolPatientPage />);
+    clickContinue();
     screen.getByText(/No clinical staff have joined yet/);
   });
 
@@ -246,7 +282,9 @@ describe("EnrolPatientPage", () => {
     render(<EnrolPatientPage />);
 
     fillRequired();
-    fireEvent.click(screen.getByLabelText("Record a pregnancy now"));
+    clickContinue();
+    fireEvent.click(screen.getByLabelText("Record a pregnancy now")); // off
+    clickContinue();
     fireEvent.click(screen.getByRole("button", { name: /Enrol patient/ }));
 
     await vi.waitFor(() =>
@@ -260,9 +298,13 @@ describe("EnrolPatientPage", () => {
     render(<EnrolPatientPage />);
 
     fillRequired();
-    fireEvent.click(screen.getByLabelText("Record a pregnancy now"));
+    clickContinue();
+    fireEvent.click(screen.getByLabelText("Record a pregnancy now")); // off
+    clickContinue();
     fireEvent.click(screen.getByRole("button", { name: /Enrol patient/ }));
 
-    await vi.waitFor(() => expect(replace).toHaveBeenCalledWith("/login"));
+    await vi.waitFor(() =>
+      expect(replace).toHaveBeenCalledWith("/login?expired=1")
+    );
   });
 });
