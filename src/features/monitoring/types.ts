@@ -275,7 +275,9 @@ export function readingAge(recordedAt: string): {
 // ── Risk ────────────────────────────────────────────────────────────────────
 
 export type RiskLevel = "low" | "medium" | "high";
-export type ReviewStatus = "unreviewed" | "confirmed" | "corrected";
+// Backend renamed unreviewed/confirmed/corrected -> pending/reviewed/escalated
+// when review_risk()/escalate_risk() replaced the single verify() action.
+export type ReviewStatus = "pending" | "reviewed" | "escalated";
 
 /**
  * One judgement, and the reading behind it.

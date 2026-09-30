@@ -12,10 +12,11 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { RiskPanel } from "./RiskPanel";
 import {
+  useEscalateRisk,
   useReassessRisk,
   useRecordReading,
   useRiskHistory,
-  useVerifyRisk,
+  useReviewRisk,
 } from "../hooks/useMonitoring";
 import { useOrganization } from "@/features/portal/hooks/usePortalData";
 import type { RiskAssessment, RiskHistory } from "../types";
@@ -26,13 +27,15 @@ vi.mock("@/features/portal/hooks/usePortalData", () => ({
 
 vi.mock("../hooks/useMonitoring", () => ({
   useRiskHistory: vi.fn(),
-  useVerifyRisk: vi.fn(),
+  useReviewRisk: vi.fn(),
+  useEscalateRisk: vi.fn(),
   useReassessRisk: vi.fn(),
   useRecordReading: vi.fn(),
 }));
 
 const mockedUseRiskHistory = vi.mocked(useRiskHistory);
-const mockedUseVerifyRisk = vi.mocked(useVerifyRisk);
+const mockedUseReviewRisk = vi.mocked(useReviewRisk);
+const mockedUseEscalateRisk = vi.mocked(useEscalateRisk);
 const mockedUseReassessRisk = vi.mocked(useReassessRisk);
 const mockedUseRecordReading = vi.mocked(useRecordReading);
 const mockedUseOrganization = vi.mocked(useOrganization);
@@ -51,8 +54,8 @@ function assessment(overrides: Partial<RiskAssessment> = {}): RiskAssessment {
     final_risk_level_display: "High",
     previous_risk_level: "",
     confirmed_risk_level: "",
-    review_status: "unreviewed",
-    review_status_display: "Unreviewed",
+    review_status: "pending",
+    review_status_display: "Pending",
     flagged_for_review: false,
     reading: null,
     bp_category: "Elevated blood pressure",
@@ -69,16 +72,21 @@ function assessment(overrides: Partial<RiskAssessment> = {}): RiskAssessment {
   };
 }
 
-function stubMutations(verifyMutate = vi.fn()) {
+function stubMutations(reviewMutate = vi.fn(), escalateMutate = vi.fn()) {
   mockedUseOrganization.mockReturnValue({
     data: { effective_confidence_threshold: "0.700" },
     isPending: false,
   } as unknown as ReturnType<typeof useOrganization>);
-  mockedUseVerifyRisk.mockReturnValue({
-    mutate: verifyMutate,
+  mockedUseReviewRisk.mockReturnValue({
+    mutate: reviewMutate,
     isPending: false,
     error: null,
-  } as unknown as ReturnType<typeof useVerifyRisk>);
+  } as unknown as ReturnType<typeof useReviewRisk>);
+  mockedUseEscalateRisk.mockReturnValue({
+    mutate: escalateMutate,
+    isPending: false,
+    error: null,
+  } as unknown as ReturnType<typeof useEscalateRisk>);
   mockedUseReassessRisk.mockReturnValue({
     mutate: vi.fn(),
     isPending: false,
@@ -191,17 +199,32 @@ describe("RiskPanel", () => {
     screen.getByText(/Changed from/);
   });
 
-  it("confirming an unreviewed assessment sends the level the model settled on", () => {
+  it("marking an unreviewed assessment reviewed sends the level the model settled on", () => {
     const mutate = vi.fn();
     stubMutations(mutate);
     history({ current: assessment({ id: "ra9", needs_review: true }) });
 
     render(<RiskPanel pregnancyId="preg1" />);
-    fireEvent.click(screen.getByText("Confirm High"));
+    fireEvent.click(screen.getByText("Mark reviewed — High"));
     expect(mutate).toHaveBeenCalledWith({
       assessmentId: "ra9",
       confirmedLevel: "high",
     });
+  });
+
+  it("escalating an unreviewed assessment sends the level the model settled on", () => {
+    const reviewMutate = vi.fn();
+    const escalateMutate = vi.fn();
+    stubMutations(reviewMutate, escalateMutate);
+    history({ current: assessment({ id: "ra9", needs_review: true }) });
+
+    render(<RiskPanel pregnancyId="preg1" />);
+    fireEvent.click(screen.getByText("Escalate"));
+    expect(escalateMutate).toHaveBeenCalledWith({
+      assessmentId: "ra9",
+      confirmedLevel: "high",
+    });
+    expect(reviewMutate).not.toHaveBeenCalled();
   });
 
   it("a clinician can disagree and record a different level instead", () => {
@@ -214,7 +237,7 @@ describe("RiskPanel", () => {
     fireEvent.change(screen.getByLabelText("Corrected risk level"), {
       target: { value: "medium" },
     });
-    fireEvent.click(screen.getByText("Record my judgement"));
+    fireEvent.click(screen.getByText("Mark reviewed"));
     expect(mutate).toHaveBeenCalledWith({
       assessmentId: "ra9",
       confirmedLevel: "medium",
@@ -226,8 +249,8 @@ describe("RiskPanel", () => {
     history({ current: assessment({ needs_review: true, verified_at: null }) });
 
     render(<RiskPanel pregnancyId="preg1" />);
-    screen.getByText("Confirm High");
-    expect(screen.queryByText(/Confirmed by/)).toBeNull();
+    screen.getByText("Mark reviewed — High");
+    expect(screen.queryByText(/Reviewed by/)).toBeNull();
   });
 
   it("offers no review control to someone who may not review — the server refuses it too", () => {
@@ -235,17 +258,17 @@ describe("RiskPanel", () => {
     history({ current: assessment({ needs_review: true }) });
 
     render(<RiskPanel pregnancyId="preg1" canVerify={false} />);
-    expect(screen.queryByText("Confirm High")).toBeNull();
+    expect(screen.queryByText("Mark reviewed — High")).toBeNull();
     screen.getByText(/Awaiting clinical review/);
   });
 
-  it("shows who reviewed it and when, once verified", () => {
+  it("shows who reviewed it and when, once resolved", () => {
     stubMutations();
     history({
       current: assessment({
         needs_review: false,
-        review_status: "confirmed",
-        review_status_display: "Confirmed",
+        review_status: "reviewed",
+        review_status_display: "Reviewed",
         confirmed_risk_level: "high",
         verified_at: "2026-09-04T11:00:00Z",
         verified_by_name: "Dr. Sana Iqbal",
@@ -253,8 +276,8 @@ describe("RiskPanel", () => {
     });
 
     render(<RiskPanel pregnancyId="preg1" />);
-    screen.getByText(/Confirmed by Dr\. Sana Iqbal on/);
-    expect(screen.queryByText("Confirm High")).toBeNull();
+    screen.getByText(/Reviewed by Dr\. Sana Iqbal on/);
+    expect(screen.queryByText("Mark reviewed — High")).toBeNull();
   });
 
   it("says so when a clinician corrected the model rather than agreeing", () => {
@@ -262,8 +285,8 @@ describe("RiskPanel", () => {
     history({
       current: assessment({
         needs_review: false,
-        review_status: "corrected",
-        review_status_display: "Corrected",
+        review_status: "reviewed",
+        review_status_display: "Reviewed",
         final_risk_level: "high",
         confirmed_risk_level: "medium",
         verified_at: "2026-09-04T11:00:00Z",
@@ -280,14 +303,14 @@ describe("RiskPanel", () => {
     history({
       current: assessment({
         needs_review: false,
-        review_status_display: "Confirmed",
+        review_status_display: "Reviewed",
         verified_at: "2026-09-04T11:00:00Z",
         verified_by_name: "",
       }),
     });
 
     render(<RiskPanel pregnancyId="preg1" />);
-    screen.getByText(/Confirmed by a clinician on/);
+    screen.getByText(/Reviewed by a clinician on/);
   });
 
   it("shows past transitions only when there is more than the current one", () => {

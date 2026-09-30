@@ -10,9 +10,10 @@ import {
 } from "lucide-react";
 
 import {
+  useEscalateRisk,
   useReassessRisk,
   useRiskHistory,
-  useVerifyRisk,
+  useReviewRisk,
 } from "../hooks/useMonitoring";
 import {
   assessmentCategories,
@@ -43,7 +44,8 @@ const LEVELS: RiskLevel[] = ["low", "medium", "high"];
  */
 export function RiskPanel({ pregnancyId, canVerify = true }: Props) {
   const risk = useRiskHistory(pregnancyId);
-  const verify = useVerifyRisk(pregnancyId);
+  const review = useReviewRisk(pregnancyId);
+  const escalate = useEscalateRisk(pregnancyId);
   const reassess = useReassessRisk(pregnancyId);
 
   // Same cached query the portal shell already holds, so this is a second
@@ -160,10 +162,13 @@ export function RiskPanel({ pregnancyId, canVerify = true }: Props) {
             <ReviewControl
               assessment={current}
               canVerify={canVerify}
-              pending={verify.isPending}
-              error={verify.error}
-              onVerify={(confirmedLevel) =>
-                verify.mutate({ assessmentId: current.id, confirmedLevel })
+              pending={review.isPending || escalate.isPending}
+              error={review.error ?? escalate.error}
+              onReview={(confirmedLevel) =>
+                review.mutate({ assessmentId: current.id, confirmedLevel })
+              }
+              onEscalate={(confirmedLevel) =>
+                escalate.mutate({ assessmentId: current.id, confirmedLevel })
               }
             />
           </div>
@@ -208,25 +213,29 @@ function CategoryList({ assessment }: { assessment: RiskAssessment }) {
 }
 
 /**
- * A clinician agreeing with the model, or correcting it.
- *
- * There is no bare "acknowledge": the server requires a level, and derives
- * confirmed-vs-corrected by comparing it to what the model said. A button
- * that only marked the row as seen would let the queue look attended to
- * without anyone having decided anything.
+ * A clinician agreeing with the model, or correcting it — then either a
+ * plain review, or escalated as a separate triage label. These are two
+ * independent choices, not one implying the other: the level (agree vs.
+ * correct) and the resolution (review vs. escalate) are separate backend
+ * actions (`ReviewRiskView`/`EscalateRiskView`), each still requiring a
+ * level either way. There is no bare "acknowledge" — a button that only
+ * marked the row as seen would let the queue look attended to without
+ * anyone having actually decided anything.
  */
 function ReviewControl({
   assessment,
   canVerify,
   pending,
   error,
-  onVerify,
+  onReview,
+  onEscalate,
 }: {
   assessment: RiskAssessment;
   canVerify: boolean;
   pending: boolean;
   error: unknown;
-  onVerify: (level: RiskLevel) => void;
+  onReview: (level: RiskLevel) => void;
+  onEscalate: (level: RiskLevel) => void;
 }) {
   const [correcting, setCorrecting] = useState(false);
   const [level, setLevel] = useState<RiskLevel>(assessment.final_risk_level);
@@ -261,63 +270,68 @@ function ReviewControl({
     );
   }
 
+  const resolveLevel = correcting ? level : assessment.final_risk_level;
+
   return (
     <div>
-      <div className="mc-row-actions">
+      <div className="mc-row-actions" style={{ flexWrap: "wrap" }}>
+        {correcting && (
+          <select
+            className="mc-input mc-input-sm"
+            aria-label="Corrected risk level"
+            value={level}
+            onChange={(e) => setLevel(e.target.value as RiskLevel)}
+          >
+            {LEVELS.map((l) => (
+              <option key={l} value={l}>
+                {riskLabel(l)}
+              </option>
+            ))}
+          </select>
+        )}
+
+        <button
+          type="button"
+          className="mc-btn mc-btn-sm"
+          onClick={() => onReview(resolveLevel)}
+          disabled={pending}
+        >
+          <Check size={14} strokeWidth={2.2} aria-hidden />
+          {pending
+            ? "Recording…"
+            : correcting
+              ? "Mark reviewed"
+              : `Mark reviewed — ${riskLabel(assessment.final_risk_level)}`}
+        </button>
+
+        <button
+          type="button"
+          className="mc-btn-ghost mc-btn-sm"
+          onClick={() => onEscalate(resolveLevel)}
+          disabled={pending}
+        >
+          <AlertTriangle size={14} strokeWidth={2} aria-hidden />
+          {pending ? "Recording…" : "Escalate"}
+        </button>
+
         {correcting ? (
-          <>
-            <select
-              className="mc-input mc-input-sm"
-              aria-label="Corrected risk level"
-              value={level}
-              onChange={(e) => setLevel(e.target.value as RiskLevel)}
-            >
-              {LEVELS.map((l) => (
-                <option key={l} value={l}>
-                  {riskLabel(l)}
-                </option>
-              ))}
-            </select>
-            <button
-              type="button"
-              className="mc-btn mc-btn-sm"
-              onClick={() => onVerify(level)}
-              disabled={pending}
-            >
-              <Check size={14} strokeWidth={2.2} aria-hidden />
-              {pending ? "Recording…" : "Record my judgement"}
-            </button>
-            <button
-              type="button"
-              className="mc-btn-ghost mc-btn-sm"
-              onClick={() => setCorrecting(false)}
-              disabled={pending}
-            >
-              Cancel
-            </button>
-          </>
+          <button
+            type="button"
+            className="mc-btn-ghost mc-btn-sm"
+            onClick={() => setCorrecting(false)}
+            disabled={pending}
+          >
+            Cancel
+          </button>
         ) : (
-          <>
-            <button
-              type="button"
-              className="mc-btn mc-btn-sm"
-              onClick={() => onVerify(assessment.final_risk_level)}
-              disabled={pending}
-            >
-              <Check size={14} strokeWidth={2.2} aria-hidden />
-              {pending
-                ? "Recording…"
-                : `Confirm ${riskLabel(assessment.final_risk_level)}`}
-            </button>
-            <button
-              type="button"
-              className="mc-btn-ghost mc-btn-sm"
-              onClick={() => setCorrecting(true)}
-              disabled={pending}
-            >
-              Disagree — correct it
-            </button>
-          </>
+          <button
+            type="button"
+            className="mc-btn-ghost mc-btn-sm"
+            onClick={() => setCorrecting(true)}
+            disabled={pending}
+          >
+            Disagree — correct it
+          </button>
         )}
       </div>
 

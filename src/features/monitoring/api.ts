@@ -187,20 +187,25 @@ export async function reassessRisk(pregnancyId: string) {
 }
 
 /**
- * A clinician's review of one assessment: agree with the model, or correct it.
+ * A clinician's review of one assessment: agree with the model, or correct
+ * it — either way as a plain review, or flagged as needing further triage.
  *
- * There is no "seen but not judged" state — the server requires a level, and
- * derives confirmed-vs-corrected by comparing it to what the model said. A
- * bare acknowledgement would let the queue look attended to without anyone
- * having actually decided anything.
+ * There is no bare "seen but not judged" state — the server requires a
+ * level either way. `review`/`escalate` are two separate endpoints, not one
+ * endpoint deriving the status (mirrors the backend's own
+ * `_RiskReviewActionView` split): the clinician picks which applies, it
+ * isn't inferred from whether they agreed with the model. Escalating is a
+ * triage label only — it has no Alert side effect; MomCare's real
+ * escalation ladder runs independently of this field.
  */
-export async function verifyRisk(
+async function resolveRiskReview(
+  action: "review" | "escalate",
   pregnancyId: string,
   assessmentId: string,
   confirmedLevel: RiskLevel
 ) {
   const res = await authFetch(
-    `/api/pregnancies/${pregnancyId}/risk/${assessmentId}/verify/`,
+    `/api/pregnancies/${pregnancyId}/risk/${assessmentId}/${action}/`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -208,4 +213,25 @@ export async function verifyRisk(
     }
   );
   return readOrThrow<RiskAssessment>(res, "Could not record this review.");
+}
+
+export function reviewRisk(
+  pregnancyId: string,
+  assessmentId: string,
+  confirmedLevel: RiskLevel
+) {
+  return resolveRiskReview("review", pregnancyId, assessmentId, confirmedLevel);
+}
+
+export function escalateRisk(
+  pregnancyId: string,
+  assessmentId: string,
+  confirmedLevel: RiskLevel
+) {
+  return resolveRiskReview(
+    "escalate",
+    pregnancyId,
+    assessmentId,
+    confirmedLevel
+  );
 }

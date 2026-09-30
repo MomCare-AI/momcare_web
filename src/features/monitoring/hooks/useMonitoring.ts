@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { SessionExpiredError } from "@/core/api/authFetch";
 import {
   assignDevice,
+  escalateRisk,
   getLatestReadings,
   getRiskHistory,
   listDevices,
@@ -12,8 +13,8 @@ import {
   reassessRisk,
   recordReading,
   registerDevice,
+  reviewRisk,
   unassignDevice,
-  verifyRisk,
   type ManualReadingInput,
 } from "../api";
 import type { RiskLevel } from "../types";
@@ -158,7 +159,7 @@ export function useRiskHistory(pregnancyId: string | undefined) {
   });
 }
 
-export function useVerifyRisk(pregnancyId: string) {
+export function useReviewRisk(pregnancyId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({
@@ -167,7 +168,25 @@ export function useVerifyRisk(pregnancyId: string) {
     }: {
       assessmentId: string;
       confirmedLevel: RiskLevel;
-    }) => verifyRisk(pregnancyId, assessmentId, confirmedLevel),
+    }) => reviewRisk(pregnancyId, assessmentId, confirmedLevel),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: monitoringKeys.risk(pregnancyId),
+      });
+    },
+  });
+}
+
+export function useEscalateRisk(pregnancyId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      assessmentId,
+      confirmedLevel,
+    }: {
+      assessmentId: string;
+      confirmedLevel: RiskLevel;
+    }) => escalateRisk(pregnancyId, assessmentId, confirmedLevel),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: monitoringKeys.risk(pregnancyId),
