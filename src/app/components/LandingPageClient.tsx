@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import dynamic from "next/dynamic";
@@ -20,6 +20,7 @@ import {
   X,
 } from "lucide-react";
 import { AboutFlip } from "./AboutFlip";
+import { MobileAppSection } from "./MobileAppSection";
 import { ThreePillars } from "./ThreePillars";
 import {
   FaqCarouselSkeleton,
@@ -153,6 +154,36 @@ const NAV_SECTION_IDS = ["about", "engine", "built", "faq", "cta"];
 export function LandingPageClient() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<string | null>(null);
+  const navInnerRef = useRef<HTMLDivElement>(null);
+
+  // ── Reserve real layout space for the floating nav pill ─────────────
+  // The nav is `position: fixed`, so by default nothing in normal flow
+  // knows it's there — the hero content used to guess a top padding large
+  // enough to clear it, which drifts out of sync whenever the pill's own
+  // rendered height changes (breakpoint, font load, content change).
+  // Measuring the pill's actual height and exposing it as a CSS variable
+  // lets a genuine spacer element reserve exactly the right space at any
+  // viewport, instead of a guessed pixel value baked into the hero. Scoped
+  // to `.nav-inner` specifically (not the whole `.nav` wrapper) so opening
+  // the mobile dropdown menu — a sibling element that grows `.nav`'s own
+  // height — doesn't reflow the page underneath it.
+  useEffect(() => {
+    const el = navInnerRef.current;
+    if (!el) return;
+
+    const setReservedHeight = () => {
+      const navTop = parseFloat(getComputedStyle(el.parentElement!).top) || 0;
+      document.documentElement.style.setProperty(
+        "--nav-reserved-height",
+        `${navTop + el.offsetHeight}px`
+      );
+    };
+
+    setReservedHeight();
+    const observer = new ResizeObserver(setReservedHeight);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   // ── Scroll-spy: highlight whichever nav link's section is on screen,
   // not just the one that was clicked — so it stays correct on scroll too.
@@ -251,7 +282,7 @@ export function LandingPageClient() {
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.75, ease: [0.23, 1, 0.32, 1] }}
       >
-        <div className="nav-inner">
+        <div className="nav-inner" ref={navInnerRef}>
           <Link
             href="/"
             className="nav-brand"
@@ -411,6 +442,12 @@ export function LandingPageClient() {
         </AnimatePresence>
       </motion.nav>
 
+      {/* Reserved nav space — a real flow element sized to the pill's
+          actual measured height (see the effect above), not a guessed
+          padding value baked into the hero. This is what stops the hero's
+          own heading/copy from ever starting underneath the fixed nav. */}
+      <div aria-hidden style={{ height: "var(--nav-reserved-height, 84px)" }} />
+
       {/* ── Hero: full-viewport video, the nav pill floats over it ─ */}
       <section className="hero-video">
         <video
@@ -530,6 +567,7 @@ export function LandingPageClient() {
       <ValuePillars />
       <EngineShowcase />
       <IntegrationHub />
+      <MobileAppSection />
 
       {/* ── CTA ─────────────────────────────────────── */}
       <section
