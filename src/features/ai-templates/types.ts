@@ -62,4 +62,8 @@ export interface TemplateEnhanceResult {
   word_count: number;
   word_limit: number;
   preview_text: string | null;
+  /** Only present when the draft was blank — the backend never sends a
+   *  blank draft to the AI (nothing to enhance), and returns this plain
+   *  notice instead of fabricating a starting point. */
+  message?: string;
 }

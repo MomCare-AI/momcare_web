@@ -205,6 +205,7 @@ function TemplateBuilderModal({
     text: string | null;
     wordCount: number;
     wordLimit: number;
+    message?: string;
   } | null>(null);
 
   const [wasOpen, setWasOpen] = useState(open);
@@ -238,6 +239,7 @@ function TemplateBuilderModal({
         text: result.preview_text,
         wordCount: result.word_count,
         wordLimit: result.word_limit,
+        message: result.message,
       });
     } catch (err) {
       setError(
@@ -329,7 +331,13 @@ function TemplateBuilderModal({
           />
         </div>
 
-        {preview && (
+        {preview?.message && (
+          <p className="mc-hint" style={{ marginTop: 4 }}>
+            {preview.message}
+          </p>
+        )}
+
+        {preview && !preview.message && (
           <div className="mc-ai" style={{ marginTop: 4 }}>
             <span className="mc-ai-tag">
               <Brain size={12} strokeWidth={2.3} aria-hidden />
