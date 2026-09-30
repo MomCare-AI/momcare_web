@@ -26,10 +26,25 @@ export function clearAccessToken(): void {
   localStorage.removeItem(TOKEN_KEY);
 }
 
-/** In-flight refresh, shared so parallel 401s trigger one call, not several. */
-let refreshInFlight: Promise<string | null> | null = null;
+/** Distinguishes "the server couldn't be reached" from "the refresh token
+ *  was rejected" -- a cold start or a network blip on the refresh call is
+ *  not the same thing as a genuinely expired session, and must not force
+ *  one. See the docstring on refreshAccessToken. */
+const REFRESH_UNAVAILABLE = Symbol("refresh-unavailable");
+type RefreshOutcome = string | null | typeof REFRESH_UNAVAILABLE;
 
-async function refreshAccessToken(): Promise<string | null> {
+/** In-flight refresh, shared so parallel 401s trigger one call, not several. */
+let refreshInFlight: Promise<RefreshOutcome> | null = null;
+
+/**
+ * Only a 4xx from the refresh endpoint means the refresh token itself was
+ * rejected (missing cookie, expired, revoked) -- that's a real session end.
+ * A 5xx or a thrown network error means the *server* failed, which the
+ * production backend does do (a cold start can take 10s+) -- treating that
+ * the same as a rejection was logging clinicians out for a slow backend,
+ * not an expired session.
+ */
+async function refreshAccessToken(): Promise<RefreshOutcome> {
   if (refreshInFlight) return refreshInFlight;
 
   refreshInFlight = (async () => {
@@ -38,13 +53,14 @@ async function refreshAccessToken(): Promise<string | null> {
         method: "POST",
         credentials: "include",
       });
+      if (res.status >= 500) return REFRESH_UNAVAILABLE;
       if (!res.ok) return null;
       const { access } = await res.json();
       if (!access) return null;
       setAccessToken(access);
       return access as string;
     } catch {
-      return null;
+      return REFRESH_UNAVAILABLE;
     } finally {
       refreshInFlight = null;
     }
@@ -86,6 +102,12 @@ export async function authFetch(
   if (response.status !== 401) return response;
 
   const refreshed = await refreshAccessToken();
+  if (refreshed === REFRESH_UNAVAILABLE) {
+    // Not a rejection -- the access token may still be perfectly valid, and
+    // clearing it here would force a real logout over what might just be a
+    // slow backend. Surface it as an ordinary failure instead.
+    throw new Error("Could not reach the server. Please try again.");
+  }
   if (!refreshed) {
     clearAccessToken();
     throw new SessionExpiredError();

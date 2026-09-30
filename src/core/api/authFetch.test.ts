@@ -134,6 +134,37 @@ describe("authFetch", () => {
     expect(refreshCalls).toBe(1);
   });
 
+  it("does not log out when the refresh endpoint itself is down (5xx)", async () => {
+    // A cold-started backend can 502/503 for the first request or two -- that
+    // is not the same thing as a rejected refresh token, and must not force
+    // a real session end.
+    setAccessToken("expired");
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(json({}, 401))
+      .mockResolvedValueOnce(json({ detail: "bad gateway" }, 502));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(authFetch("/api/patients/")).rejects.toThrow(
+      "Could not reach the server. Please try again."
+    );
+    expect(getAccessToken()).toBe("expired");
+  });
+
+  it("does not log out when the refresh call throws (network blip)", async () => {
+    setAccessToken("expired");
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(json({}, 401))
+      .mockRejectedValueOnce(new TypeError("Failed to fetch"));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(authFetch("/api/patients/")).rejects.toThrow(
+      "Could not reach the server. Please try again."
+    );
+    expect(getAccessToken()).toBe("expired");
+  });
+
   it("does not refresh on a non-401 failure", async () => {
     setAccessToken("valid");
     const fetchMock = vi.fn().mockResolvedValue(json({ detail: "boom" }, 500));
