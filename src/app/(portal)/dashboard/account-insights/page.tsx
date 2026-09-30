@@ -193,7 +193,7 @@ export default function AccountInsightsPage() {
           {report && (
             <>
               <section
-                className="mc-kpis mc-kpis-4col"
+                className="mc-kpis mc-kpis-4col mc-kpis-compact"
                 style={{ marginBottom: 14 }}
               >
                 <div className="mc-kpi">
@@ -241,7 +241,7 @@ export default function AccountInsightsPage() {
               </section>
 
               <section
-                className="mc-kpis mc-kpis-4col"
+                className="mc-kpis mc-kpis-4col mc-kpis-compact"
                 style={{ marginBottom: 14 }}
               >
                 <div className="mc-kpi">
@@ -293,7 +293,7 @@ export default function AccountInsightsPage() {
               </section>
 
               <section
-                className="mc-kpis mc-kpis-4col"
+                className="mc-kpis mc-kpis-4col mc-kpis-compact"
                 style={{ marginBottom: 18 }}
               >
                 <div className="mc-kpi">
