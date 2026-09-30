@@ -241,7 +241,7 @@ export function ManualReadingForm({
       </p>
 
       <div className="mc-formgrid">
-        {VITAL_FIELDS.map(({ field, label, unit, step, placeholder }) => (
+        {VITAL_FIELDS.map(({ field, label, unit, step }) => (
           <div key={field}>
             <label className="mc-label" htmlFor={`vital-${field}`}>
               {label} <span className="mc-unit">({unit})</span>
@@ -253,7 +253,10 @@ export function ManualReadingForm({
               step={step}
               value={values[field] ?? ""}
               onChange={(e) => set(field, e.target.value)}
-              placeholder={placeholder}
+              // A number input changes its value on scroll/trackpad wheel
+              // while focused — blurring on wheel makes scrolling just
+              // scroll, never silently edit a vital.
+              onWheel={(e) => e.currentTarget.blur()}
             />
           </div>
         ))}

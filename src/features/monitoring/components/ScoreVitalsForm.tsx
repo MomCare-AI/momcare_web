@@ -91,7 +91,7 @@ export function ScoreVitalsForm({
 
       <form onSubmit={handleSubmit}>
         <div className="mc-formgrid">
-          {VITAL_FIELDS.map(({ field, label, unit, step, placeholder }) => (
+          {VITAL_FIELDS.map(({ field, label, unit, step }) => (
             <div key={field}>
               <label className="mc-label" htmlFor={`riskinput-${field}`}>
                 {label} <span className="mc-unit">({unit})</span>
@@ -103,7 +103,11 @@ export function ScoreVitalsForm({
                 step={step}
                 value={values[field] ?? ""}
                 onChange={(e) => set(field, e.target.value)}
-                placeholder={placeholder}
+                // A number input changes its value on scroll/trackpad
+                // wheel while focused — surprising and easy to trigger by
+                // accident while scrolling the page past it. Blurring on
+                // wheel makes scrolling just scroll, never edit.
+                onWheel={(e) => e.currentTarget.blur()}
               />
             </div>
           ))}
