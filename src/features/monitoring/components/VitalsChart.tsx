@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo } from "react";
+import { useId, useMemo } from "react";
 import {
+  Area,
   CartesianGrid,
+  ComposedChart,
   Legend,
   Line,
-  LineChart,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
@@ -214,17 +215,41 @@ export function VitalsChart({
     };
   }, [data, allThresholds]);
 
+  // Unique per mount: the inline card and the "expand" modal can both have
+  // a VitalsChart on screen at once, and an SVG gradient id is global to
+  // the document — a hardcoded id would make the second instance paint
+  // with whichever <defs> happened to register last.
+  const gradientId = useId();
+
   if (!spec || data.length === 0) return null;
 
   const isBloodPressure = Boolean(spec.secondaryField);
 
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <LineChart
+      <ComposedChart
         data={data}
         margin={{ top: 8, right: 12, bottom: 4, left: -12 }}
       >
-        <CartesianGrid stroke={CHART_COLOURS.grid} vertical={false} />
+        <defs>
+          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+            <stop
+              offset="5%"
+              stopColor={CHART_COLOURS.primary}
+              stopOpacity={0.25}
+            />
+            <stop
+              offset="95%"
+              stopColor={CHART_COLOURS.primary}
+              stopOpacity={0}
+            />
+          </linearGradient>
+        </defs>
+        <CartesianGrid
+          stroke={CHART_COLOURS.grid}
+          strokeDasharray="3 6"
+          vertical={false}
+        />
         <XAxis
           dataKey="time"
           type="number"
@@ -257,10 +282,19 @@ export function VitalsChart({
             String(name),
           ]}
           contentStyle={{
-            borderRadius: 9,
-            border: "1px solid var(--c-border)",
+            borderRadius: 12,
+            border: "1px solid var(--c-border-soft)",
+            boxShadow: "0 8px 24px rgba(23, 59, 77, 0.12)",
             fontSize: 12.5,
+            padding: "8px 12px",
           }}
+          labelStyle={{
+            color: CHART_COLOURS.axis,
+            fontSize: 11.5,
+            marginBottom: 4,
+          }}
+          itemStyle={{ padding: "1px 0" }}
+          cursor={{ stroke: CHART_COLOURS.grid, strokeWidth: 1 }}
         />
 
         {thresholds.map((t) => (
@@ -279,45 +313,67 @@ export function VitalsChart({
         ))}
 
         {(!isBloodPressure || showSystolic) && (
+          <Area
+            type="natural"
+            dataKey="value"
+            stroke="none"
+            fill={`url(#${gradientId})`}
+            connectNulls={false}
+            isAnimationActive={false}
+            legendType="none"
+            tooltipType="none"
+          />
+        )}
+        {(!isBloodPressure || showSystolic) && (
           <Line
-            type="monotone"
+            type="natural"
             dataKey="value"
             name={isBloodPressure ? "Systolic" : spec.label}
             stroke={CHART_COLOURS.primary}
-            strokeWidth={2}
+            strokeWidth={2.5}
+            strokeLinecap="round"
             dot={false}
+            activeDot={{ r: 5, strokeWidth: 2, stroke: "#fff" }}
             connectNulls={false}
             isAnimationActive={false}
           />
         )}
         {isBloodPressure && showDiastolic && (
           <Line
-            type="monotone"
+            type="natural"
             dataKey="secondary"
             name="Diastolic"
             stroke={CHART_COLOURS.secondary}
-            strokeWidth={2}
+            strokeWidth={2.5}
+            strokeLinecap="round"
             dot={false}
+            activeDot={{ r: 5, strokeWidth: 2, stroke: "#fff" }}
             connectNulls={false}
             isAnimationActive={false}
           />
         )}
         {combineHeartRate && showHeartRateLine && (
           <Line
-            type="monotone"
+            type="natural"
             dataKey="heartRate"
             name="Heart Rate"
             stroke={CHART_COLOURS.heartRate}
-            strokeWidth={2}
+            strokeWidth={2.5}
+            strokeLinecap="round"
             dot={false}
+            activeDot={{ r: 5, strokeWidth: 2, stroke: "#fff" }}
             connectNulls={false}
             isAnimationActive={false}
           />
         )}
         {(isBloodPressure || combineHeartRate) && (
-          <Legend wrapperStyle={{ fontSize: 12 }} />
+          <Legend
+            wrapperStyle={{ fontSize: 12 }}
+            iconType="plainline"
+            iconSize={16}
+          />
         )}
-      </LineChart>
+      </ComposedChart>
     </ResponsiveContainer>
   );
 }
