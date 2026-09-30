@@ -2,8 +2,6 @@
 
 import { useMemo, useState } from "react";
 import {
-  AlertTriangle,
-  Brain,
   Download,
   Expand,
   List,
@@ -21,6 +19,7 @@ import { RiskPanel } from "@/features/monitoring/components/RiskPanel";
 import { ScoreResult } from "@/features/monitoring/components/ScoreVitalsForm";
 import { VitalsChart } from "@/features/monitoring/components/VitalsChart";
 import { AddReadingModal } from "./AddReadingModal";
+import { AISummaryPanel } from "./AISummaryPanel";
 import { PatientQuickLogPanel } from "./PatientQuickLogPanel";
 import {
   VITAL_METRICS,
@@ -286,7 +285,9 @@ export function PatientReadingsPanel({
                 </div>
                 <button
                   type="button"
-                  className="mc-btn-ghost mc-btn-sm"
+                  className="mc-iconbtn"
+                  aria-label="Download CSV"
+                  title="Download CSV"
                   disabled={filteredReadings.length === 0}
                   onClick={() =>
                     downloadCsv(
@@ -295,12 +296,11 @@ export function PatientReadingsPanel({
                     )
                   }
                 >
-                  <Download size={13} strokeWidth={2} aria-hidden />
-                  Download CSV
+                  <Download size={15} strokeWidth={2} aria-hidden />
                 </button>
                 <button
                   type="button"
-                  className="mc-btn mc-btn-sm"
+                  className="mc-btn-dark mc-btn-sm"
                   onClick={() => setShowAdd(true)}
                 >
                   <Plus size={13} strokeWidth={2} aria-hidden />
@@ -511,28 +511,10 @@ export function PatientReadingsPanel({
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-          <Card>
-            <CardHeader>
-              <div className="mc-card-title">
-                <Brain
-                  size={15}
-                  strokeWidth={1.9}
-                  aria-hidden
-                  style={{ verticalAlign: -2, marginRight: 6 }}
-                />
-                AI Summary
-              </div>
-            </CardHeader>
-            <CardBody>
-              <p className="mc-alert mc-alert-notice">
-                <AlertTriangle size={15} strokeWidth={2} aria-hidden />
-                Not yet connected to an AI summary service. The risk model
-                scores every reading (see AI Risk Assessment), but it
-                doesn&apos;t write narrative summaries — this card is a preview
-                of where one would appear.
-              </p>
-            </CardBody>
-          </Card>
+          <AISummaryPanel
+            patientId={patientId}
+            onViewReadings={() => setView("chart")}
+          />
 
           <PatientQuickLogPanel
             patientId={patientId}

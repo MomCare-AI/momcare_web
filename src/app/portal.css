@@ -622,6 +622,14 @@ body::-webkit-scrollbar-thumb:hover {
   color: var(--c-teal);
   border-color: var(--c-teal-soft);
 }
+.mc-iconbtn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.mc-iconbtn:disabled:hover {
+  color: var(--c-body);
+  border-color: var(--c-border);
+}
 
 .mc-burger {
   display: none;
@@ -1223,6 +1231,31 @@ a.mc-kpi:hover {
 .mc-btn:disabled {
   opacity: 0.55;
   cursor: default;
+}
+
+/* A deliberately different accent from the usual brand-blue .mc-btn — for
+   a primary action sitting in a row of otherwise-neutral view controls
+   (e.g. Readings' "Add Reading"), where it needs to read as the one
+   actionable item at a glance rather than blend in as just another
+   filter. */
+.mc-btn-dark {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 16px;
+  border-radius: var(--r-control);
+  border: 1px solid var(--c-ink);
+  background: var(--c-ink);
+  color: #fff;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.18s ease;
+}
+.mc-btn-dark:hover:not(:disabled) {
+  background: #0f2733;
 }
 
 .mc-btn-ghost {

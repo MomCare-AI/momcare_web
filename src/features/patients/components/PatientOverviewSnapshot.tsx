@@ -55,24 +55,21 @@ export function PatientOverviewSnapshot({
   const readings = readingsQuery.data?.results ?? [];
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexWrap: "wrap",
-        gap: 18,
-        marginBottom: 18,
-      }}
-    >
+    <div className="mc-overview-row">
       {/* Wider than Vitals Snapshot/Reading Activity on purpose — it's
           prose, not a tile grid, and needs the room. Not `.mc-grid-even`
           (shared with Reports and RecentActivityCards, which do want
           equal columns) — this row's proportions are specific to this
-          component. */}
-      <div style={{ flex: "2 1 420px", minWidth: 0 }}>
+          component. CSS Grid rather than flex-wrap: a flex row's "stretch
+          to match" only applies within one wrapped line, so a narrower
+          viewport that wrapped the third card onto its own line left it
+          unstretched and visibly shorter — grid's row stretch has no such
+          per-line ambiguity. */}
+      <div style={{ minWidth: 0 }}>
         <AISummaryPanel patientId={patientId} onViewReadings={onViewReadings} />
       </div>
 
-      <Card style={{ flex: "1 1 260px", minWidth: 0 }}>
+      <Card style={{ minWidth: 0 }}>
         <CardHeader>
           <div>
             <div className="mc-card-title">
@@ -144,7 +141,7 @@ export function PatientOverviewSnapshot({
         </CardBody>
       </Card>
 
-      <Card style={{ flex: "1 1 260px", minWidth: 0 }}>
+      <Card style={{ minWidth: 0 }}>
         <CardHeader>
           <div>
             <div className="mc-card-title">
