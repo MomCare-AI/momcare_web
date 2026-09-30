@@ -1,116 +1,128 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { motion } from "motion/react";
 import {
   AlertCircle,
-  ChevronRight,
-  HeartPulse,
   Info,
   Stethoscope,
   UserPlus,
   Users,
+  X,
 } from "lucide-react";
 import { useLocationPatients } from "@/features/locations/hooks/useLocations";
 import { useLocationScope } from "@/features/locations/LocationScopeContext";
-import { useAllPatients } from "@/features/reports/hooks/useReports";
-import { aggregateRiskLevels } from "@/features/reports/lib/aggregate";
-import type { RiskDistribution } from "@/features/reports/types";
 import { SessionExpiredError } from "@/core/api/authFetch";
 import { useJoinRequests } from "@/features/join-requests/hooks/useJoinRequests";
 import { JoinRequestsPanel } from "@/features/patients/components/JoinRequestsPanel";
 import { PatientsTable } from "@/features/patients/components/PatientsTable";
 import { WorkflowActivityBanner } from "@/features/patients/components/WorkflowActivityBanner";
-import { WorklistPanel } from "@/features/patients/components/WorklistPanel";
+import type {
+  PatientCareActivityFilter,
+  PatientWorkflowFilter,
+} from "@/features/patients/types";
 import {
   useDashboardKpis,
   usePatientList,
-  useWorklist,
 } from "@/features/patients/hooks/usePatients";
-import { Card, CardBody, CardHeader } from "@/shared/ui/Card";
+import { Card, CardBody } from "@/shared/ui/Card";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { RowSkeleton } from "@/shared/ui/RowSkeleton";
 import { usePortal } from "./layout";
 import { usePageTitle } from "@/hooks/usePageTitle";
 
-const RISK_LEVELS: {
-  key: keyof Pick<RiskDistribution, "high" | "medium" | "low" | "not_assessed">;
-  label: string;
-  badge: string;
-  color: string;
-}[] = [
-  {
-    key: "high",
-    label: "High",
-    badge: "mc-badge-high",
-    color: "var(--c-high)",
-  },
-  {
-    key: "medium",
-    label: "Medium",
-    badge: "mc-badge-medium",
-    color: "var(--c-moderate)",
-  },
-  {
-    key: "low",
-    label: "Low",
-    badge: "mc-badge-low",
-    color: "var(--c-stable)",
-  },
-  {
-    key: "not_assessed",
-    label: "Not assessed",
-    badge: "mc-badge-neutral",
-    color: "var(--c-faint)",
-  },
-];
+const WORKFLOW_FILTER_LABELS: Record<PatientWorkflowFilter, string> = {
+  risk_review: "Risk Review",
+  low_confidence: "Low Confidence",
+};
+const CARE_ACTIVITY_FILTER_LABELS: Record<PatientCareActivityFilter, string> = {
+  monitoring_follow_up: "Monitoring Follow-up",
+  unseen_readings: "Unseen Readings",
+  reading_reminder: "Reading Reminder",
+};
 
-/** CSS conic-gradient stops for the risk donut — no charting library needed
- *  for five static segments, and it stays crisp at any size. */
-function donutGradient(risk: RiskDistribution): string {
-  const total = risk.total || 1;
-  let cursor = 0;
-  const stops = RISK_LEVELS.map(({ key, color }) => {
-    const pct = (risk[key] / total) * 100;
-    const from = cursor;
-    cursor += pct;
-    return `${color} ${from}% ${cursor}%`;
-  });
-  return `conic-gradient(${stops.join(", ")})`;
+function isWorkflowFilter(
+  value: string | null
+): value is PatientWorkflowFilter {
+  return value === "risk_review" || value === "low_confidence";
+}
+function isCareActivityFilter(
+  value: string | null
+): value is PatientCareActivityFilter {
+  return (
+    value === "monitoring_follow_up" ||
+    value === "unseen_readings" ||
+    value === "reading_reminder"
+  );
 }
 
 export default function OverviewPage() {
   usePageTitle("Clinical Overview");
   const { org, isHospitalAdmin, isClinician } = usePortal();
   const router = useRouter();
-  const patientsQuery = useAllPatients();
 
-  // Folded in from the old standalone Patients page — same three tabs
-  // (Patients / Worklist / Join Requests), unchanged hooks and panels.
+  // Folded in from the old standalone Patients page — Patients / Join
+  // Requests tabs, unchanged hooks and panels. Worklist's own tile was
+  // dropped from the KPI banner (not one of the reference platform's
+  // dashboard-kpis concepts), which left this tab with no way to reach it.
   const assignedToMe = isClinician && !isHospitalAdmin;
-  const [listTab, setListTab] = useState<"patients" | "worklist" | "requests">(
-    "patients"
-  );
-  const worklist = useWorklist(assignedToMe);
+  const [listTab, setListTab] = useState<"patients" | "requests">("patients");
   const joinRequests = useJoinRequests("pending");
   const dashboardKpis = useDashboardKpis();
 
-  const initialSearch = useSearchParams().get("search") ?? "";
+  const searchParams = useSearchParams();
+  const initialSearch = searchParams.get("search") ?? "";
+  const workflowFilterParam = searchParams.get("workflow");
+  const careActivityFilterParam = searchParams.get("care_activity");
+  const workflowFilter = isWorkflowFilter(workflowFilterParam)
+    ? workflowFilterParam
+    : undefined;
+  const careActivityFilter = isCareActivityFilter(careActivityFilterParam)
+    ? careActivityFilterParam
+    : undefined;
+
+  // A Workflow/Care Activity KPI tile links to this same page with a query
+  // param rather than switching local state directly — real, shareable
+  // URLs, per the tiles' own job of being links. Arriving with one always
+  // means "show the (now filtered) patients tab", even if some other tab
+  // was showing before this navigation (client-side nav to the same route
+  // doesn't remount the page, so `listTab`'s own initial value wouldn't
+  // otherwise change).
+  useEffect(() => {
+    if (workflowFilter || careActivityFilter) setListTab("patients");
+  }, [workflowFilter, careActivityFilter]);
+
   // page_size=100: the whole hospital's list fetched once, so Search and
   // Advance Filters (both client-side, in PatientsTable) share one
   // consistent in-memory set — see that component's own doc comment for the
-  // honest tradeoff at hospitals with more than 100 patients.
-  const listResult = usePatientList("", 1, assignedToMe, 100);
+  // honest tradeoff at hospitals with more than 100 patients. The
+  // workflow/care-activity filter, unlike search, is applied server-side —
+  // matching exactly what dashboard-kpis counted.
+  const listResult = usePatientList(
+    "",
+    1,
+    assignedToMe,
+    100,
+    workflowFilter,
+    careActivityFilter
+  );
 
   // The sidebar's location switcher — "All Locations" (null) uses the
   // hospital-wide query above; a specific site swaps in its own
   // sub-resource endpoint (`/api/locations/<id>/patients/`), the only
   // place a per-location patient list actually exists server-side today.
+  // That endpoint only ever accepts `?is_active=` — it has no idea what
+  // `?workflow=`/`?care_activity=` mean (see LocationPatientsView) — so a
+  // KPI tile's filter used to be silently ignored whenever a location was
+  // already selected. A workflow/care-activity filter now always wins and
+  // falls back to the hospital-wide query, since matching what the tile
+  // promised matters more than staying location-scoped for that one view.
   const { selectedLocationId } = useLocationScope();
   const locationResult = useLocationPatients(selectedLocationId);
-  const scopedToLocation = selectedLocationId !== null;
+  const filterCrossesLocations = Boolean(workflowFilter || careActivityFilter);
+  const scopedToLocation =
+    selectedLocationId !== null && !filterCrossesLocations;
   const activeResult = scopedToLocation ? locationResult : listResult;
 
   useEffect(() => {
@@ -119,23 +131,37 @@ export default function OverviewPage() {
   }, [listResult.error, router]);
 
   const listPatients = activeResult.data?.results ?? [];
+  // The current query's own result count — the filtered subset while a
+  // workflow/care-activity filter is applied, the full roster otherwise.
   const listCount = activeResult.data?.count ?? 0;
-
-  const patients = patientsQuery.data ?? [];
 
   const hasStaff = org.staff_count > 0;
 
-  const risk = useMemo(() => aggregateRiskLevels(patients), [patients]);
+  const activeFilterLabel = workflowFilter
+    ? WORKFLOW_FILTER_LABELS[workflowFilter]
+    : careActivityFilter
+      ? CARE_ACTIVITY_FILTER_LABELS[careActivityFilter]
+      : null;
 
   return (
     <>
       <WorkflowActivityBanner
         activeTab={listTab}
         onSelect={setListTab}
-        patientsCount={listCount}
-        worklistCount={worklist.data?.count ?? 0}
-        requestsCount={joinRequests.data?.count ?? 0}
+        // Always the true, unfiltered roster total — dashboard-kpis' own
+        // count, not the currently-filtered list's.
+        totalPatients={dashboardKpis.data?.total_patients ?? listCount}
+        requestsCount={
+          dashboardKpis.data?.pending_join_requests ??
+          joinRequests.data?.count ??
+          0
+        }
+        activePatients={dashboardKpis.data?.active_patients}
+        inactivePatients={dashboardKpis.data?.inactive_patients}
+        workflow={dashboardKpis.data?.workflow}
         careActivities={dashboardKpis.data?.care_activities}
+        activeWorkflowFilter={workflowFilter}
+        activeCareActivityFilter={careActivityFilter}
       />
 
       {isHospitalAdmin && (
@@ -151,21 +177,33 @@ export default function OverviewPage() {
         </div>
       )}
 
+      {listTab === "patients" && activeFilterLabel && (
+        <div
+          className="mc-badge mc-badge-info"
+          style={{ marginBottom: 14, display: "inline-flex", gap: 6 }}
+        >
+          {activeFilterLabel}
+          {selectedLocationId !== null && (
+            <span style={{ opacity: 0.75 }}>— showing every location</span>
+          )}
+          <Link
+            href="/dashboard"
+            aria-label="Clear filter"
+            style={{
+              display: "inline-flex",
+              marginLeft: 6,
+              color: "inherit",
+            }}
+          >
+            <X size={12} strokeWidth={2.4} aria-hidden />
+          </Link>
+        </div>
+      )}
+
       {listTab === "requests" ? (
         <Card style={{ marginBottom: 18 }}>
           <CardBody>
             <JoinRequestsPanel />
-          </CardBody>
-        </Card>
-      ) : listTab === "worklist" ? (
-        <Card style={{ marginBottom: 18 }}>
-          <CardBody>
-            <p className="mc-hint" style={{ marginBottom: 14 }}>
-              Cases missing a recent reading, a recent note, an answered risk
-              history, or a lead clinician — not a statement about clinical
-              severity. See Needing attention for that.
-            </p>
-            <WorklistPanel assignedToMe={assignedToMe} />
           </CardBody>
         </Card>
       ) : activeResult.isPending ? (
@@ -192,17 +230,22 @@ export default function OverviewPage() {
                 <EmptyState
                   icon={<Users size={20} strokeWidth={1.9} aria-hidden />}
                   title={
-                    scopedToLocation
-                      ? "No patients at this location"
-                      : "No patients enrolled yet"
+                    activeFilterLabel
+                      ? `No patients need ${activeFilterLabel.toLowerCase()}`
+                      : scopedToLocation
+                        ? "No patients at this location"
+                        : "No patients enrolled yet"
                   }
                   text={
-                    scopedToLocation
-                      ? "Switch locations, or clear the filter to see the whole hospital."
-                      : "Enrol your first patient to start tracking her pregnancy."
+                    activeFilterLabel
+                      ? "This is a real, current result — nobody in the roster matches this filter right now, not a loading or error state."
+                      : scopedToLocation
+                        ? "Switch locations, or clear the filter to see the whole hospital."
+                        : "Enrol your first patient to start tracking her pregnancy."
                   }
                   actions={
-                    !scopedToLocation && (
+                    !scopedToLocation &&
+                    !activeFilterLabel && (
                       <Link href="/dashboard/patients/new" className="mc-btn">
                         <UserPlus size={15} strokeWidth={2} aria-hidden />
                         Enrol patient
@@ -220,111 +263,6 @@ export default function OverviewPage() {
           </Card>
         </>
       )}
-
-      <div className="mc-fullstack">
-        <Card>
-          <CardHeader>
-            <div className="mc-section-head">
-              <span className="mc-section-icon mc-kpi-icon-brand">
-                <HeartPulse size={17} strokeWidth={1.9} aria-hidden />
-              </span>
-              <div>
-                <div className="mc-card-title">Maternal health overview</div>
-                <div className="mc-card-sub">
-                  Active pregnancies by current risk level
-                </div>
-              </div>
-            </div>
-          </CardHeader>
-
-          {patientsQuery.isError && (
-            <EmptyState
-              title="Overview unavailable"
-              text="This is not a statement that no patient needs review — the list could not be loaded. Refresh to try again."
-            />
-          )}
-
-          {patientsQuery.isSuccess && risk.total === 0 && (
-            <EmptyState
-              icon={<HeartPulse size={20} strokeWidth={1.9} aria-hidden />}
-              title="No health data yet"
-              text="A breakdown by risk level will appear here once patients are enrolled and their readings begin arriving."
-            />
-          )}
-
-          {patientsQuery.isSuccess && risk.total > 0 && (
-            <CardBody>
-              <div className="mc-donut-wrap">
-                <motion.div
-                  className="mc-donut"
-                  style={{ background: donutGradient(risk) }}
-                  role="img"
-                  aria-label={`${risk.total} active pregnancies, ${risk.needing_attention} needing review`}
-                  initial={{ opacity: 0, scale: 0.85 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-                >
-                  <div className="mc-donut-hole">
-                    <span className="mc-donut-value">{risk.total}</span>
-                    <span className="mc-donut-label">active pregnancies</span>
-                  </div>
-                </motion.div>
-                <div className="mc-riskbars">
-                  {RISK_LEVELS.map(({ key, label, color }, index) => {
-                    const count = risk[key];
-                    const pct =
-                      risk.total > 0
-                        ? Math.round((count / risk.total) * 100)
-                        : 0;
-                    return (
-                      <div key={key} className="mc-riskbar-row">
-                        <span className="mc-riskbar-tag">
-                          <span
-                            className="mc-riskbar-dot"
-                            style={{ background: color }}
-                            aria-hidden
-                          />
-                          {label}
-                        </span>
-                        <div className="mc-riskbar-track">
-                          <motion.div
-                            className="mc-riskbar-fill"
-                            style={{ background: color }}
-                            initial={{ width: 0 }}
-                            animate={{ width: `${pct}%` }}
-                            transition={{
-                              duration: 0.5,
-                              delay: 0.1 + index * 0.08,
-                              ease: [0.16, 1, 0.3, 1],
-                            }}
-                          />
-                        </div>
-                        <span className="mc-riskbar-count">{count}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-              <div className="mc-hint" style={{ marginTop: 14 }}>
-                {risk.needing_attention} of {risk.total} active{" "}
-                {risk.total === 1 ? "pregnancy needs" : "pregnancies need"}{" "}
-                review right now.
-              </div>
-
-              {risk.needing_attention > 0 && (
-                <Link
-                  href="/dashboard/alerts"
-                  className="mc-link"
-                  style={{ marginTop: 12 }}
-                >
-                  View alerts
-                  <ChevronRight size={14} strokeWidth={2.2} aria-hidden />
-                </Link>
-              )}
-            </CardBody>
-          )}
-        </Card>
-      </div>
 
       {!hasStaff && isHospitalAdmin && (
         <Card style={{ marginBottom: 18 }}>

@@ -246,6 +246,14 @@ export interface AISummary {
  * by, so this can never disagree with what those screens show. Scoped by
  * the same roster filters (location/assigned_to=me) as the patient list.
  */
+/** Mirrors `_apply_workflow_and_care_activity`'s accepted `?workflow=`/
+ *  `?care_activity=` values on `GET /api/patients/` — the same filter the
+ *  dashboard-kpis counts are computed with, so a number on a tile can
+ *  never disagree with the list you get by following it. */
+export type PatientWorkflowFilter = "risk_review" | "low_confidence";
+export type PatientCareActivityFilter =
+  "monitoring_follow_up" | "unseen_readings" | "reading_reminder";
+
 export interface DashboardKpis {
   total_patients: number;
   active_patients: number;

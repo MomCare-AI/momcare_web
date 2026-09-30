@@ -1,21 +1,75 @@
 "use client";
 
-import { AlertCircle, Brain, Sparkles } from "lucide-react";
+import { AlertCircle, FileText, Sparkles } from "lucide-react";
 
 import { useAISummary } from "@/features/patients/hooks/usePatients";
+import type { AISummaryCitation } from "@/features/patients/types";
 import { formatDateTime } from "@/shared/lib/formatDateTime";
 import { Card, CardBody, CardHeader } from "@/shared/ui/Card";
 import { EmptyState } from "@/shared/ui/EmptyState";
 
 interface Props {
   patientId: string;
+  /** Jumps to the Readings tab — the honest destination for a "reading"
+   *  citation. There's no per-staff profile page anywhere in the portal,
+   *  so a "staff" citation is highlighted the same way but isn't a link
+   *  to anywhere. */
+  onViewReadings?: () => void;
+}
+
+interface ContentSegment {
+  text: string;
+  citation?: AISummaryCitation;
+}
+
+/**
+ * Splits the summary's prose at each citation's own substring, so the
+ * cited value/name can be highlighted inline exactly where it already
+ * appears in the sentence — rather than repeating it in a separate list
+ * below. Only the first occurrence of a given citation's text is matched;
+ * overlapping matches are dropped rather than risk highlighting the wrong
+ * span.
+ */
+function splitByCitations(
+  content: string,
+  citations: AISummaryCitation[]
+): ContentSegment[] {
+  if (citations.length === 0) return [{ text: content }];
+
+  const matches = citations
+    .map((citation) => {
+      const start = citation.text ? content.indexOf(citation.text) : -1;
+      return start === -1
+        ? null
+        : { start, end: start + citation.text.length, citation };
+    })
+    .filter(
+      (m): m is { start: number; end: number; citation: AISummaryCitation } =>
+        m !== null
+    )
+    .sort((a, b) => a.start - b.start);
+
+  const segments: ContentSegment[] = [];
+  let cursor = 0;
+  for (const m of matches) {
+    if (m.start < cursor) continue; // overlaps the previous match — skip
+    if (m.start > cursor)
+      segments.push({ text: content.slice(cursor, m.start) });
+    segments.push({
+      text: content.slice(m.start, m.end),
+      citation: m.citation,
+    });
+    cursor = m.end;
+  }
+  if (cursor < content.length) segments.push({ text: content.slice(cursor) });
+  return segments;
 }
 
 /**
  * The cached AI Summary (`GET /api/patients/{id}/ai-summary/`) — read-only,
  * on purpose. There is no "Regenerate" button anywhere in this panel: the
- * backend refreshes this on its own four triggers (enrollment, a risk-level
- * change, a periodic cron, deactivation) — see
+ * backend refreshes this on its own triggers (enrollment, every new
+ * reading, a periodic cron, deactivation) — see
  * backend/docs/design/2026-09-27-ai-summary-design.md's Triggers section.
  * A manual-refresh button here would be an uncontrolled path to a paid API
  * call with no rate limit, which is exactly what that design avoided.
@@ -25,17 +79,35 @@ interface Props {
  * empty state, never as an error. A genuine fetch failure gets its own
  * distinct message — this portal's own rule is that "nothing to show" and
  * "we couldn't find out" must never look the same.
+ *
+ * Citations highlight inline, in place, rather than as a separate list —
+ * each one is a real value/name the content already mentions, computed
+ * once at generation time by the backend's own `_build_citations()`; a
+ * value the text never mentions simply produces no citation, never a
+ * guessed one.
  */
-export function AISummaryPanel({ patientId }: Props) {
+export function AISummaryPanel({ patientId, onViewReadings }: Props) {
   const summaryQuery = useAISummary(patientId);
 
   return (
-    <Card style={{ marginTop: 18 }}>
+    <Card>
       <CardHeader>
-        <div className="mc-card-title">AI Summary</div>
-        <div className="mc-card-sub">
-          A narrative generated from this patient's own vitals, notes and care
-          team.
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            width: "100%",
+          }}
+        >
+          <div
+            className="mc-card-title"
+            style={{ display: "flex", alignItems: "center", gap: 8 }}
+          >
+            <FileText size={16} strokeWidth={1.9} aria-hidden />
+            AI Summary
+          </div>
+          <span className="mc-badge mc-badge-info">AI Insights</span>
         </div>
       </CardHeader>
       <CardBody>
@@ -54,52 +126,58 @@ export function AISummaryPanel({ patientId }: Props) {
             text="One is generated automatically once there's data to summarize — this refreshes on its own, there's nothing to trigger here."
           />
         ) : (
-          <>
-            <p style={{ whiteSpace: "pre-wrap", lineHeight: 1.6 }}>
-              {summaryQuery.data.content}
-            </p>
-            {summaryQuery.data.citations.length > 0 && (
-              <div style={{ marginTop: 14 }}>
-                <div
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 700,
-                    letterSpacing: "0.06em",
-                    textTransform: "uppercase",
-                    color: "var(--c-faint)",
-                    marginBottom: 8,
-                  }}
-                >
-                  Sources
-                </div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                  {summaryQuery.data.citations.map((c, i) => (
-                    <span
-                      key={`${c.type}-${c.id}-${i}`}
-                      className={
-                        c.type === "staff"
-                          ? "mc-badge mc-badge-info"
-                          : "mc-badge mc-badge-neutral"
-                      }
+          <div className="mc-ai">
+            <p style={{ whiteSpace: "pre-wrap", lineHeight: 1.65, margin: 0 }}>
+              {splitByCitations(
+                summaryQuery.data.content,
+                summaryQuery.data.citations
+              ).map((segment, i) => {
+                if (!segment.citation) return segment.text;
+
+                // Only a reading citation has somewhere real to go (the
+                // Readings tab) — underlined, like a link. A staff citation
+                // is still a real, backend-verified mention, just not one
+                // this portal has a profile page to send anyone to, so it's
+                // highlighted (color + weight) without implying it's
+                // clickable.
+                if (segment.citation.type === "reading" && onViewReadings) {
+                  return (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={onViewReadings}
+                      style={{
+                        color: "#2b5f94",
+                        textDecoration: "underline",
+                        textDecorationColor: "#8fb3d9",
+                        textUnderlineOffset: 2,
+                        fontWeight: 600,
+                        background: "none",
+                        border: "none",
+                        padding: 0,
+                        font: "inherit",
+                        cursor: "pointer",
+                      }}
                     >
-                      {c.text}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-            <div className="mc-ai" style={{ marginTop: 14 }}>
-              <span className="mc-ai-tag">
-                <Brain size={12} strokeWidth={2.3} aria-hidden />
-                AI Summary
-              </span>
-              <p className="mc-ai-note">
-                Decision support only — never a diagnosis. Generated{" "}
-                {formatDateTime(summaryQuery.data.generated_at)} using{" "}
-                {summaryQuery.data.model_used}.
-              </p>
-            </div>
-          </>
+                      {segment.text}
+                    </button>
+                  );
+                }
+                return (
+                  <span key={i} style={{ color: "#2b5f94", fontWeight: 600 }}>
+                    {segment.text}
+                  </span>
+                );
+              })}
+            </p>
+            <p className="mc-ai-note">
+              Decision support only — never a diagnosis. Generated{" "}
+              {formatDateTime(summaryQuery.data.generated_at)} using{" "}
+              {summaryQuery.data.model_used}
+              {summaryQuery.data.citations.length > 0 &&
+                " · underlined values link to their reading, highlighted names are real mentions from the care team."}
+            </p>
+          </div>
         )}
       </CardBody>
     </Card>

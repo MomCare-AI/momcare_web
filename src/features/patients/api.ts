@@ -4,11 +4,13 @@ import type {
   AISummary,
   DashboardKpis,
   Paginated,
+  PatientCareActivityFilter,
   PatientDetail,
   PatientListItem,
   PatientStatusEntry,
   PatientStatusListResponse,
   PatientUpdateInput,
+  PatientWorkflowFilter,
   Pregnancy,
   PregnancyUpdateInput,
   RiskFactors,
@@ -52,6 +54,10 @@ export function listPatients(
      *  Reports to pull the whole hospital in a handful of pages rather than
      *  the default 25/page. */
     pageSize?: number;
+    /** `?workflow=`/`?care_activity=` — the same filters dashboard-kpis
+     *  counts with. At most one of the two is ever meaningful at a time. */
+    workflow?: PatientWorkflowFilter;
+    careActivity?: PatientCareActivityFilter;
   } = {}
 ) {
   const query = new URLSearchParams();
@@ -62,6 +68,8 @@ export function listPatients(
   // see core/patients/api/views.py:_scope_to_assigned. hospital_admin gets an
   // honest empty list for this param, so it's never sent for that role.
   if (params.assignedToMe) query.set("assigned_to", "me");
+  if (params.workflow) query.set("workflow", params.workflow);
+  if (params.careActivity) query.set("care_activity", params.careActivity);
   const suffix = query.toString() ? `?${query}` : "";
   return authJson<Paginated<PatientListItem>>(`/api/patients/${suffix}`);
 }

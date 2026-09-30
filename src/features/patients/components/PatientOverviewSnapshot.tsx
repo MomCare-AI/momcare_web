@@ -8,11 +8,13 @@ import {
   useReadings,
 } from "@/features/monitoring/hooks/useMonitoring";
 import { VITAL_METRICS, latestForMetric } from "@/features/monitoring/types";
-import { AiSummaryCard } from "./AiSummaryCard";
+import { AISummaryPanel } from "./AISummaryPanel";
 import { Card, CardBody, CardHeader } from "@/shared/ui/Card";
 
 interface Props {
+  patientId: string;
   pregnancyId: string | null;
+  onViewReadings?: () => void;
 }
 
 function countLast24h(readings: { recorded_at: string }[]): number {
@@ -22,15 +24,21 @@ function countLast24h(readings: { recorded_at: string }[]): number {
 }
 
 /**
- * The top row of the Overview tab: AI Summary placeholder, then a real
- * "Reading Activity" card (reading volume + device status — the reference
- * platform's own "RPM Overview" box, renamed since MomCare has no RPM/CCM
- * split to report). An "out of range" count is deliberately left out —
- * MomCare's vital-category thresholds live only in the backend's
- * `clinical_categories.py`, and re-implementing them here would risk
- * silently drifting from the real rule.
+ * The top row of the Overview tab: the real AI Summary (was a static
+ * "not yet connected" placeholder until the backend's ai-summary endpoint
+ * shipped — see AISummaryPanel's own docstring for why it's read-only),
+ * then a real "Reading Activity" card (reading volume + device status —
+ * the reference platform's own "RPM Overview" box, renamed since MomCare
+ * has no RPM/CCM split to report). An "out of range" count is
+ * deliberately left out — MomCare's vital-category thresholds live only
+ * in the backend's `clinical_categories.py`, and re-implementing them
+ * here would risk silently drifting from the real rule.
  */
-export function PatientOverviewSnapshot({ pregnancyId }: Props) {
+export function PatientOverviewSnapshot({
+  patientId,
+  pregnancyId,
+  onViewReadings,
+}: Props) {
   const readingsQuery = useReadings(pregnancyId ?? undefined);
   const devicesQuery = useDevices();
 
@@ -48,7 +56,7 @@ export function PatientOverviewSnapshot({ pregnancyId }: Props) {
 
   return (
     <div className="mc-grid-even">
-      <AiSummaryCard />
+      <AISummaryPanel patientId={patientId} onViewReadings={onViewReadings} />
 
       <Card>
         <CardHeader>

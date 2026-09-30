@@ -20,7 +20,12 @@ import {
   type EnrolmentInput,
   type PatientStatusInput,
 } from "../api";
-import type { PatientUpdateInput, PregnancyUpdateInput } from "../types";
+import type {
+  PatientCareActivityFilter,
+  PatientUpdateInput,
+  PatientWorkflowFilter,
+  PregnancyUpdateInput,
+} from "../types";
 
 /**
  * Server data for the patients domain.
@@ -33,8 +38,18 @@ import type { PatientUpdateInput, PregnancyUpdateInput } from "../types";
 
 export const patientKeys = {
   all: ["patients"] as const,
-  list: (search: string, page: number, assignedToMe: boolean) =>
-    [...patientKeys.all, "list", { search, page, assignedToMe }] as const,
+  list: (
+    search: string,
+    page: number,
+    assignedToMe: boolean,
+    workflow?: PatientWorkflowFilter,
+    careActivity?: PatientCareActivityFilter
+  ) =>
+    [
+      ...patientKeys.all,
+      "list",
+      { search, page, assignedToMe, workflow, careActivity },
+    ] as const,
   detail: (id: string) => [...patientKeys.all, "detail", id] as const,
   pregnancies: (id: string) => [...patientKeys.all, "pregnancies", id] as const,
   clinicians: ["clinicians"] as const,
@@ -57,11 +72,24 @@ export function usePatientList(
   search: string,
   page: number,
   assignedToMe = false,
-  pageSize?: number
+  pageSize?: number,
+  workflow?: PatientWorkflowFilter,
+  careActivity?: PatientCareActivityFilter
 ) {
   return useQuery({
-    queryKey: [...patientKeys.list(search, page, assignedToMe), pageSize],
-    queryFn: () => listPatients({ search, page, assignedToMe, pageSize }),
+    queryKey: [
+      ...patientKeys.list(search, page, assignedToMe, workflow, careActivity),
+      pageSize,
+    ],
+    queryFn: () =>
+      listPatients({
+        search,
+        page,
+        assignedToMe,
+        pageSize,
+        workflow,
+        careActivity,
+      }),
     retry: retryUnlessSessionExpired,
     // Keeps the previous page on screen while the next one loads, so paging
     // and searching don't blank the table on every keystroke.

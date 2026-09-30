@@ -31,7 +31,6 @@ import { PatientDevicesPanel } from "@/features/patients/components/PatientDevic
 import { PatientDocumentsPanel } from "@/features/patients/components/PatientDocumentsPanel";
 import { PatientHeaderBanner } from "@/features/patients/components/PatientHeaderBanner";
 import { PatientOverviewSnapshot } from "@/features/patients/components/PatientOverviewSnapshot";
-import { AISummaryPanel } from "@/features/patients/components/AISummaryPanel";
 import { PatientReadingsPanel } from "@/features/patients/components/PatientReadingsPanel";
 import { PatientStatusesPanel } from "@/features/patients/components/PatientStatusesPanel";
 import { RecentActivityCards } from "@/features/patients/components/RecentActivityCards";
@@ -179,15 +178,17 @@ export default function PatientProfilePage({
 
       {tab === "overview" && (
         <>
-          <PatientOverviewSnapshot pregnancyId={current?.id ?? null} />
+          <PatientOverviewSnapshot
+            patientId={patient.id}
+            pregnancyId={current?.id ?? null}
+            onViewReadings={() => setTab("readings")}
+          />
 
           <RecentActivityCards
             patientId={patient.id}
             patientLocationName={patient.location_name}
             onOpenNotes={() => setTab("notes")}
           />
-
-          <AISummaryPanel patientId={patient.id} />
 
           {current && (
             <CareTeamEditor
