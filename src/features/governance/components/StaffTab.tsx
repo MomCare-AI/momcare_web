@@ -38,14 +38,22 @@ const EMPTY_FORM: CreateStaffInput = {
   locations: [],
 };
 
-export function StaffTab() {
+interface Props {
+  /** Set once, from the URL a citation link arrives with (`?staff=<id>`) —
+   *  expands that person's row and scrolls it into view on first load. */
+  initialHighlightId?: string | null;
+}
+
+export function StaffTab({ initialHighlightId = null }: Props) {
   const { isHospitalAdmin, user, refresh } = usePortal();
   const router = useRouter();
 
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState<CreateStaffInput>(EMPTY_FORM);
   const [formError, setFormError] = useState<string | null>(null);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(
+    initialHighlightId
+  );
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [sort, setSort] = useState<{
@@ -116,7 +124,7 @@ export function StaffTab() {
 
   useEffect(() => {
     if (staffQuery.error instanceof SessionExpiredError)
-      router.replace("/login");
+      router.replace("/login?expired=1");
   }, [staffQuery.error, router]);
 
   // The shell shows the staff count, so it refetches once the team is known.
@@ -124,6 +132,17 @@ export function StaffTab() {
     if (!staffQuery.isPending) refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [staff.length]);
+
+  // Scroll a citation-linked row into view once the table has actually
+  // rendered — nothing to scroll to while the skeleton is still showing.
+  useEffect(() => {
+    if (!initialHighlightId || staffQuery.isPending) return;
+    document
+      .getElementById(`staff-row-${initialHighlightId}`)
+      ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    // Only on the row becoming available — not on every re-render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialHighlightId, staffQuery.isPending]);
 
   const toggleLocation = (id: string) => {
     setForm((f) => ({
@@ -146,7 +165,7 @@ export function StaffTab() {
       setShowForm(false);
     } catch (err) {
       if (err instanceof SessionExpiredError) {
-        router.replace("/login");
+        router.replace("/login?expired=1");
         return;
       }
       setFormError(
@@ -471,6 +490,7 @@ function StaffRow({
   return (
     <Fragment>
       <tr
+        id={`staff-row-${m.id}`}
         className="mc-dtable-row"
         aria-expanded={expanded}
         onClick={onToggleExpand}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 import { usePortal } from "../layout";
 import { AITemplatesTab } from "@/features/governance/components/AITemplatesTab";
@@ -16,10 +17,30 @@ import { usePageTitle } from "@/hooks/usePageTitle";
 type Tab =
   "staff" | "locations" | "providers" | "statuses" | "notes" | "ai-templates";
 
+const VALID_TABS: Tab[] = [
+  "staff",
+  "locations",
+  "providers",
+  "statuses",
+  "notes",
+  "ai-templates",
+];
+
 export default function GovernancePage() {
   usePageTitle("System Governance");
   const { org, isHospitalAdmin } = usePortal();
-  const [tab, setTab] = useState<Tab>("locations");
+  const searchParams = useSearchParams();
+  // A citation link (AI Summary's staff mentions) arrives as ?tab=staff&
+  // staff=<id> — read once on first render, not kept in sync afterwards,
+  // same as every other useState-driven tab here (switching tabs by click
+  // doesn't update the URL either).
+  const [tab, setTab] = useState<Tab>(() => {
+    const requested = searchParams.get("tab");
+    return VALID_TABS.includes(requested as Tab)
+      ? (requested as Tab)
+      : "locations";
+  });
+  const [highlightStaffId] = useState(() => searchParams.get("staff"));
   const secondaryProvidersQuery = useSecondaryProviders();
 
   // Matches the visibility the two separate nav items had before this page
@@ -121,7 +142,9 @@ export default function GovernancePage() {
         )}
       </div>
 
-      {activeTab === "staff" && <StaffTab />}
+      {activeTab === "staff" && (
+        <StaffTab initialHighlightId={highlightStaffId} />
+      )}
       {activeTab === "locations" && <LocationsTab />}
       {activeTab === "providers" && <SecondaryProvidersTab />}
       {activeTab === "statuses" && <StatusLabelsTab />}

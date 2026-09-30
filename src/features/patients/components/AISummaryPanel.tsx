@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { AlertCircle, FileText, Sparkles } from "lucide-react";
 
 import { useAISummary } from "@/features/patients/hooks/usePatients";
@@ -11,9 +12,9 @@ import { EmptyState } from "@/shared/ui/EmptyState";
 interface Props {
   patientId: string;
   /** Jumps to the Readings tab — the honest destination for a "reading"
-   *  citation. There's no per-staff profile page anywhere in the portal,
-   *  so a "staff" citation is highlighted the same way but isn't a link
-   *  to anywhere. */
+   *  citation. A "staff" citation instead links to System Governance's
+   *  Staff tab, expanded to that specific person (there's no dedicated
+   *  per-staff profile page, so that's the closest real destination). */
   onViewReadings?: () => void;
 }
 
@@ -88,6 +89,7 @@ function splitByCitations(
  */
 export function AISummaryPanel({ patientId, onViewReadings }: Props) {
   const summaryQuery = useAISummary(patientId);
+  const router = useRouter();
 
   return (
     <Card>
@@ -141,12 +143,10 @@ export function AISummaryPanel({ patientId, onViewReadings }: Props) {
               ).map((segment, i) => {
                 if (!segment.citation) return segment.text;
 
-                // Only a reading citation has somewhere real to go (the
-                // Readings tab) — underlined, like a link. A staff citation
-                // is still a real, backend-verified mention, just not one
-                // this portal has a profile page to send anyone to, so it's
-                // highlighted (color + weight) without implying it's
-                // clickable.
+                // A reading citation jumps to the Readings tab (same page);
+                // a staff citation navigates to Governance's Staff tab,
+                // expanded to that person — the closest real destination,
+                // since there's no dedicated per-staff profile page.
                 if (segment.citation.type === "reading" && onViewReadings) {
                   return (
                     <button
@@ -172,21 +172,36 @@ export function AISummaryPanel({ patientId, onViewReadings }: Props) {
                     </button>
                   );
                 }
-                return (
-                  <span
-                    key={i}
-                    style={{
-                      color: "#1d4e85",
-                      background: "#eef1ff",
-                      fontWeight: 700,
-                      borderRadius: 4,
-                      padding: "1px 4px",
-                      margin: "0 1px",
-                    }}
-                  >
-                    {segment.text}
-                  </span>
-                );
+                if (segment.citation.type === "staff") {
+                  return (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() =>
+                        router.push(
+                          `/dashboard/governance?tab=staff&staff=${segment.citation!.id}`
+                        )
+                      }
+                      style={{
+                        color: "#1d4e85",
+                        background: "#eef1ff",
+                        textDecoration: "underline",
+                        textDecorationColor: "#8a94d1",
+                        textUnderlineOffset: 2,
+                        fontWeight: 700,
+                        border: "none",
+                        borderRadius: 4,
+                        padding: "1px 4px",
+                        margin: "0 1px",
+                        font: "inherit",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {segment.text}
+                    </button>
+                  );
+                }
+                return segment.text;
               })}
             </p>
             <p className="mc-ai-note">
@@ -194,7 +209,7 @@ export function AISummaryPanel({ patientId, onViewReadings }: Props) {
               {formatDateTime(summaryQuery.data.generated_at)} using{" "}
               {summaryQuery.data.model_used}
               {summaryQuery.data.citations.length > 0 &&
-                " · underlined values link to their reading, highlighted names are real mentions from the care team."}
+                " · underlined values and names are real mentions you can click through to — a reading jumps to the Readings tab, a name opens their staff record."}
             </p>
           </div>
         )}
