@@ -58,6 +58,36 @@ export function AISummaryPanel({ patientId }: Props) {
             <p style={{ whiteSpace: "pre-wrap", lineHeight: 1.6 }}>
               {summaryQuery.data.content}
             </p>
+            {summaryQuery.data.citations.length > 0 && (
+              <div style={{ marginTop: 14 }}>
+                <div
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    letterSpacing: "0.06em",
+                    textTransform: "uppercase",
+                    color: "var(--c-faint)",
+                    marginBottom: 8,
+                  }}
+                >
+                  Sources
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  {summaryQuery.data.citations.map((c, i) => (
+                    <span
+                      key={`${c.type}-${c.id}-${i}`}
+                      className={
+                        c.type === "staff"
+                          ? "mc-badge mc-badge-info"
+                          : "mc-badge mc-badge-neutral"
+                      }
+                    >
+                      {c.text}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="mc-ai" style={{ marginTop: 14 }}>
               <span className="mc-ai-tag">
                 <Brain size={12} strokeWidth={2.3} aria-hidden />

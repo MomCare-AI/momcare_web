@@ -226,10 +226,17 @@ export type PatientStatusListResponse = Paginated<PatientStatusEntry>;
  * call from here; see backend/docs/design/2026-09-27-ai-summary-design.md's
  * Triggers section for the only four paths that ever refresh this.
  */
+export interface AISummaryCitation {
+  text: string;
+  type: "reading" | "staff";
+  id: string;
+}
+
 export interface AISummary {
   content: string;
   generated_at: string;
   model_used: string;
+  citations: AISummaryCitation[];
 }
 
 /**
