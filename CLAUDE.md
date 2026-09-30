@@ -82,12 +82,26 @@ the same task.
 Frontend-only by default — don't inspect or run `../backend` unless the
 task genuinely can't be resolved without checking an API contract.
 
-No subagents for single-file changes, CSS/layout fixes, small bug fixes, or
-locating a known symbol. Use `Grep`/`Glob` directly instead.
+**Subagent rule.** No subagents for: single-file changes, CSS/layout fixes,
+simple UI/component changes, straightforward CRUD UI work, simple bug fixes,
+simple TypeScript fixes, locating symbols/files, or other similarly small,
+well-scoped tasks. Use `Grep`/`Glob` directly instead.
 
-Verification matches the change size — a CSS tweak gets a typecheck, not a
-full `vitest run`; a shared-component change gets the full suite. Don't
-run the full suite by default for a small fix.
+**Verification rule.** Verification matches the change size:
+
+- CSS/UI change → targeted visual check; typecheck only if relevant.
+- TypeScript change → typecheck, plus lint when appropriate.
+- Behavior change → the relevant test.
+- Larger feature → broader verification.
+- Avoid expensive full-project verification (e.g. a full `vitest run`) for
+  small changes.
+
+**Long-session context rule.** Trust current repository state and
+`../docs/PLAN.md` over old conversational context, not what was said many
+turns ago (the path is relative to this file — `docs/` sits beside
+`frontend/`, not inside it). Use `PLAN.md` as the single project-state
+document — update it when project state genuinely changes, never create a
+second summary/state document.
 
 ## Commands
 
