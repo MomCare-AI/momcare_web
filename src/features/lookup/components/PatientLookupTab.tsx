@@ -4,39 +4,34 @@ import { useState } from "react";
 import Link from "next/link";
 import { Search, User, UserCheck, UserX } from "lucide-react";
 
-import { usePatientList } from "@/features/patients/hooks/usePatients";
+import {
+  usePatientList,
+  useQuickLookupKpis,
+} from "@/features/patients/hooks/usePatients";
 import { RiskBadge } from "@/features/monitoring/components/RiskBadge";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { RowSkeleton } from "@/shared/ui/RowSkeleton";
 import { useDebouncedValue } from "../useDebouncedValue";
 
-// DefaultPagination caps page_size at 100 server-side — the same limit
-// Reports already relies on to pull "the whole hospital" in one page. The
-// Active/Inactive breakdown below is computed from whatever this call
-// returns, so on a hospital with more than 100 patients it undercounts;
-// `total` itself stays exact regardless, since it reads the paginated
-// envelope's own `count`, not the fetched row count.
-const STATS_PAGE_SIZE = 100;
-
 export function PatientLookupTab() {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebouncedValue(search, 350);
 
-  const statsQuery = usePatientList("", 1, false, STATS_PAGE_SIZE);
+  // Organization-wide and uncapped — quick-lookup-kpis aggregates every
+  // patient server-side, never undercounting past a fetched page's size.
+  const kpisQuery = useQuickLookupKpis();
   const searchQuery = usePatientList(debouncedSearch.trim(), 1, false, 50);
 
-  const total = statsQuery.data?.count ?? 0;
-  const statsRows = statsQuery.data?.results ?? [];
-  const activeCount = statsRows.filter((p) => p.is_active).length;
-  const inactiveCount = statsRows.filter((p) => !p.is_active).length;
-  const statsCapped = total > statsRows.length;
+  const total = kpisQuery.data?.patients.total ?? 0;
+  const activeCount = kpisQuery.data?.patients.active ?? 0;
+  const inactiveCount = kpisQuery.data?.patients.inactive ?? 0;
 
   const rows = searchQuery.data?.results ?? [];
   const searching = debouncedSearch.trim().length > 0;
 
   return (
     <>
-      <section className="mc-kpis">
+      <section className="mc-kpis mc-kpis-compact">
         <div className="mc-kpi">
           <div className="mc-kpi-top">
             <span className="mc-kpi-label">Total Patients</span>
@@ -61,11 +56,7 @@ export function PatientLookupTab() {
             </span>
           </div>
           <span className="mc-kpi-value">{activeCount}</span>
-          <span className="mc-kpi-foot">
-            {statsCapped
-              ? `Of the first ${statsRows.length} fetched`
-              : "Across all locations"}
-          </span>
+          <span className="mc-kpi-foot">Across all locations</span>
         </div>
         <div className="mc-kpi">
           <div className="mc-kpi-top">
@@ -81,11 +72,7 @@ export function PatientLookupTab() {
             </span>
           </div>
           <span className="mc-kpi-value">{inactiveCount}</span>
-          <span className="mc-kpi-foot">
-            {statsCapped
-              ? `Of the first ${statsRows.length} fetched`
-              : "Across all locations"}
-          </span>
+          <span className="mc-kpi-foot">Across all locations</span>
         </div>
       </section>
 

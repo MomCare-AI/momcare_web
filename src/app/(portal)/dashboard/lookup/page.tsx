@@ -28,12 +28,6 @@ export default function QuickLookupPage() {
 
   return (
     <>
-      <h1 className="mc-h1">Quick Look Up</h1>
-      <p className="mc-sub" style={{ marginBottom: 18 }}>
-        Find a patient across every location, look up a device by its serial
-        number, or find a staff member — without leaving this page.
-      </p>
-
       <div className="mc-tabs" role="tablist" aria-label="Look up">
         {TABS.map(({ key, label, Icon }) => {
           const active = key === tab;

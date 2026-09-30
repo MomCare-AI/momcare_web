@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Briefcase, Search, UserCheck, UserX } from "lucide-react";
 
 import { useLocations } from "@/features/locations/hooks/useLocations";
+import { useQuickLookupKpis } from "@/features/patients/hooks/usePatients";
 import { useStaffList } from "@/features/staff/hooks/useStaff";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { InitialsAvatar } from "@/shared/ui/InitialsAvatar";
@@ -13,6 +14,11 @@ import { useDebouncedValue } from "../useDebouncedValue";
 export function StaffLookupTab() {
   const staffQuery = useStaffList();
   const locationsQuery = useLocations();
+  // Organization-wide and uncapped, unlike counting useStaffList's own
+  // page_size=100 fetch (see that hook's own comment on why it isn't real
+  // pagination yet) — the same quick-lookup-kpis endpoint the Patients tab
+  // uses, so one hospital over 100 staff still sees a correct count here.
+  const kpisQuery = useQuickLookupKpis();
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebouncedValue(search, 350);
 
@@ -25,9 +31,9 @@ export function StaffLookupTab() {
     return map;
   }, [locationsQuery.data]);
 
-  const total = staff.length;
-  const activeCount = staff.filter((s) => s.is_active).length;
-  const inactiveCount = staff.filter((s) => !s.is_active).length;
+  const total = kpisQuery.data?.staff.total ?? 0;
+  const activeCount = kpisQuery.data?.staff.active ?? 0;
+  const inactiveCount = kpisQuery.data?.staff.inactive ?? 0;
 
   const searching = debouncedSearch.trim().length > 0;
   const rows = useMemo(() => {
@@ -49,7 +55,7 @@ export function StaffLookupTab() {
 
   return (
     <>
-      <section className="mc-kpis">
+      <section className="mc-kpis mc-kpis-compact">
         <div className="mc-kpi">
           <div className="mc-kpi-top">
             <span className="mc-kpi-label">Total Staff</span>

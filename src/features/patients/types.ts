@@ -274,6 +274,14 @@ export interface DashboardKpis {
   };
 }
 
+/** `GET /api/patients/quick-lookup-kpis/` — organization-wide counts, never
+ *  scoped by location/`?assigned_to=me` (unlike `DashboardKpis`) and never
+ *  capped by a page size, unlike counting a fetched page of results. */
+export interface QuickLookupKpis {
+  staff: { total: number; active: number; inactive: number };
+  patients: { total: number; active: number; inactive: number };
+}
+
 export const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
 /** Clinical state, so it earns colour. Never colour alone — each carries a label. */

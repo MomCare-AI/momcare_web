@@ -13,6 +13,7 @@ import type {
   PatientWorkflowFilter,
   Pregnancy,
   PregnancyUpdateInput,
+  QuickLookupKpis,
   RiskFactors,
   WorklistResponse,
 } from "./types";
@@ -89,6 +90,10 @@ export function getPatient(id: string) {
 
 export function getDashboardKpis() {
   return authJson<DashboardKpis>(`/api/patients/dashboard-kpis/`);
+}
+
+export function getQuickLookupKpis() {
+  return authJson<QuickLookupKpis>(`/api/patients/quick-lookup-kpis/`);
 }
 
 /**

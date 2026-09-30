@@ -34,7 +34,7 @@ export function DeviceLookupTab() {
 
   return (
     <>
-      <section className="mc-kpis">
+      <section className="mc-kpis mc-kpis-compact">
         <div className="mc-kpi">
           <div className="mc-kpi-top">
             <span className="mc-kpi-label">Total Devices</span>

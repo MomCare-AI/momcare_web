@@ -9,6 +9,7 @@ import {
   getAISummary,
   getDashboardKpis,
   getPatient,
+  getQuickLookupKpis,
   listClinicians,
   listPatients,
   listPatientStatuses,
@@ -56,6 +57,7 @@ export const patientKeys = {
   worklist: (assignedToMe: boolean) =>
     [...patientKeys.all, "worklist", assignedToMe] as const,
   dashboardKpis: ["patients", "dashboard-kpis"] as const,
+  quickLookupKpis: ["patients", "quick-lookup-kpis"] as const,
   statuses: (patientId: string) =>
     [...patientKeys.all, "statuses", patientId] as const,
   aiSummary: (patientId: string) =>
@@ -114,6 +116,18 @@ export function useDashboardKpis() {
   return useQuery({
     queryKey: patientKeys.dashboardKpis,
     queryFn: getDashboardKpis,
+    retry: retryUnlessSessionExpired,
+  });
+}
+
+/** Organization-wide, uncapped — unlike counting a fetched page of
+ *  patients/staff, this never undercounts past a page_size limit. Shared
+ *  by Quick Lookup's Patients and Staff tabs; TanStack Query's cache
+ *  dedupes the two calls into one request. */
+export function useQuickLookupKpis() {
+  return useQuery({
+    queryKey: patientKeys.quickLookupKpis,
+    queryFn: getQuickLookupKpis,
     retry: retryUnlessSessionExpired,
   });
 }
