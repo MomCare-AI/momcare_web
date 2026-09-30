@@ -59,7 +59,9 @@ export type VitalMetric =
   | "heart_rate"
   | "body_temp_f"
   | "blood_glucose"
-  | "hemoglobin";
+  | "hemoglobin"
+  | "stress_score"
+  | "phys_activity_score";
 
 export const VITAL_METRICS: {
   metric: VitalMetric;
@@ -104,6 +106,20 @@ export const VITAL_METRICS: {
     short: "Hb",
     unit: "g/dL",
     field: "hemoglobin",
+  },
+  {
+    metric: "stress_score",
+    label: "Stress score",
+    short: "Stress",
+    unit: "/10",
+    field: "stress_score",
+  },
+  {
+    metric: "phys_activity_score",
+    label: "Physical activity",
+    short: "Activity",
+    unit: "/10",
+    field: "phys_activity_score",
   },
 ];
 

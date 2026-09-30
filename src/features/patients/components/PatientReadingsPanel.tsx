@@ -60,6 +60,8 @@ const CATEGORY_FIELD: Record<VitalMetric, keyof RiskAssessment | null> = {
   body_temp_f: "temperature_category",
   blood_glucose: "glucose_category",
   hemoglobin: "hemoglobin_category",
+  stress_score: null,
+  phys_activity_score: null,
 };
 
 /** A light heuristic over the backend's own category text, purely to pick a

@@ -122,9 +122,9 @@ describe("VitalsPanel", () => {
     series([reading()]);
 
     render(<VitalsPanel pregnancyId="preg1" />);
-    // Only blood pressure was recorded. The other four metrics each say so
+    // Only blood pressure was recorded. The other six metrics each say so
     // rather than showing a blank, a zero, or another vital's number.
-    expect(screen.getAllByText("Not measured").length).toBe(4);
+    expect(screen.getAllByText("Not measured").length).toBe(6);
   });
 
   it("finds a vital in an older event rather than reporting it unmeasured", () => {
