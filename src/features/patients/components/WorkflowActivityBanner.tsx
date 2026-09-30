@@ -14,6 +14,7 @@ import {
   UserMinus,
   Users,
 } from "lucide-react";
+import { AlertBell } from "@/features/alerts/components/AlertBell";
 import type { DashboardKpis } from "../types";
 
 type ListTab = "patients" | "requests";
@@ -201,7 +202,20 @@ export function WorkflowActivityBanner({
     <>
       {/* ── Patient roster split ─────────────────────────────── */}
       <div className="mc-kpi-roster-row">
-        <div className="mc-kpi-tile" style={{ cursor: "default" }}>
+        <div
+          style={{
+            flex: "0 1 20%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "flex-start",
+          }}
+        >
+          <AlertBell />
+        </div>
+        <div
+          className="mc-kpi-tile"
+          style={{ cursor: "default", flex: "1 1 40%" }}
+        >
           <TileContent
             label="Active Patients"
             value={activePatients}
@@ -209,7 +223,10 @@ export function WorkflowActivityBanner({
             selected={false}
           />
         </div>
-        <div className="mc-kpi-tile" style={{ cursor: "default" }}>
+        <div
+          className="mc-kpi-tile"
+          style={{ cursor: "default", flex: "1 1 40%" }}
+        >
           <TileContent
             label="Inactive Patients"
             value={inactivePatients}

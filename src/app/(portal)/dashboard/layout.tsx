@@ -188,7 +188,6 @@ export default function DashboardLayout({
   const pathname = usePathname();
 
   const [menuOpen, setMenuOpen] = useState(false);
-  const [navSearch, setNavSearch] = useState("");
 
   // The tablet tier (860–1023px) always shows the icon rail regardless of
   // this preference — only the desktop tier ever reads it. Resizing within
@@ -218,14 +217,6 @@ export default function DashboardLayout({
   };
 
   const effectiveCollapsed = isDesktopTier ? manualCollapsed : true;
-
-  const submitNavSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    const term = navSearch.trim();
-    router.push(
-      term ? `/dashboard?search=${encodeURIComponent(term)}` : "/dashboard"
-    );
-  };
 
   // authFetch refreshes once on a 401 underneath these, so an hour-old session
   // recovers silently instead of bouncing the user out mid-task.
@@ -342,10 +333,6 @@ export default function DashboardLayout({
               showMenuTrigger
               menuOpen={menuOpen}
               onToggleMenu={() => setMenuOpen((v) => !v)}
-              navSearch={navSearch}
-              onNavSearchChange={setNavSearch}
-              onSubmitSearch={submitNavSearch}
-              initials={initials}
             />
             <div className="mc-page">{children}</div>
           </div>

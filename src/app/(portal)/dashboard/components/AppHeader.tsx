@@ -1,9 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { Menu, Search, X } from "lucide-react";
-
-import { AlertBell } from "@/features/alerts/components/AlertBell";
+import { Menu, X } from "lucide-react";
 
 interface Props {
   /** Only the mobile tier renders this — desktop and tablet always show the
@@ -11,63 +8,31 @@ interface Props {
   showMenuTrigger: boolean;
   menuOpen: boolean;
   onToggleMenu: () => void;
-  navSearch: string;
-  onNavSearchChange: (value: string) => void;
-  onSubmitSearch: (event: React.FormEvent) => void;
-  initials: string;
 }
 
 /**
- * What's left at the top once primary navigation moves into the sidebar:
- * search, the alert bell, and a compact link to the account. Full name and
- * role now live in the sidebar's own identity block — repeating them here
- * would just be the same information twice.
+ * Nothing left here on desktop/tablet — account access already lives in
+ * the sidebar's own identity block, search was a duplicate of the
+ * Patients list's own (more capable) search box, and the alert bell now
+ * lives next to Active/Inactive Patients on the Overview page. This is
+ * only rendered at all (see `.mc-appheader`'s own CSS) so the mobile menu
+ * trigger has somewhere to live — desktop/tablet gets no header bar.
  */
-export function AppHeader({
-  showMenuTrigger,
-  menuOpen,
-  onToggleMenu,
-  navSearch,
-  onNavSearchChange,
-  onSubmitSearch,
-  initials,
-}: Props) {
+export function AppHeader({ showMenuTrigger, menuOpen, onToggleMenu }: Props) {
+  if (!showMenuTrigger) return null;
+
   return (
     <header className="mc-appheader">
-      {showMenuTrigger && (
-        <button
-          id="mc-menu-trigger"
-          type="button"
-          className="mc-burger"
-          onClick={onToggleMenu}
-          aria-label={menuOpen ? "Close menu" : "Open menu"}
-          aria-expanded={menuOpen}
-        >
-          {menuOpen ? <X size={19} /> : <Menu size={19} />}
-        </button>
-      )}
-
-      <form className="mc-navsearch" onSubmit={onSubmitSearch} role="search">
-        <Search size={15} strokeWidth={2} aria-hidden />
-        <input
-          type="text"
-          placeholder="Search patients…"
-          value={navSearch}
-          onChange={(e) => onNavSearchChange(e.target.value)}
-          aria-label="Search patients"
-        />
-      </form>
-
-      <div className="mc-appheader-right">
-        <AlertBell />
-        <Link
-          href="/dashboard/settings"
-          className="mc-avatar mc-appheader-avatar"
-          aria-label="Account settings"
-        >
-          {initials}
-        </Link>
-      </div>
+      <button
+        id="mc-menu-trigger"
+        type="button"
+        className="mc-burger"
+        onClick={onToggleMenu}
+        aria-label={menuOpen ? "Close menu" : "Open menu"}
+        aria-expanded={menuOpen}
+      >
+        {menuOpen ? <X size={19} /> : <Menu size={19} />}
+      </button>
     </header>
   );
 }

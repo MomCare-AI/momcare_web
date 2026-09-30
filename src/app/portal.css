@@ -590,81 +590,14 @@ body::-webkit-scrollbar-thumb:hover {
 }
 
 /* ── Application header ──────────────────────────────────────────────────
-   What's left once primary navigation moves into the sidebar: search, the
-   alert bell, and a compact link to the account. */
+   Search, the alert bell and account access all moved out (search was a
+   duplicate of the Patients list's own box; account access already lives
+   in the sidebar; the bell moved next to Active/Inactive Patients) —
+   nothing left to show on desktop/tablet, so no bar reserves the space.
+   Only the mobile tier re-enables it, as the mobile menu trigger's home
+   (see the breakpoint below). */
 .mc-appheader {
-  position: sticky;
-  top: 0;
-  z-index: 40;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  height: 70px;
-  padding: 0 32px;
-  background: var(--c-card);
-  border-bottom: 1px solid var(--c-border);
-}
-
-.mc-navsearch {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: none;
-  width: 260px;
-  height: 36px;
-  padding: 0 12px;
-  border-radius: 999px;
-  border: 1px solid transparent;
-  /* One-off #f1f4f5 rather than a new token: it only needs to read as
-     "recessed into the white navbar," and it's distinct enough from
-     --c-ground on its own for that without another near-duplicate gray
-     added to the system (see the color-system task's own §26). */
-  background: #f1f4f5;
-  color: var(--c-faint);
-  transition:
-    background 0.18s ease,
-    border-color 0.18s ease;
-}
-.mc-navsearch:focus-within {
-  background: var(--c-card);
-  border-color: var(--c-teal-soft);
-  color: var(--c-body);
-}
-.mc-navsearch input {
-  flex: 1;
-  min-width: 0;
-  border: none;
-  background: none;
-  outline: none;
-  font: inherit;
-  font-size: 13.5px;
-  color: var(--c-ink);
-}
-/* The global :focus-visible ring (portal.css's own accessibility rule,
-   further up this file) otherwise wins here on specificity. Not removing
-   focus visibility - the pill's own border-color and background shift on
-   :focus-within already say "this is focused" without a second, competing
-   ring drawn on top of it. */
-.mc-navsearch input:focus-visible {
-  outline: none;
-}
-.mc-navsearch input::placeholder {
-  color: var(--c-faint);
-}
-
-.mc-appheader-right {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex: none;
-  margin-left: auto;
-}
-.mc-appheader-avatar {
-  text-decoration: none;
-  transition: box-shadow 0.15s ease;
-}
-.mc-appheader-avatar:hover {
-  box-shadow: 0 0 0 2px var(--c-teal-soft);
+  display: none;
 }
 
 .mc-iconbtn {
@@ -1804,9 +1737,16 @@ select.mc-input {
     display: none;
   }
   .mc-appheader {
+    display: flex;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 40;
     padding: 0 16px;
     gap: 10px;
     height: 56px;
+    background: var(--c-card);
+    border-bottom: 1px solid var(--c-border);
   }
   .mc-burger {
     display: grid;
@@ -1823,12 +1763,6 @@ select.mc-input {
   .mc-page {
     padding: 20px 16px 48px;
   }
-  .mc-navsearch {
-    width: auto;
-    flex: 1;
-    min-width: 0;
-  }
-
   /* ── Headings ── */
   .mc-h1 {
     font-size: 20px;
