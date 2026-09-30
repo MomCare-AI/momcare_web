@@ -127,7 +127,14 @@ export function AISummaryPanel({ patientId, onViewReadings }: Props) {
           />
         ) : (
           <div className="mc-ai">
-            <p style={{ whiteSpace: "pre-wrap", lineHeight: 1.65, margin: 0 }}>
+            <p
+              style={{
+                whiteSpace: "pre-wrap",
+                lineHeight: 1.55,
+                fontSize: 13,
+                margin: 0,
+              }}
+            >
               {splitByCitations(
                 summaryQuery.data.content,
                 summaryQuery.data.citations
@@ -147,14 +154,16 @@ export function AISummaryPanel({ patientId, onViewReadings }: Props) {
                       type="button"
                       onClick={onViewReadings}
                       style={{
-                        color: "#2b5f94",
+                        color: "#1d4e85",
+                        background: "#dbe9fa",
                         textDecoration: "underline",
-                        textDecorationColor: "#8fb3d9",
+                        textDecorationColor: "#5f92c9",
                         textUnderlineOffset: 2,
-                        fontWeight: 600,
-                        background: "none",
+                        fontWeight: 700,
                         border: "none",
-                        padding: 0,
+                        borderRadius: 4,
+                        padding: "1px 4px",
+                        margin: "0 1px",
                         font: "inherit",
                         cursor: "pointer",
                       }}
@@ -164,7 +173,17 @@ export function AISummaryPanel({ patientId, onViewReadings }: Props) {
                   );
                 }
                 return (
-                  <span key={i} style={{ color: "#2b5f94", fontWeight: 600 }}>
+                  <span
+                    key={i}
+                    style={{
+                      color: "#1d4e85",
+                      background: "#eef1ff",
+                      fontWeight: 700,
+                      borderRadius: 4,
+                      padding: "1px 4px",
+                      margin: "0 1px",
+                    }}
+                  >
                     {segment.text}
                   </span>
                 );

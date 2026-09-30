@@ -55,10 +55,24 @@ export function PatientOverviewSnapshot({
   const readings = readingsQuery.data?.results ?? [];
 
   return (
-    <div className="mc-grid-even">
-      <AISummaryPanel patientId={patientId} onViewReadings={onViewReadings} />
+    <div
+      style={{
+        display: "flex",
+        flexWrap: "wrap",
+        gap: 18,
+        marginBottom: 18,
+      }}
+    >
+      {/* Wider than Vitals Snapshot/Reading Activity on purpose — it's
+          prose, not a tile grid, and needs the room. Not `.mc-grid-even`
+          (shared with Reports and RecentActivityCards, which do want
+          equal columns) — this row's proportions are specific to this
+          component. */}
+      <div style={{ flex: "2 1 420px", minWidth: 0 }}>
+        <AISummaryPanel patientId={patientId} onViewReadings={onViewReadings} />
+      </div>
 
-      <Card>
+      <Card style={{ flex: "1 1 260px", minWidth: 0 }}>
         <CardHeader>
           <div>
             <div className="mc-card-title">
@@ -83,7 +97,7 @@ export function PatientOverviewSnapshot({
               style={{
                 display: "grid",
                 gridTemplateColumns: "repeat(3, 1fr)",
-                gap: 10,
+                gap: 8,
               }}
             >
               {VITAL_METRICS.map(({ metric, label, unit }) => {
@@ -94,16 +108,20 @@ export function PatientOverviewSnapshot({
                     style={{
                       border: "1px solid var(--c-border-soft)",
                       borderRadius: "var(--r-control)",
-                      padding: "10px 12px",
+                      padding: "7px 8px",
+                      minWidth: 0,
                     }}
                   >
                     <div
                       className="mc-pair-label"
-                      style={{ textTransform: "uppercase" }}
+                      style={{ textTransform: "uppercase", fontSize: 10 }}
                     >
                       {label}
                     </div>
-                    <div className="mc-pair-value" style={{ fontSize: 20 }}>
+                    <div
+                      className="mc-pair-value"
+                      style={{ fontSize: 15, whiteSpace: "nowrap" }}
+                    >
                       {latest
                         ? latest.secondary === null
                           ? latest.value
@@ -113,7 +131,7 @@ export function PatientOverviewSnapshot({
                     {latest && (
                       <div
                         className="mc-hint"
-                        style={{ color: "var(--c-teal)" }}
+                        style={{ color: "var(--c-teal)", fontSize: 10.5 }}
                       >
                         {unit}
                       </div>
@@ -126,7 +144,7 @@ export function PatientOverviewSnapshot({
         </CardBody>
       </Card>
 
-      <Card>
+      <Card style={{ flex: "1 1 260px", minWidth: 0 }}>
         <CardHeader>
           <div>
             <div className="mc-card-title">

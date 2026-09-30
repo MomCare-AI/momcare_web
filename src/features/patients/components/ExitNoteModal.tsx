@@ -61,8 +61,10 @@ export function ExitNoteModal({
   const save = async (withNote: boolean) => {
     setError(null);
     const noteText = withNote ? note.trim() : "";
-    if (withNote && (leftVoicemail || twoWayCommunication) && !noteText) {
-      setError("Recording a call outcome needs a note.");
+    if (withNote && !noteText) {
+      setError(
+        "Write a note before saving, or use Continue Without Note to skip it."
+      );
       return;
     }
     try {
@@ -116,7 +118,7 @@ export function ExitNoteModal({
           rows={4}
           value={note}
           onChange={(e) => setNote(e.target.value)}
-          placeholder="What was discussed or found — optional"
+          placeholder="What was discussed or found — required to save a note"
         />
       </div>
 
