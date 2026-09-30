@@ -52,23 +52,29 @@ function tileClassName(selected: boolean): string {
 function TileContent({ label, value, icon, selected }: TileContentProps) {
   return (
     <>
-      <span
-        className={selected ? "mc-kpi-icon mc-kpi-icon-brand" : "mc-kpi-icon"}
-      >
-        {icon}
-      </span>
+      <span className="mc-kpi-icon">{icon}</span>
       <span>
         <div
           style={{
             fontSize: 17,
             fontWeight: 700,
-            color: value === undefined ? "var(--c-faint)" : "var(--c-ink)",
+            color: selected
+              ? "#ffffff"
+              : value === undefined
+                ? "var(--c-faint)"
+                : "var(--c-ink)",
             lineHeight: 1,
           }}
         >
           {value ?? "—"}
         </div>
-        <div style={{ fontSize: 11.5, color: "var(--c-faint)", marginTop: 3 }}>
+        <div
+          style={{
+            fontSize: 11.5,
+            color: selected ? "rgba(255, 255, 255, 0.82)" : "var(--c-faint)",
+            marginTop: 3,
+          }}
+        >
           {label}
         </div>
       </span>
@@ -202,38 +208,25 @@ export function WorkflowActivityBanner({
     <>
       {/* ── Patient roster split ─────────────────────────────── */}
       <div className="mc-kpi-roster-row">
-        <div
-          style={{
-            flex: "0 1 20%",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "flex-start",
-          }}
-        >
-          <AlertBell />
+        <div className="mc-kpi-roster-group">
+          <div className="mc-kpi-tile" style={{ cursor: "default" }}>
+            <TileContent
+              label="Active Patients"
+              value={activePatients}
+              icon={<Users size={16} strokeWidth={1.9} aria-hidden />}
+              selected={false}
+            />
+          </div>
+          <div className="mc-kpi-tile" style={{ cursor: "default" }}>
+            <TileContent
+              label="Inactive Patients"
+              value={inactivePatients}
+              icon={<UserMinus size={16} strokeWidth={1.9} aria-hidden />}
+              selected={false}
+            />
+          </div>
         </div>
-        <div
-          className="mc-kpi-tile"
-          style={{ cursor: "default", flex: "1 1 40%" }}
-        >
-          <TileContent
-            label="Active Patients"
-            value={activePatients}
-            icon={<Users size={16} strokeWidth={1.9} aria-hidden />}
-            selected={false}
-          />
-        </div>
-        <div
-          className="mc-kpi-tile"
-          style={{ cursor: "default", flex: "1 1 40%" }}
-        >
-          <TileContent
-            label="Inactive Patients"
-            value={inactivePatients}
-            icon={<UserMinus size={16} strokeWidth={1.9} aria-hidden />}
-            selected={false}
-          />
-        </div>
+        <AlertBell />
       </div>
 
       <div className="mc-hero" style={{ padding: "18px 20px" }}>
