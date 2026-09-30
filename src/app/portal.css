@@ -1917,37 +1917,16 @@ select.mc-input {
   }
 
   /* ── Tables ── */
-  .mc-dtable,
-  .mc-dtable tbody,
-  .mc-dtable tr {
-    display: block;
-    width: 100%;
-  }
-  .mc-dtable thead {
-    display: none;
-  }
-  .mc-dtable-wrap {
-    overflow-x: visible;
-  }
-  .mc-dtable-row {
-    background: var(--c-card);
-    border: 1px solid var(--c-border-soft);
-    border-radius: var(--r-card);
-    margin-bottom: 12px;
-    padding: 8px 0;
-  }
-  .mc-dtable-row:last-child {
-    margin-bottom: 0;
-  }
-  .mc-dtable td {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 14px;
-    border-bottom: none;
-    white-space: normal;
-  }
+  /* No stacked-card override here on purpose — .mc-dtable-wrap's own
+     `overflow-x: auto` + .mc-dtable's `min-width: max-content` (see the
+     unscoped rules below) already make this a real, compact,
+     single-row-per-patient table that scrolls horizontally at any width.
+     A previous version of this rule forced `display: block` and hid the
+     header, which turned every row into an unlabeled vertical stack of
+     bare values (patient name, status, gestational age, ... with nothing
+     saying which was which) — much taller, and actively less readable,
+     than just letting the real table scroll sideways the way the
+     reference platform's own table does. */
 
   /* ── Toolbar ── */
   .mc-table-toolbar {
@@ -2812,6 +2791,111 @@ a.mc-kpi:hover,
 .mc-kpi-icon-neutral {
   background: var(--c-border-soft);
   color: var(--c-faint);
+}
+
+/* Workflow/Care Activity KPI tiles (WorkflowActivityBanner) — a plain
+   border alone made it hard to tell a tile was clickable, or which one was
+   currently selected, without close inspection. Hover and the selected
+   state both get the same tint so a selected tile reads as "held down"
+   even without the pointer over it. */
+.mc-kpi-tile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--c-card);
+  border: 1px solid var(--c-border-soft);
+  border-radius: var(--r-control);
+  padding: 9px 14px;
+  min-width: 120px;
+  /* Never shrinks below its own min-width inside a scrolling row — the
+     row scrolls instead of squeezing tiles thinner than their content. */
+  flex-shrink: 0;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+.mc-kpi-tile:hover {
+  background: var(--c-teal-wash);
+}
+.mc-kpi-tile-selected,
+.mc-kpi-tile-selected:hover {
+  background: var(--c-teal-wash);
+  border-color: var(--c-teal);
+}
+
+.mc-kpi-roster-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+/* The Workflow/Care Activity pair, side by side above the tablet
+   breakpoint. Each column keeps a 280px floor so its own tile row still
+   has genuine room before it ever needs to scroll — narrower than that
+   and every tile row would need scrolling even on a wide screen, just to
+   fit two columns rather than because there's really not enough width. */
+.mc-kpi-columns {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.mc-kpi-column {
+  flex: 1 1 280px;
+  min-width: 0;
+}
+/* Active/Inactive stack full width below the tablet breakpoint (matches
+   the layout shell's own tier in dashboard/layout.tsx) — two short tiles
+   have no real content-driven reason to wrap on their own, so this one is
+   still an explicit break rather than left to flex-wrap.
+   The Workflow/Care Activity pair is NOT force-stacked here — `.mc-kpi-
+   column`'s own `flex: 1 1 280px` already wraps it once the container
+   truly can't fit both (~620px combined). An earlier version of this rule
+   forced them to stack as low as 860px regardless, which stacked them
+   even when there was clearly enough room for one row — narrower than
+   the reference platform ever needs to. */
+@media (max-width: 860px) {
+  .mc-kpi-roster-row {
+    flex-direction: column;
+  }
+  .mc-kpi-roster-row .mc-kpi-tile {
+    width: 100%;
+  }
+}
+
+/* A tile row that doesn't fit its container scrolls horizontally instead
+   of wrapping a tile onto its own line — the scrollbar itself is hidden,
+   since the arrow buttons next to the section label are the intended way
+   to move it (a trackpad/touch swipe still works, just invisibly). */
+.mc-kpi-row {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  flex-wrap: nowrap;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.mc-kpi-row::-webkit-scrollbar {
+  display: none;
+}
+.mc-kpi-scroll-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 1px solid var(--c-border-soft);
+  background: var(--c-card);
+  color: var(--c-faint);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.mc-kpi-scroll-btn:hover {
+  background: var(--c-teal-wash);
+  color: var(--c-teal);
+  border-color: var(--c-teal);
 }
 
 /* Severity gets the accent, not decoration — "Needing attention" is a real

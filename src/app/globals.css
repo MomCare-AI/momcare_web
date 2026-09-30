@@ -241,9 +241,14 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  background: rgba(255, 255, 255, 0.5);
-  backdrop-filter: blur(14px) saturate(180%);
-  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  /* Was 0.5, then 0.85 -- scrolled-past content (card titles, headings)
+     was still legible enough through the blur to visually mix with the
+     nav's own text while scrolling. Near-opaque so nothing behind the nav
+     is ever readable, while the blur still carries enough of a frosted
+     look to not read as a flat solid bar. */
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   /* This blur runs on every scroll frame since the nav is fixed and
      always on screen — promoting it to its own GPU layer keeps that
      from forcing a repaint of everything scrolling behind it. */
@@ -439,7 +444,12 @@ body {
   min-height: 100vh;
   min-height: 100svh;
   display: flex;
-  align-items: center;
+  /* Plain `center` overflows upward past the section's own top edge once
+     the hero content (pill + headline + copy + CTA) is taller than a short
+     viewport -- straight behind the fixed nav. `safe center` keeps the
+     centering on tall viewports but falls back to top-alignment instead of
+     overflowing off-screen, so the pill can never render above the nav. */
+  align-items: safe center;
   overflow: hidden;
   background: var(--text);
 }
@@ -470,7 +480,11 @@ body {
   width: 100%;
   max-width: 1320px;
   margin: 0 auto;
-  padding: 140px 44px 64px;
+  /* Top padding is now purely aesthetic breathing room within the hero —
+     the reserved-nav-space spacer above this section (see
+     LandingPageClient.tsx) is what actually clears the fixed nav, so this
+     no longer needs to guess a value large enough to do that job too. */
+  padding: 56px 44px 64px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -3181,7 +3195,10 @@ body {
   }
 
   .hero-video-inner {
-    padding-top: 100px;
+    /* Was 100px, guessed to also clear the fixed nav -- the reserved-space
+       spacer before this section now does that job, so this is just
+       breathing room within the hero itself. */
+    padding-top: 32px;
     padding-left: 24px;
     padding-right: 24px;
     text-align: center;
