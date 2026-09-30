@@ -33,6 +33,7 @@ function patient(overrides: Partial<PatientListItem>): PatientListItem {
     provider_name: null,
     nurse_name: null,
     care_manager_name: null,
+    language: null,
     last_reading_at: null,
     last_reading_display: null,
     last_monitoring_contact_at: null,

@@ -9,7 +9,6 @@ import { RiskBadge } from "@/features/monitoring/components/RiskBadge";
 import { riskLabel } from "@/features/monitoring/types";
 import type { Device } from "@/features/monitoring/types";
 import { EmptyState } from "@/shared/ui/EmptyState";
-import { InitialsAvatar } from "@/shared/ui/InitialsAvatar";
 import {
   FIELDS_WITHOUT_DATA,
   PatientAdvanceFilterModal,
@@ -202,6 +201,7 @@ export function PatientsTable({
                 <th>Gestational age</th>
                 <th>Care Manager</th>
                 <th>Provider</th>
+                <th>Language</th>
                 <th>Last Reading</th>
                 <th>Last Call</th>
                 <th>Monitoring Time</th>
@@ -219,25 +219,10 @@ export function PatientsTable({
                     <td>
                       <Link
                         href={`/dashboard/patients/${patient.id}`}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 10,
-                          color: "inherit",
-                          textDecoration: "none",
-                        }}
+                        className="mc-dtable-primary"
+                        style={{ color: "inherit", textDecoration: "none" }}
                       >
-                        <InitialsAvatar name={patient.full_name} size={30} />
-                        <div>
-                          <div className="mc-dtable-primary">
-                            {patient.full_name}
-                          </div>
-                          <div className="mc-dtable-sub">
-                            {[patient.mrn, patient.phone, patient.cnic]
-                              .filter(Boolean)
-                              .join(" · ") || "—"}
-                          </div>
-                        </div>
+                        {patient.full_name}
                       </Link>
                     </td>
                     <td>
@@ -290,6 +275,7 @@ export function PatientsTable({
                     <td className="mc-dtable-sub">
                       {patient.provider_name || "—"}
                     </td>
+                    <td className="mc-dtable-sub">{patient.language || "—"}</td>
                     <td className="mc-dtable-sub">
                       {patient.last_reading_display || "—"}
                     </td>

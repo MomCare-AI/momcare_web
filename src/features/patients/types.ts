@@ -101,6 +101,10 @@ export interface PatientListItem {
   provider_name: string | null;
   nurse_name: string | null;
   care_manager_name: string | null;
+  /** Only present once she has her own app account — lives on `User`, and
+   *  `Patient.user` is optional (a rural patient may never have one). Null
+   *  for every patient today, since the patient app isn't live yet. */
+  language: string | null;
   last_reading_at: string | null;
   last_reading_display: string | null;
   last_monitoring_contact_at: string | null;
