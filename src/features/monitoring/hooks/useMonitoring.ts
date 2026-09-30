@@ -7,6 +7,7 @@ import {
   assignDevice,
   escalateRisk,
   getLatestReadings,
+  getReadingStatistics,
   getRiskHistory,
   listDevices,
   listReadings,
@@ -16,8 +17,9 @@ import {
   reviewRisk,
   unassignDevice,
   type ManualReadingInput,
+  type ReadingPeriod,
 } from "../api";
-import type { RiskLevel } from "../types";
+import type { ReadingType, RiskLevel } from "../types";
 
 // The root is named separately: referring to monitoringKeys inside its own
 // initializer makes TypeScript unable to infer the type.
@@ -29,6 +31,18 @@ export const monitoringKeys = {
     [...MONITORING_ROOT, "readings", pregnancyId] as const,
   latest: (pregnancyId: string) =>
     [...MONITORING_ROOT, "latest", pregnancyId] as const,
+  statistics: (
+    pregnancyId: string,
+    readingType: ReadingType,
+    period: ReadingPeriod
+  ) =>
+    [
+      ...MONITORING_ROOT,
+      "statistics",
+      pregnancyId,
+      readingType,
+      period,
+    ] as const,
   devices: [...MONITORING_ROOT, "devices"] as const,
   risk: (pregnancyId: string) =>
     [...MONITORING_ROOT, "risk", pregnancyId] as const,
@@ -54,6 +68,30 @@ export function useReadings(pregnancyId: string | undefined) {
     enabled: Boolean(pregnancyId),
     retry: retryUnlessSessionExpired,
     // Monitoring data goes out of date on its own, unlike a patient record.
+    staleTime: 30 * 1000,
+  });
+}
+
+/**
+ * The real category-percentage breakdown for one vital's chart, over the
+ * chart's own selected range — every clinical band in guideline order, not
+ * just the ones that occurred. `readingType` null (stress/activity, which
+ * have no clinical bands) disables the query rather than requesting garbage.
+ */
+export function useReadingStatistics(
+  pregnancyId: string | undefined,
+  readingType: ReadingType | null,
+  period: ReadingPeriod
+) {
+  return useQuery({
+    queryKey: monitoringKeys.statistics(
+      pregnancyId ?? "",
+      readingType ?? "blood_pressure",
+      period
+    ),
+    queryFn: () => getReadingStatistics(pregnancyId!, readingType!, period),
+    enabled: Boolean(pregnancyId) && Boolean(readingType),
+    retry: retryUnlessSessionExpired,
     staleTime: 30 * 1000,
   });
 }

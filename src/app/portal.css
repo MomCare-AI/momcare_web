@@ -2954,6 +2954,44 @@ a.mc-kpi:hover,
   font-variant-numeric: tabular-nums;
 }
 
+/* One vital's clinical-band breakdown as a single continuous bar — each
+   segment's width is its real share of readings in the range, so a 0% band
+   is simply invisible rather than padded out to look occupied. */
+.mc-catbar-track {
+  display: flex;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--c-border-soft);
+  overflow: hidden;
+  gap: 2px;
+}
+.mc-catbar-segment {
+  min-width: 0;
+  transition: flex-grow 0.4s ease;
+}
+.mc-catbar-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-top: 12px;
+}
+.mc-catbar-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--c-ink);
+}
+.mc-catbar-item strong {
+  font-variant-numeric: tabular-nums;
+}
+.mc-catbar-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+}
+
 /* ── Dense data table ────────────────────────────────────────────────────
    System Governance's table screens (Locations/Staff/Secondary Providers) — a denser
    alternative to .mc-rows for lists with several sortable columns. A clicked

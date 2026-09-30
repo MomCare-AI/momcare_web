@@ -13,8 +13,10 @@ import {
 
 import {
   useReadings,
+  useReadingStatistics,
   useRiskHistory,
 } from "@/features/monitoring/hooks/useMonitoring";
+import type { ReadingPeriod } from "@/features/monitoring/api";
 import { RiskPanel } from "@/features/monitoring/components/RiskPanel";
 import { ScoreResult } from "@/features/monitoring/components/ScoreVitalsForm";
 import { VitalsChart } from "@/features/monitoring/components/VitalsChart";
@@ -23,7 +25,6 @@ import { PatientQuickLogPanel } from "./PatientQuickLogPanel";
 import {
   VITAL_METRICS,
   vitalValue,
-  type RiskAssessment,
   type VitalMetric,
   type VitalReading,
 } from "@/features/monitoring/types";
@@ -50,42 +51,50 @@ const RANGE_OPTIONS: { value: Range; label: string; days: number }[] = [
   { value: "6m", label: "6 Months", days: 180 },
 ];
 
-/** Which `RiskAssessment` field carries this vital's clinical category — one
- *  exists for every vital MomCare tracks (`modules/pregnancy/vitals/api/
- *  serializers.py::RiskAssessmentSerializer`), computed server-side by
- *  `momcare_model/clinical_categories.py`. Never re-implemented here. */
-const CATEGORY_FIELD: Record<VitalMetric, keyof RiskAssessment | null> = {
-  blood_pressure: "bp_category",
-  heart_rate: "heart_rate_category",
-  body_temp_f: "temperature_category",
-  blood_glucose: "glucose_category",
-  hemoglobin: "hemoglobin_category",
-  stress_score: null,
-  phys_activity_score: null,
+/** The chart's own range, mapped to the statistics endpoint's preset window
+ *  codes (`vitals/services.py::READING_PERIODS`) — same day counts, just the
+ *  backend's own names instead of this panel's short ones. */
+const PERIOD_BY_RANGE: Record<Range, ReadingPeriod> = {
+  "2d": "2_days",
+  "1w": "1_week",
+  "1m": "1_month",
+  "3m": "3_months",
+  "6m": "6_months",
 };
 
-/** A light heuristic over the backend's own category text, purely to pick a
- *  display color — the label itself is always exactly what the backend
- *  said, never altered or invented. */
-function categoryTone(label: string): string {
-  const l = label.toLowerCase();
-  if (
-    l.includes("crisis") ||
-    l.includes("severe") ||
-    l.includes("stage 2") ||
-    l.includes("high")
-  )
-    return "var(--c-high)";
-  if (
-    l.includes("stage 1") ||
-    l.includes("elevated") ||
-    l.includes("borderline") ||
-    l.includes("moderate") ||
-    l.includes("low")
-  )
-    return "var(--c-moderate)";
-  if (l.includes("normal")) return "var(--c-stable)";
-  return "var(--c-faint)";
+/** A fixed, distinct hue per vital — identifies *which vital* a segment is,
+ *  not its clinical severity, so this deliberately stays off the portal's
+ *  stable/moderate/high/critical palette (CLAUDE.md reserves that one for
+ *  real alert state; reusing it here would make an idle vital look like a
+ *  clinical warning). */
+const VITAL_COLORS: Partial<Record<VitalMetric, string>> = {
+  blood_pressure: "#4662e8",
+  heart_rate: "#8a5fd1",
+  body_temp_f: "#0891b2",
+  blood_glucose: "#c2478d",
+  hemoglobin: "#64748b",
+};
+
+/**
+ * Largest-remainder rounding: whole-number percentages that sum to exactly
+ * 100 (or 0 if every count is 0), rather than naive per-item rounding, which
+ * can drift a point above or below 100 and make a "this adds up to 100%" bar
+ * visibly lie.
+ */
+function allocatePercentages(counts: number[]): number[] {
+  const total = counts.reduce((sum, c) => sum + c, 0);
+  if (total === 0) return counts.map(() => 0);
+  const raw = counts.map((c) => (c / total) * 100);
+  const floors = raw.map(Math.floor);
+  let remainder = 100 - floors.reduce((sum, f) => sum + f, 0);
+  const byFraction = raw
+    .map((v, i) => ({ i, frac: v - Math.floor(v) }))
+    .sort((a, b) => b.frac - a.frac);
+  const result = [...floors];
+  for (let k = 0; k < remainder && k < byFraction.length; k++) {
+    result[byFraction[k].i] += 1;
+  }
+  return result;
 }
 
 function toCsv(readings: VitalReading[], metric: VitalMetric): string {
@@ -163,6 +172,45 @@ export function PatientReadingsPanel({
   const readingsQuery = useReadings(pregnancyId);
   const riskQuery = useRiskHistory(pregnancyId);
 
+  // Every vital's category breakdown at once, independent of which one the
+  // chart above happens to be showing — four calls because the backend
+  // groups blood pressure and heart rate under one `reading_type`, not five.
+  const period = PERIOD_BY_RANGE[range];
+  const bpStats = useReadingStatistics(pregnancyId, "blood_pressure", period);
+  const tempStats = useReadingStatistics(pregnancyId, "temperature", period);
+  const glucoseStats = useReadingStatistics(
+    pregnancyId,
+    "blood_glucose",
+    period
+  );
+  const hemoglobinStats = useReadingStatistics(
+    pregnancyId,
+    "hemoglobin",
+    period
+  );
+
+  // One bar, one segment per vital, widths summing to 100% — each vital's
+  // share of the readings actually taken in this range. Not a risk-weight:
+  // no per-vital "contribution to risk" exists anywhere in the model, so
+  // this only ever answers "what did we measure most," never "what mattered
+  // most."
+  const readingShare = useMemo(() => {
+    const counts: Partial<Record<VitalMetric, number>> = {
+      blood_pressure: bpStats.data?.readings_count.systolic_bp ?? 0,
+      heart_rate: bpStats.data?.readings_count.heart_rate ?? 0,
+      body_temp_f: tempStats.data?.readings_count.body_temp_f ?? 0,
+      blood_glucose: glucoseStats.data?.readings_count.blood_glucose ?? 0,
+      hemoglobin: hemoglobinStats.data?.readings_count.hemoglobin ?? 0,
+    };
+    const metrics = Object.keys(counts) as VitalMetric[];
+    const values = metrics.map((m) => counts[m] ?? 0);
+    const percentages = allocatePercentages(values);
+    return metrics
+      .map((m, i) => ({ metric: m, count: values[i], pct: percentages[i] }))
+      .filter((entry) => entry.count > 0)
+      .sort((a, b) => b.count - a.count);
+  }, [bpStats.data, tempStats.data, glucoseStats.data, hemoglobinStats.data]);
+
   const cutoff = rangeCutoff(
     RANGE_OPTIONS.find((r) => r.value === range)!.days
   );
@@ -176,29 +224,6 @@ export function PatientReadingsPanel({
   );
 
   const spec = VITAL_METRICS.find((m) => m.metric === metric)!;
-
-  const categoryBreakdown = useMemo(() => {
-    const field = CATEGORY_FIELD[metric];
-    if (!field) return [];
-    const history = riskQuery.data?.history ?? [];
-    const counts = new Map<string, number>();
-    let total = 0;
-    for (const assessment of history) {
-      if (new Date(assessment.assessed_at).getTime() < cutoff) continue;
-      const value = assessment[field];
-      if (typeof value !== "string" || !value) continue;
-      counts.set(value, (counts.get(value) ?? 0) + 1);
-      total += 1;
-    }
-    if (total === 0) return [];
-    return Array.from(counts.entries())
-      .map(([label, count]) => ({
-        label,
-        count,
-        pct: Math.round((count / total) * 100),
-      }))
-      .sort((a, b) => b.count - a.count);
-  }, [riskQuery.data, metric, cutoff]);
 
   const isPending = readingsQuery.isPending;
 
@@ -414,49 +439,54 @@ export function PatientReadingsPanel({
             )}
           </Card>
 
-          {categoryBreakdown.length > 0 && (
+          {readingShare.length > 0 && (
             <Card>
               <CardHeader>
-                <div>
-                  <div className="mc-card-title">
-                    Average {spec.label.toLowerCase()} category
-                  </div>
-                  <div className="mc-card-sub">
-                    Based on{" "}
-                    {categoryBreakdown.reduce((s, c) => s + c.count, 0)}{" "}
-                    assessed reading
-                    {categoryBreakdown.reduce((s, c) => s + c.count, 0) === 1
-                      ? ""
-                      : "s"}{" "}
-                    in this range
-                  </div>
+                <div className="mc-card-title">Reading mix</div>
+                <div className="mc-card-sub">
+                  Share of readings by vital, for{" "}
+                  {RANGE_OPTIONS.find(
+                    (r) => r.value === range
+                  )?.label.toLowerCase()}
                 </div>
               </CardHeader>
               <CardBody>
-                <div className="mc-riskbars">
-                  {categoryBreakdown.map((c) => (
-                    <div key={c.label} className="mc-riskbar-row">
-                      <span className="mc-riskbar-tag">
-                        <span
-                          className="mc-riskbar-dot"
-                          style={{ background: categoryTone(c.label) }}
-                          aria-hidden
-                        />
-                        {c.label}
-                      </span>
-                      <div className="mc-riskbar-track">
-                        <div
-                          className="mc-riskbar-fill"
-                          style={{
-                            width: `${c.pct}%`,
-                            background: categoryTone(c.label),
-                          }}
-                        />
-                      </div>
-                      <span className="mc-riskbar-count">{c.pct}%</span>
-                    </div>
+                <div className="mc-catbar-track">
+                  {readingShare.map((entry) => (
+                    <div
+                      key={entry.metric}
+                      className="mc-catbar-segment"
+                      title={`${
+                        VITAL_METRICS.find((m) => m.metric === entry.metric)!
+                          .label
+                      }: ${entry.pct}%`}
+                      style={{
+                        flex: `${entry.pct} 0 0%`,
+                        background: VITAL_COLORS[entry.metric],
+                      }}
+                    />
                   ))}
                 </div>
+                <div className="mc-catbar-legend">
+                  {readingShare.map((entry) => (
+                    <span key={entry.metric} className="mc-catbar-item">
+                      <span
+                        className="mc-catbar-dot"
+                        style={{ background: VITAL_COLORS[entry.metric] }}
+                        aria-hidden
+                      />
+                      {
+                        VITAL_METRICS.find((m) => m.metric === entry.metric)!
+                          .label
+                      }{" "}
+                      <strong>{entry.pct}%</strong>
+                    </span>
+                  ))}
+                </div>
+                <p className="mc-hint" style={{ marginTop: 10 }}>
+                  How much of the monitoring in this range was each vital — not
+                  a measure of risk.
+                </p>
               </CardBody>
             </Card>
           )}
@@ -534,43 +564,47 @@ export function PatientReadingsPanel({
                 heartRate: showHeartRateLine,
               }}
             />
-            {categoryBreakdown.length > 0 && (
+            {readingShare.length > 0 && (
               <div style={{ marginTop: 20 }}>
-                <div className="mc-card-title" style={{ marginBottom: 4 }}>
-                  Average {spec.label.toLowerCase()} category
+                <div className="mc-card-title" style={{ marginBottom: 10 }}>
+                  Reading mix
                 </div>
-                <div className="mc-card-sub" style={{ marginBottom: 12 }}>
-                  Based on {categoryBreakdown.reduce((s, c) => s + c.count, 0)}{" "}
-                  assessed reading
-                  {categoryBreakdown.reduce((s, c) => s + c.count, 0) === 1
-                    ? ""
-                    : "s"}{" "}
-                  in this range
-                </div>
-                <div className="mc-riskbars">
-                  {categoryBreakdown.map((c) => (
-                    <div key={c.label} className="mc-riskbar-row">
-                      <span className="mc-riskbar-tag">
-                        <span
-                          className="mc-riskbar-dot"
-                          style={{ background: categoryTone(c.label) }}
-                          aria-hidden
-                        />
-                        {c.label}
-                      </span>
-                      <div className="mc-riskbar-track">
-                        <div
-                          className="mc-riskbar-fill"
-                          style={{
-                            width: `${c.pct}%`,
-                            background: categoryTone(c.label),
-                          }}
-                        />
-                      </div>
-                      <span className="mc-riskbar-count">{c.pct}%</span>
-                    </div>
+                <div className="mc-catbar-track">
+                  {readingShare.map((entry) => (
+                    <div
+                      key={entry.metric}
+                      className="mc-catbar-segment"
+                      title={`${
+                        VITAL_METRICS.find((m) => m.metric === entry.metric)!
+                          .label
+                      }: ${entry.pct}%`}
+                      style={{
+                        flex: `${entry.pct} 0 0%`,
+                        background: VITAL_COLORS[entry.metric],
+                      }}
+                    />
                   ))}
                 </div>
+                <div className="mc-catbar-legend">
+                  {readingShare.map((entry) => (
+                    <span key={entry.metric} className="mc-catbar-item">
+                      <span
+                        className="mc-catbar-dot"
+                        style={{ background: VITAL_COLORS[entry.metric] }}
+                        aria-hidden
+                      />
+                      {
+                        VITAL_METRICS.find((m) => m.metric === entry.metric)!
+                          .label
+                      }{" "}
+                      <strong>{entry.pct}%</strong>
+                    </span>
+                  ))}
+                </div>
+                <p className="mc-hint" style={{ marginTop: 10 }}>
+                  How much of the monitoring in this range was each vital — not
+                  a measure of risk.
+                </p>
               </div>
             )}
           </>

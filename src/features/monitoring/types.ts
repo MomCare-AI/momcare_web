@@ -123,70 +123,64 @@ export const VITAL_METRICS: {
   },
 ];
 
-/** Every vital the API accepts, in the order the entry form shows them. */
+/** Every vital the API accepts, in the order the entry form shows them. No
+ *  placeholder values \u2014 a greyed-out "120" or "98.6" reads as a real number
+ *  at a glance, which is exactly the normal-looking-default this portal's
+ *  own rules forbid (see CLAUDE.md's "absent data stays visibly absent"). */
 export const VITAL_FIELDS: {
   field: NumericVital;
   label: string;
   unit: string;
   step: string;
-  placeholder: string;
 }[] = [
-  { field: "age", label: "Age", unit: "years", step: "1", placeholder: "28" },
+  { field: "age", label: "Age", unit: "years", step: "1" },
   {
     field: "systolic_bp",
     label: "Systolic BP",
     unit: "mmHg",
     step: "0.1",
-    placeholder: "120",
   },
   {
     field: "diastolic_bp",
     label: "Diastolic BP",
     unit: "mmHg",
     step: "0.1",
-    placeholder: "80",
   },
   {
     field: "heart_rate",
     label: "Heart rate",
     unit: "bpm",
     step: "0.1",
-    placeholder: "80",
   },
   {
     field: "body_temp_f",
     label: "Temperature",
     unit: "\u00B0F",
     step: "0.1",
-    placeholder: "98.6",
   },
   {
     field: "hemoglobin",
     label: "Hemoglobin",
     unit: "g/dL",
     step: "0.1",
-    placeholder: "12.0",
   },
   {
     field: "blood_glucose",
     label: "Blood glucose",
     unit: "mg/dL",
     step: "0.1",
-    placeholder: "100",
   },
   {
     field: "stress_score",
     label: "Stress score",
     unit: "0-10",
     step: "0.1",
-    placeholder: "5",
   },
   {
     field: "phys_activity_score",
     label: "Physical activity",
     unit: "0-10",
     step: "0.1",
-    placeholder: "5",
   },
 ];
 
@@ -226,6 +220,77 @@ export function latestForMetric(
   }
   return null;
 }
+
+// ── Reading statistics ──────────────────────────────────────────────────────
+// Mirrors modules/pregnancy/vitals/services.py::compute_reading_statistics and
+// momcare_model/clinical_categories.py::CATEGORY_BANDS — plain DB aggregation
+// over real readings in the requested window, not model output. Every band in
+// a category's official guideline order is always present (even at 0%); the
+// backend only omits a category entirely when the window has zero readings
+// of that vital at all.
+
+export type ReadingType =
+  "blood_pressure" | "temperature" | "blood_glucose" | "hemoglobin";
+
+export type ReadingCategoryKey =
+  | "bp_category"
+  | "heart_rate_category"
+  | "temperature_category"
+  | "glucose_category"
+  | "hemoglobin_category";
+
+export interface ReadingCategoryBand {
+  key: string;
+  count: number;
+  percentage: number;
+}
+
+export interface ReadingCategoryStats {
+  guideline: string;
+  bands: ReadingCategoryBand[];
+}
+
+export interface ReadingStatistics {
+  average: Record<string, number>;
+  min: Record<string, number>;
+  max: Record<string, number>;
+  readings_count: Record<string, number>;
+  categories: Partial<Record<ReadingCategoryKey, ReadingCategoryStats>>;
+}
+
+/** Which backend `reading_type` (and which of its categories) a chart's
+ *  selected vital maps to. `heart_rate` rides under `blood_pressure`'s
+ *  reading_type because the backend groups those two fields together — there
+ *  is no separate heart-rate reading_type. `stress_score`/
+ *  `phys_activity_score` map to `null`: "wellness" has no clinical bands
+ *  defined at all (see READING_TYPE_CATEGORIES on the backend). */
+export const READING_STATS_SOURCE: Record<
+  VitalMetric,
+  { readingType: ReadingType; categoryKey: ReadingCategoryKey } | null
+> = {
+  blood_pressure: {
+    readingType: "blood_pressure",
+    categoryKey: "bp_category",
+  },
+  heart_rate: {
+    readingType: "blood_pressure",
+    categoryKey: "heart_rate_category",
+  },
+  body_temp_f: {
+    readingType: "temperature",
+    categoryKey: "temperature_category",
+  },
+  blood_glucose: {
+    readingType: "blood_glucose",
+    categoryKey: "glucose_category",
+  },
+  hemoglobin: {
+    readingType: "hemoglobin",
+    categoryKey: "hemoglobin_category",
+  },
+  stress_score: null,
+  phys_activity_score: null,
+};
 
 export interface Device {
   id: string;

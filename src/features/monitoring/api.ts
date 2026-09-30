@@ -4,6 +4,8 @@ import type {
   Device,
   LatestReadings,
   NumericVital,
+  ReadingStatistics,
+  ReadingType,
   RiskAssessment,
   RiskHistory,
   RiskLevel,
@@ -77,6 +79,33 @@ export function listReadings(
   return authJson<Paginated<VitalReading>>(
     `/api/pregnancies/${pregnancyId}/readings/?${query}`
   );
+}
+
+/** Preset windows the statistics endpoint accepts for `period` — mirrors
+ *  vitals/services.py::READING_PERIODS. */
+export type ReadingPeriod =
+  "2_days" | "1_week" | "1_month" | "3_months" | "6_months";
+
+/**
+ * The category-percentage breakdown for one `reading_type`, over a preset
+ * window — real DB aggregation, triggered by the same `reading_type` query
+ * param `listReadings` never sets. A minimal `page_size` since only the
+ * `statistics` block is used here, not the reading rows themselves.
+ */
+export async function getReadingStatistics(
+  pregnancyId: string,
+  readingType: ReadingType,
+  period: ReadingPeriod
+): Promise<ReadingStatistics> {
+  const query = new URLSearchParams({
+    reading_type: readingType,
+    period,
+    page_size: "1",
+  });
+  const body = await authJson<
+    Paginated<VitalReading> & { statistics: ReadingStatistics }
+  >(`/api/pregnancies/${pregnancyId}/readings/?${query}`);
+  return body.statistics;
 }
 
 /**
