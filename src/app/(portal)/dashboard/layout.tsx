@@ -235,7 +235,8 @@ export default function DashboardLayout({
       : null;
 
   useEffect(() => {
-    if (queryError instanceof SessionExpiredError) router.replace("/login");
+    if (queryError instanceof SessionExpiredError)
+      router.replace("/login?expired=1");
   }, [queryError, router]);
 
   useEffect(() => {

@@ -127,7 +127,7 @@ export default function OverviewPage() {
 
   useEffect(() => {
     if (listResult.error instanceof SessionExpiredError)
-      router.replace("/login");
+      router.replace("/login?expired=1");
   }, [listResult.error, router]);
 
   const listPatients = activeResult.data?.results ?? [];

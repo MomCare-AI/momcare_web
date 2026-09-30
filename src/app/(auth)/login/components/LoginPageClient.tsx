@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { setAccessToken } from "@/core/api/authFetch";
 import { clearQueryCache } from "@/core/query/queryClient";
 
@@ -14,6 +14,7 @@ const REMEMBERED_EMAIL_KEY = "momcare_remembered_email";
 
 export function LoginPageClient() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
   // A hospital still under review isn't a failed login — it's a status update,
   // so it gets its own calmer treatment rather than the red error style.
@@ -34,6 +35,18 @@ export function LoginPageClient() {
       setRememberMe(true);
     }
   }, []);
+
+  // Every SessionExpiredError redirect across the app lands here with this
+  // param — otherwise landing back on /login with no explanation reads as a
+  // silent teleport, especially losing whatever was mid-way through being
+  // filled in on the page that bounced here.
+  useEffect(() => {
+    if (searchParams.get("expired") === "1") {
+      setNotice(
+        "Your session expired. Please sign in again — anything you were filling in on the previous page was not saved."
+      );
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
