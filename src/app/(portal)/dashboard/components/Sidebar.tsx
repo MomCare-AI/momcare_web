@@ -92,33 +92,45 @@ export function Sidebar({
           )}
         </span>
         {!iconOnly && (
-          <span className="mc-sidebar-brandtext">
-            <span className="mc-sidebar-brand-momcare">MomCare</span>
-            {/* Truncated with the full name on hover/focus — a long hospital
-                name must never push the nav below the fold to stay legible. */}
-            <span className="mc-sidebar-brand-org" title={orgName}>
-              {orgName}
+          <>
+            <span className="mc-sidebar-brandtext">
+              <span className="mc-sidebar-brand-momcare">MomCare</span>
+              {/* Truncated with the full name on hover/focus — a long
+                  hospital name must never push the nav below the fold to
+                  stay legible. */}
+              <span className="mc-sidebar-brand-org" title={orgName}>
+                {orgName}
+              </span>
             </span>
-          </span>
+            {variant === "desktop" && onToggleCollapse && (
+              <button
+                type="button"
+                className="mc-sidebar-collapse-btn"
+                onClick={onToggleCollapse}
+                aria-label="Collapse sidebar"
+              >
+                <ChevronLeft size={14} strokeWidth={2.2} aria-hidden />
+              </button>
+            )}
+          </>
         )}
       </div>
 
-      <LocationSwitcher collapsed={iconOnly} />
-
-      {variant === "desktop" && onToggleCollapse && (
+      {/* Collapsed rail has no room for the toggle beside the mark, so it
+          drops to its own centered row instead — the one case the brand
+          row can't hold it. */}
+      {variant === "desktop" && onToggleCollapse && iconOnly && (
         <button
           type="button"
-          className="mc-sidebar-collapse-btn"
+          className="mc-sidebar-collapse-btn mc-sidebar-collapse-btn-standalone"
           onClick={onToggleCollapse}
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-label="Expand sidebar"
         >
-          {collapsed ? (
-            <ChevronRight size={14} strokeWidth={2.2} aria-hidden />
-          ) : (
-            <ChevronLeft size={14} strokeWidth={2.2} aria-hidden />
-          )}
+          <ChevronRight size={14} strokeWidth={2.2} aria-hidden />
         </button>
       )}
+
+      <LocationSwitcher collapsed={iconOnly} />
 
       <div className="mc-sidebar-divider" />
 

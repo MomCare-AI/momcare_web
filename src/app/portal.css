@@ -168,7 +168,7 @@ body::-webkit-scrollbar-thumb:hover {
   align-self: flex-start;
   height: 100vh;
   flex: none;
-  width: 260px;
+  width: 236px;
   display: flex;
   flex-direction: column;
   background: var(--sb-bg);
@@ -179,22 +179,22 @@ body::-webkit-scrollbar-thumb:hover {
   transition: width 0.25s ease;
 }
 .mc-sidebar[data-collapsed="true"] {
-  width: 76px;
+  width: 68px;
 }
 
 .mc-sidebar-brand {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 20px 18px 14px;
+  gap: 9px;
+  padding: 16px 16px 10px;
   min-width: 0;
 }
 .mc-sidebar-mark {
   position: relative;
   flex: none;
-  width: 32px;
-  height: 32px;
-  border-radius: 9px;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
   overflow: hidden;
   display: grid;
   place-items: center;
@@ -209,16 +209,16 @@ body::-webkit-scrollbar-thumb:hover {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  line-height: 1.3;
+  line-height: 1.25;
 }
 .mc-sidebar-brand-momcare {
-  font-size: 15.5px;
+  font-size: 14px;
   font-weight: 700;
   color: var(--sb-text);
   letter-spacing: -0.01em;
 }
 .mc-sidebar-brand-org {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
   color: var(--sb-text-muted);
   white-space: nowrap;
@@ -226,13 +226,16 @@ body::-webkit-scrollbar-thumb:hover {
   text-overflow: ellipsis;
 }
 
+/* Sits at the end of the brand row, beside the MomCare mark — margin-left:
+   auto pushes it to the row's far edge regardless of how wide the org name
+   next to it is. */
 .mc-sidebar-collapse-btn {
   display: grid;
   place-items: center;
-  align-self: flex-end;
+  flex: none;
   width: 22px;
   height: 22px;
-  margin: 0 18px 4px auto;
+  margin-left: auto;
   border-radius: 50%;
   border: 1px solid var(--sb-border);
   background: rgba(255, 255, 255, 0.06);
@@ -246,13 +249,16 @@ body::-webkit-scrollbar-thumb:hover {
   background: var(--sb-bg-hover);
   color: var(--sb-text);
 }
-.mc-sidebar[data-collapsed="true"] .mc-sidebar-collapse-btn {
-  margin-inline: auto;
+/* Collapsed rail: the mark alone fills the brand row, so the toggle drops
+   to its own centered row below instead of crowding beside it. */
+.mc-sidebar-collapse-btn-standalone {
+  align-self: center;
+  margin: 0 auto 4px;
 }
 
 .mc-sidebar-divider {
   height: 1px;
-  margin: 4px 18px 10px;
+  margin: 4px 16px 8px;
   background: var(--sb-border);
   flex: none;
 }
@@ -264,15 +270,15 @@ body::-webkit-scrollbar-thumb:hover {
 .mc-locationswitch {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
-  padding: 9px 11px;
+  padding: 7px 10px;
   border-radius: var(--r-control);
   border: 1px solid var(--sb-border);
   background: var(--sb-bg-hover);
   color: var(--sb-text);
   font: inherit;
-  font-size: 13.5px;
+  font-size: 12.5px;
   font-weight: 600;
   cursor: pointer;
 }
@@ -357,8 +363,8 @@ body::-webkit-scrollbar-thumb:hover {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: 0 12px;
+  gap: 1px;
+  padding: 0 10px;
   min-height: 0;
 }
 
@@ -366,14 +372,14 @@ body::-webkit-scrollbar-thumb:hover {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
+  gap: 10px;
+  padding: 8px 10px;
   border-radius: var(--r-control);
   border: none;
   background: none;
   color: var(--sb-text-muted);
   font: inherit;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   text-decoration: none;
   white-space: nowrap;
@@ -407,8 +413,8 @@ body::-webkit-scrollbar-thumb:hover {
   display: grid;
   place-items: center;
   flex: none;
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
 }
 .mc-sidebar-navitem-label {
   overflow: hidden;
@@ -452,24 +458,24 @@ body::-webkit-scrollbar-thumb:hover {
 
 .mc-sidebar-footer {
   flex: none;
-  padding: 10px 12px 16px;
+  padding: 8px 10px 12px;
 }
 .mc-sidebar-identity {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 12px 12px;
+  gap: 8px;
+  padding: 6px 10px 10px;
   min-width: 0;
 }
 .mc-sidebar-identity-text {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  line-height: 1.3;
+  line-height: 1.25;
 }
 .mc-sidebar-identity-name {
-  font-size: 13.5px;
+  font-size: 12.5px;
   font-weight: 600;
   color: var(--sb-text);
   white-space: nowrap;
@@ -477,23 +483,21 @@ body::-webkit-scrollbar-thumb:hover {
   text-overflow: ellipsis;
 }
 .mc-sidebar-identity-role {
-  font-size: 11.5px;
+  font-size: 10.5px;
   color: var(--sb-text-muted);
 }
 
-/* Reused as-is by the compact header avatar too, on the app's usual light
-   surface — the teal-on-white pairing there already reads fine without a
-   separate variant. */
+/* Sidebar-only now — the compact header's own avatar link was removed. */
 .mc-avatar {
-  width: 34px;
-  height: 34px;
+  width: 28px;
+  height: 28px;
   flex: none;
   border-radius: 50%;
   display: grid;
   place-items: center;
   background: var(--c-teal-wash);
   color: var(--c-teal);
-  font-size: 12.5px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.02em;
 }
@@ -737,6 +741,176 @@ body::-webkit-scrollbar-thumb:hover {
   color: var(--c-ink);
 }
 
+/* ── Enrollment wizard (patients/new) ───────────────────────────────────
+   Step pills above the form, and a live preview card beside it that mirrors
+   the form's own state field-for-field — never a placeholder for data the
+   backend doesn't actually collect. */
+.mc-wizard-steps {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+.mc-wizard-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1 1 210px;
+  padding: 12px 16px;
+  border-radius: var(--r-card);
+  border: 1px solid var(--c-border);
+  background: var(--c-card);
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+.mc-wizard-step:hover {
+  border-color: var(--c-teal-soft);
+}
+.mc-wizard-step-active {
+  background: var(--c-teal);
+  border-color: var(--c-teal);
+}
+.mc-wizard-step-active .mc-wizard-step-label {
+  color: #ffffff;
+}
+.mc-wizard-step-active .mc-wizard-step-sub {
+  color: rgba(255, 255, 255, 0.68);
+}
+.mc-wizard-step-done {
+  background: var(--c-teal-wash);
+  border-color: var(--c-teal-soft);
+}
+.mc-wizard-step-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: var(--c-teal-wash);
+  color: var(--c-teal);
+}
+.mc-wizard-step-active .mc-wizard-step-icon {
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+}
+.mc-wizard-step-done .mc-wizard-step-icon {
+  background: var(--c-teal);
+  color: #ffffff;
+}
+.mc-wizard-step-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--c-ink);
+}
+.mc-wizard-step-sub {
+  font-size: 11px;
+  color: var(--c-faint);
+  margin-top: 1px;
+}
+
+.mc-preview {
+  position: sticky;
+  top: 20px;
+}
+.mc-preview-flag {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--c-faint);
+  margin-bottom: 8px;
+}
+.mc-preview-flag-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--c-teal);
+  flex: none;
+}
+.mc-preview-card {
+  border-radius: var(--r-card);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+}
+.mc-preview-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 18px;
+  background: var(--c-teal);
+}
+.mc-preview-avatar {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+}
+.mc-preview-name {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #ffffff;
+}
+.mc-preview-sub {
+  font-size: 11.5px;
+  color: rgba(255, 255, 255, 0.64);
+  text-transform: capitalize;
+  margin-top: 1px;
+}
+.mc-preview-body {
+  background: var(--c-card);
+  border: 1px solid var(--c-border);
+  border-top: none;
+  padding: 16px 18px 18px;
+}
+.mc-preview-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--c-faint);
+  margin: 18px 0 10px;
+}
+.mc-preview-section-title:first-child {
+  margin-top: 0;
+}
+.mc-preview-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 14px;
+}
+.mc-preview-field-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--c-faint);
+}
+.mc-preview-field-value {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--c-ink);
+  margin-top: 2px;
+  overflow-wrap: anywhere;
+}
+.mc-preview-field-empty {
+  color: var(--c-faint);
+  font-weight: 400;
+}
+
 /* ── Cards ───────────────────────────────────────────────────────────── */
 .mc-card {
   background: var(--c-card);
@@ -865,6 +1039,32 @@ a.mc-kpi:hover {
   gap: 5px;
 }
 
+/* An opt-in modifier on `.mc-kpis` for callers with many small stat cards
+   in a row (Quick Lookup's three, the Staff Audit Report's twelve) — the
+   Reports page's own `.mc-kpis` stays full-size since it doesn't add this
+   class. */
+.mc-kpis-compact {
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.mc-kpis-compact .mc-kpi {
+  padding: 10px 14px;
+  column-gap: 10px;
+}
+.mc-kpis-compact .mc-kpi-icon {
+  width: 32px;
+  height: 32px;
+}
+.mc-kpis-compact .mc-kpi-label {
+  font-size: 10.5px;
+}
+.mc-kpis-compact .mc-kpi-value {
+  font-size: 20px;
+}
+.mc-kpis-compact .mc-kpi-foot {
+  font-size: 11px;
+}
+
 /* ── Clinical state badges ───────────────────────────────────────────── */
 .mc-badge {
   display: inline-flex;
@@ -879,6 +1079,18 @@ a.mc-kpi:hover {
 }
 .mc-badge svg {
   flex: none;
+}
+/* Smaller inside the dense table — matches the tightened row/font density
+   already applied to .mc-dtable elsewhere, so a Status pill doesn't dwarf
+   the 12.5px row text next to it. */
+.mc-dtable .mc-badge {
+  padding: 3px 9px;
+  font-size: 11px;
+  gap: 4px;
+}
+.mc-dtable .mc-badge svg {
+  width: 10px;
+  height: 10px;
 }
 .mc-badge-stable,
 .mc-badge-low {
@@ -940,6 +1152,22 @@ a.mc-kpi:hover {
   gap: 18px;
   margin-bottom: 18px;
 }
+/* PatientOverviewSnapshot's own row — AI Summary double-width, Vitals
+   Snapshot/Reading Activity equal — grid rather than flex-wrap so every
+   column stretches to the same row height with no per-wrapped-line
+   ambiguity (see that component's own comment). Collapses to one column
+   once there's no real room for three. */
+.mc-overview-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+@media (max-width: 860px) {
+  .mc-overview-row {
+    grid-template-columns: 1fr;
+  }
+}
 .mc-stack {
   display: grid;
   gap: 18px;
@@ -952,6 +1180,13 @@ a.mc-kpi:hover {
   align-items: center;
   gap: 9px;
   flex-wrap: wrap;
+  /* Every caller sits inside its own flex-wrap parent (.mc-table-toolbar,
+     .mc-card-head), so when there's genuinely not enough room the whole
+     group drops to its own line there — flex-shrink: 0 stops this group's
+     own items (e.g. a status Select next to a button) from being squeezed
+     below their natural width first and splitting apart mid-group, which
+     read as two controls stacked on top of each other for no reason. */
+  flex-shrink: 0;
   margin-bottom: 22px;
 }
 
@@ -1701,7 +1936,7 @@ select.mc-input {
    state. */
 @media (min-width: 860px) and (max-width: 1023px) {
   .mc-sidebar {
-    width: 76px;
+    width: 68px;
   }
 }
 
@@ -2755,15 +2990,28 @@ a.mc-kpi:hover,
 }
 .mc-kpi-tile-selected,
 .mc-kpi-tile-selected:hover {
-  background: var(--c-teal-wash);
+  background: var(--c-teal);
   border-color: var(--c-teal);
+}
+.mc-kpi-tile-selected .mc-kpi-icon {
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
 }
 
 .mc-kpi-roster-row {
   display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
   margin-bottom: 14px;
+}
+/* Active + Inactive stay grouped together on the left; the bell sits on
+   its own at the far right via the row's own justify-content. */
+.mc-kpi-roster-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
 }
 /* The Workflow/Care Activity pair, side by side above the tablet
    breakpoint. Each column keeps a 280px floor so its own tile row still
@@ -2791,6 +3039,10 @@ a.mc-kpi:hover,
    the reference platform ever needs to. */
 @media (max-width: 860px) {
   .mc-kpi-roster-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .mc-kpi-roster-group {
     flex-direction: column;
   }
   .mc-kpi-roster-row .mc-kpi-tile {
