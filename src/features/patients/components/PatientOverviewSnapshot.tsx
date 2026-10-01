@@ -94,7 +94,7 @@ export function PatientOverviewSnapshot({
               style={{
                 display: "grid",
                 gridTemplateColumns: "repeat(3, 1fr)",
-                gap: 8,
+                gap: 6,
               }}
             >
               {VITAL_METRICS.map(({ metric, label, unit }) => {
@@ -105,19 +105,19 @@ export function PatientOverviewSnapshot({
                     style={{
                       border: "1px solid var(--c-border-soft)",
                       borderRadius: "var(--r-control)",
-                      padding: "7px 8px",
+                      padding: "4px 6px",
                       minWidth: 0,
                     }}
                   >
                     <div
                       className="mc-pair-label"
-                      style={{ textTransform: "uppercase", fontSize: 10 }}
+                      style={{ textTransform: "uppercase", fontSize: 9 }}
                     >
                       {label}
                     </div>
                     <div
                       className="mc-pair-value"
-                      style={{ fontSize: 15, whiteSpace: "nowrap" }}
+                      style={{ fontSize: 12.5, whiteSpace: "nowrap" }}
                     >
                       {latest
                         ? latest.secondary === null
@@ -128,7 +128,7 @@ export function PatientOverviewSnapshot({
                     {latest && (
                       <div
                         className="mc-hint"
-                        style={{ color: "var(--c-teal)", fontSize: 10.5 }}
+                        style={{ color: "var(--c-teal)", fontSize: 9 }}
                       >
                         {unit}
                       </div>

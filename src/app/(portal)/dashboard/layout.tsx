@@ -35,6 +35,7 @@ import {
   type OrgSummary,
 } from "@/features/portal/hooks/usePortalData";
 import { AppHeader } from "./components/AppHeader";
+import { DashboardSkeleton } from "./components/DashboardSkeleton";
 import { MobileSidebarDrawer } from "./components/MobileSidebarDrawer";
 import { Sidebar } from "./components/Sidebar";
 import type { NavItem } from "./components/SidebarNavItem";
@@ -272,10 +273,10 @@ export default function DashboardLayout({
 
   if (!org || !user) {
     return (
-      <div className="mc-portal">
+      <>
         {pathname === "/dashboard" && <OverviewPrefetch />}
-        <div className="mc-loading">Loading your hospital…</div>
-      </div>
+        <DashboardSkeleton />
+      </>
     );
   }
 

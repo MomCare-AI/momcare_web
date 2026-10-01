@@ -1146,11 +1146,14 @@ a.mc-kpi:hover {
 }
 
 /* ── Layout grids ────────────────────────────────────────────────────── */
-/* A 75/25 split — the Readings tab's chart+category column against its
-   AI Summary/Monitoring rail, matching the reference platform's own ratio. */
+/* ~70/30 split — the Readings tab's chart+category column against its
+   AI Summary/Monitoring rail. Chart column stays clearly wider, just not
+   as wide as the reference platform's own 75/25. Height matches already
+   via Grid's default `align-items: stretch` — whichever column is taller
+   sets the row height, no extra CSS needed for that. */
 .mc-grid-2 {
   display: grid;
-  grid-template-columns: minmax(0, 3fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 2.3fr) minmax(0, 1fr);
   gap: 18px;
   margin-bottom: 18px;
 }
@@ -2004,7 +2007,21 @@ select.mc-input {
 .mc-table-toolbar-search {
   position: relative;
   max-width: 340px;
-  flex: 1 1 260px;
+  /* Was `1 1 260px` — the `1` grow factor let this box stretch to fill
+     whatever space was left, which is what pushed `.mc-actions` onto its
+     own line well before the toolbar was actually out of room. `0 1 260px`
+     keeps it at a fixed, modest width (still free to shrink on a narrow
+     screen) so the actions group stays on the same row at normal desktop
+     widths. */
+  flex: 0 1 260px;
+}
+
+/* `.mc-actions`' own `margin-bottom: 22px` is meant for its other use as a
+   standalone row (e.g. a dashboard's quick actions); inside a toolbar
+   that's already spaced by `.mc-table-toolbar`'s own padding, it was just
+   adding unused vertical space below the actions group. */
+.mc-table-toolbar .mc-actions {
+  margin-bottom: 0;
 }
 
 /* Mobile tier: no permanent sidebar at all — the drawer takes over

@@ -27,6 +27,7 @@ import {
 import { useSecondaryProviders } from "@/features/secondary-providers/hooks/useSecondaryProviders";
 import { formatDate } from "@/shared/lib/formatDateTime";
 import { ExitNoteModal } from "@/features/patients/components/ExitNoteModal";
+import { PatientDetailSkeleton } from "@/features/patients/components/PatientDetailSkeleton";
 import { PatientHeaderBanner } from "@/features/patients/components/PatientHeaderBanner";
 import { PatientOverviewSnapshot } from "@/features/patients/components/PatientOverviewSnapshot";
 import { PatientStatusesPanel } from "@/features/patients/components/PatientStatusesPanel";
@@ -112,8 +113,7 @@ export default function PatientProfilePage({
       router.replace("/login?expired=1");
   }, [error, router]);
 
-  if (patientQuery.isPending)
-    return <div className="mc-loading">Loading patient…</div>;
+  if (patientQuery.isPending) return <PatientDetailSkeleton />;
 
   if (error || !patient) {
     return (

@@ -25,7 +25,7 @@ import { EmptyState } from "@/shared/ui/EmptyState";
 import { InitialsAvatar } from "@/shared/ui/InitialsAvatar";
 import { Modal } from "@/shared/ui/Modal";
 import { RowSkeleton } from "@/shared/ui/RowSkeleton";
-import { TintedIconButton } from "@/shared/ui/TintedIconButton";
+import { ActionMenu, ActionMenuItem } from "@/shared/ui/ActionMenu";
 import { LogSessionModal } from "./LogSessionModal";
 
 /** ~350ms after the last keystroke, not on every keystroke. */
@@ -312,25 +312,21 @@ function SearchResultRow({
 
       {canEdit && (
         <div
-          style={{
-            display: "flex",
-            justifyContent: "flex-end",
-            gap: 6,
-            marginTop: 4,
-          }}
+          style={{ display: "flex", justifyContent: "flex-end", marginTop: 4 }}
         >
-          <TintedIconButton
-            icon={<Pencil size={12} strokeWidth={2.2} aria-hidden />}
-            tone="brand"
-            label="Edit note"
-            onClick={() => setShowEdit(true)}
-          />
-          <TintedIconButton
-            icon={<Trash2 size={12} strokeWidth={2.2} aria-hidden />}
-            tone="danger"
-            label="Delete note"
-            onClick={() => setShowDelete(true)}
-          />
+          <ActionMenu label="Note actions">
+            <ActionMenuItem
+              icon={<Pencil size={13} strokeWidth={2} aria-hidden />}
+              label="Edit"
+              onClick={() => setShowEdit(true)}
+            />
+            <ActionMenuItem
+              icon={<Trash2 size={13} strokeWidth={2} aria-hidden />}
+              label="Delete"
+              danger
+              onClick={() => setShowDelete(true)}
+            />
+          </ActionMenu>
         </div>
       )}
 
@@ -503,33 +499,23 @@ function TimelineRow({
 
       {rowCanEdit && (
         <div
-          style={{
-            display: "flex",
-            justifyContent: "flex-end",
-            gap: 6,
-            marginTop: 4,
-          }}
+          style={{ display: "flex", justifyContent: "flex-end", marginTop: 4 }}
         >
-          {note && (
-            <TintedIconButton
-              icon={<Pencil size={12} strokeWidth={2.2} aria-hidden />}
-              tone="brand"
-              label="Edit note"
-              onClick={() => setShowNoteEdit(true)}
+          <ActionMenu label="Entry actions">
+            {note && (
+              <ActionMenuItem
+                icon={<Pencil size={13} strokeWidth={2} aria-hidden />}
+                label="Edit"
+                onClick={() => setShowNoteEdit(true)}
+              />
+            )}
+            <ActionMenuItem
+              icon={<Trash2 size={13} strokeWidth={2} aria-hidden />}
+              label="Delete"
+              danger
+              onClick={() => setShowDelete(true)}
             />
-          )}
-          <TintedIconButton
-            icon={<Trash2 size={12} strokeWidth={2.2} aria-hidden />}
-            tone="danger"
-            label={
-              session && note
-                ? "Delete entry"
-                : note
-                  ? "Delete note"
-                  : "Delete session"
-            }
-            onClick={() => setShowDelete(true)}
-          />
+          </ActionMenu>
         </div>
       )}
 

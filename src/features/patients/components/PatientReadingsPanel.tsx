@@ -233,13 +233,18 @@ export function PatientReadingsPanel({
           <Card>
             <CardHeader style={{ flexWrap: "wrap", gap: 12 }}>
               <div>
-                <div className="mc-card-title">{spec.label}</div>
+                <div
+                  className="mc-card-title"
+                  style={{ textTransform: "uppercase", letterSpacing: 0.3 }}
+                >
+                  {spec.label}
+                </div>
                 <div className="mc-card-sub">
                   {RANGE_OPTIONS.find((r) => r.value === range)?.label}
                 </div>
               </div>
-              <div className="mc-actions">
-                <div style={{ width: "100%", maxWidth: 130 }}>
+              <div className="mc-actions" style={{ gap: 6 }}>
+                <div style={{ width: "100%", maxWidth: 104 }}>
                   <Select
                     aria-label="Time range"
                     value={range}
@@ -251,7 +256,7 @@ export function PatientReadingsPanel({
                     }))}
                   />
                 </div>
-                <div style={{ width: "100%", maxWidth: 170 }}>
+                <div style={{ width: "100%", maxWidth: 130 }}>
                   <Select
                     aria-label="Vital"
                     value={metric}
@@ -300,7 +305,7 @@ export function PatientReadingsPanel({
                 </button>
                 <button
                   type="button"
-                  className="mc-btn-dark mc-btn-sm"
+                  className="mc-btn mc-btn-sm"
                   onClick={() => setShowAdd(true)}
                 >
                   <Plus size={13} strokeWidth={2} aria-hidden />
