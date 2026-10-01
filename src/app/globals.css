@@ -480,11 +480,13 @@ body {
   width: 100%;
   max-width: 1320px;
   margin: 0 auto;
-  /* Top padding is now purely aesthetic breathing room within the hero —
-     the reserved-nav-space spacer above this section (see
-     LandingPageClient.tsx) is what actually clears the fixed nav, so this
-     no longer needs to guess a value large enough to do that job too. */
-  padding: 56px 44px 64px;
+  /* Top padding clears the fixed nav itself now — the hero's video
+     background is full-bleed to the top of the page (no flow spacer above
+     this section, see LandingPageClient.tsx), so only the content here
+     needs to stay clear of the floating pill, via the same measured
+     `--nav-reserved-height` the effect there sets, plus aesthetic
+     breathing room. */
+  padding: calc(var(--nav-reserved-height, 84px) + 32px) 44px 64px;
   display: flex;
   align-items: center;
   justify-content: space-between;

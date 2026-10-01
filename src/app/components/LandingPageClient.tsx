@@ -442,11 +442,16 @@ export function LandingPageClient() {
         </AnimatePresence>
       </motion.nav>
 
-      {/* Reserved nav space — a real flow element sized to the pill's
-          actual measured height (see the effect above), not a guessed
-          padding value baked into the hero. This is what stops the hero's
-          own heading/copy from ever starting underneath the fixed nav. */}
-      <div aria-hidden style={{ height: "var(--nav-reserved-height, 84px)" }} />
+      {/* No flow spacer here on purpose — the hero video is full-bleed to
+          the very top of the page, with the fixed nav floating over it
+          (z-index 100 vs. the hero's own stacking context). A spacer
+          element reserving this height in normal flow would push the
+          hero's background down with it, leaving a visible gap between
+          the nav and the video starting underneath it. The nav clearance
+          this used to provide now lives on `.hero-video-inner`'s own
+          padding-top (`var(--nav-reserved-height)`, same variable the
+          effect above sets) so only the *content*, not the video
+          background, is pushed clear of the nav. */}
 
       {/* ── Hero: full-viewport video, the nav pill floats over it ─ */}
       <section className="hero-video">

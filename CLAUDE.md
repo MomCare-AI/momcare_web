@@ -73,28 +73,37 @@ borders, 12–14px radii, Lucide icons (**never emoji**), tabular numerals,
 
 ## Working efficiently in this codebase
 
-Small/medium tasks (a single-file fix, a CSS/layout tweak, a small component
-change): locate the target file, read only what's directly relevant, make
-the smallest correct change, run the smallest relevant check, stop. Don't
-scan the repo, read unrelated files, or re-read files already inspected in
-the same task.
+Most tasks here are small, well-defined changes in one or two files. Treat
+that as the default shape, not full architecture work:
 
-Frontend-only by default — don't inspect or run `../backend` unless the
-task genuinely can't be resolved without checking an API contract.
+locate → read only the minimal relevant code → make the smallest correct
+change → run the smallest relevant check → stop.
+
+Expand investigation only when evidence in front of you requires it — not
+preemptively. Don't scan the repo broadly, read unrelated files, or re-read
+files already understood in the same task.
+
+Frontend-only by default — don't inspect or run `../backend` unless the task
+genuinely can't be resolved without checking an API contract.
 
 **Subagent rule.** No subagents for: single-file changes, CSS/layout fixes,
 simple UI/component changes, straightforward CRUD UI work, simple bug fixes,
 simple TypeScript fixes, locating symbols/files, or other similarly small,
 well-scoped tasks. Use `Grep`/`Glob` directly instead.
 
-**Verification rule.** Verification matches the change size:
+**Verification rule.** Verification matches the change, not the repo size:
 
-- CSS/UI change → targeted visual check; typecheck only if relevant.
-- TypeScript change → typecheck, plus lint when appropriate.
-- Behavior change → the relevant test.
-- Larger feature → broader verification.
-- Avoid expensive full-project verification (e.g. a full `vitest run`) for
-  small changes.
+- CSS/layout → targeted visual check.
+- TypeScript change → use the narrowest relevant typecheck available; for
+  project-level type safety, use the configured project typecheck.
+- Behavior change → the relevant test(s) for that behavior.
+- Multi-file feature → broader verification, scoped to what it touches.
+
+`npx eslint src` and `npx vitest run` (whole-project) are not default
+after-every-edit steps. Reserve full lint/test/build for substantial
+multi-file changes, finishing a feature, or right before a commit — the
+pre-commit hook already runs the full suite then regardless, so a manual
+full run earlier is usually redundant.
 
 **Long-session context rule.** Trust current repository state and
 `../docs/PLAN.md` over old conversational context, not what was said many
@@ -102,6 +111,10 @@ turns ago (the path is relative to this file — `docs/` sits beside
 `frontend/`, not inside it). Use `PLAN.md` as the single project-state
 document — update it when project state genuinely changes, never create a
 second summary/state document.
+
+This doesn't relax anything above — existing conventions and the pre-commit
+gate stay authoritative; this section only scopes investigation and
+verification effort to match task size.
 
 ## Commands
 
