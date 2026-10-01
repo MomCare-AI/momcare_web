@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Search, SlidersHorizontal, Users } from "lucide-react";
 
 import { useDevices } from "@/features/monitoring/hooks/useMonitoring";
@@ -119,6 +120,7 @@ export function PatientsTable({
   patients: PatientListItem[];
   initialSearch?: string;
 }) {
+  const router = useRouter();
   const devicesQuery = useDevices();
   const [search, setSearch] = useState(initialSearch);
   const [filters, setFilters] = useState<FilterRule[]>([]);
@@ -215,7 +217,20 @@ export function PatientsTable({
                   : undefined;
 
                 return (
-                  <tr key={patient.id} className="mc-dtable-row">
+                  <tr
+                    key={patient.id}
+                    className="mc-dtable-row"
+                    style={{ cursor: "pointer" }}
+                    onClick={(e) => {
+                      // Let the name cell's own <a> handle its click
+                      // natively (new-tab/middle-click/copy-link all keep
+                      // working) — the row-wide handler only covers every
+                      // other cell, which has nothing clickable of its own.
+                      if ((e.target as HTMLElement).closest("a, button"))
+                        return;
+                      router.push(`/dashboard/patients/${patient.id}`);
+                    }}
+                  >
                     <td>
                       <Link
                         href={`/dashboard/patients/${patient.id}`}
