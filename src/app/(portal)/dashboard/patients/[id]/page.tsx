@@ -2,6 +2,7 @@
 
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   AlertCircle,
@@ -25,19 +26,47 @@ import {
 } from "@/features/patients/types";
 import { useSecondaryProviders } from "@/features/secondary-providers/hooks/useSecondaryProviders";
 import { formatDate } from "@/shared/lib/formatDateTime";
-import { MonitoringNotesPanel } from "@/features/patients/components/MonitoringNotesPanel";
 import { ExitNoteModal } from "@/features/patients/components/ExitNoteModal";
-import { PatientDevicesPanel } from "@/features/patients/components/PatientDevicesPanel";
-import { PatientDocumentsPanel } from "@/features/patients/components/PatientDocumentsPanel";
 import { PatientHeaderBanner } from "@/features/patients/components/PatientHeaderBanner";
 import { PatientOverviewSnapshot } from "@/features/patients/components/PatientOverviewSnapshot";
-import { PatientReadingsPanel } from "@/features/patients/components/PatientReadingsPanel";
 import { PatientStatusesPanel } from "@/features/patients/components/PatientStatusesPanel";
 import { RecentActivityCards } from "@/features/patients/components/RecentActivityCards";
 import { BackButton } from "@/shared/ui/BackButton";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { usePortal } from "../../layout";
 import { usePageTitle } from "@/hooks/usePageTitle";
+
+// Lazy-loaded: the patient detail route was shipping ~850KB of JS (2-3x
+// every other route) because these four tab panels were statically
+// imported even though only the active tab's panel is ever rendered — the
+// `{tab === "..." && <Panel/>}` guard below only controls *rendering*, not
+// *bundling*, so all four shipped on every visit regardless of which tab
+// (if any) got opened. Readings alone pulls in the recharts-based
+// VitalsChart, the single largest piece of this. Overview's own
+// components stay static imports below since Overview is the default tab
+// shown immediately — lazy-loading it would only add a loading flicker to
+// the very first thing a clinician sees, with no bundle-size win (its code
+// has to load either way).
+const PatientReadingsPanel = dynamic(() =>
+  import("@/features/patients/components/PatientReadingsPanel").then(
+    (m) => m.PatientReadingsPanel
+  )
+);
+const MonitoringNotesPanel = dynamic(() =>
+  import("@/features/patients/components/MonitoringNotesPanel").then(
+    (m) => m.MonitoringNotesPanel
+  )
+);
+const PatientDevicesPanel = dynamic(() =>
+  import("@/features/patients/components/PatientDevicesPanel").then(
+    (m) => m.PatientDevicesPanel
+  )
+);
+const PatientDocumentsPanel = dynamic(() =>
+  import("@/features/patients/components/PatientDocumentsPanel").then(
+    (m) => m.PatientDocumentsPanel
+  )
+);
 
 type Tab =
   "overview" | "readings" | "notes" | "devices" | "documents" | "history";
@@ -151,30 +180,32 @@ export default function PatientProfilePage({
         </p>
       )}
 
-      <PatientHeaderBanner
-        patient={patient}
-        current={current}
-        seconds={timerSeconds}
-        setSeconds={setTimerSeconds}
-        running={timerRunning}
-        setRunning={setTimerRunning}
-      />
+      <div className="mc-patient-sticky-head">
+        <PatientHeaderBanner
+          patient={patient}
+          current={current}
+          seconds={timerSeconds}
+          setSeconds={setTimerSeconds}
+          running={timerRunning}
+          setRunning={setTimerRunning}
+        />
 
-      <div className="mc-subnav">
-        <nav className="mc-subnav-tabs" aria-label="Patient sections">
-          {TABS.map((t) => (
-            <button
-              key={t.id}
-              className="mc-subnav-tab"
-              aria-current={tab === t.id ? "page" : undefined}
-              onClick={() => setTab(t.id)}
-            >
-              {t.label}
-            </button>
-          ))}
-        </nav>
+        <div className="mc-subnav">
+          <nav className="mc-subnav-tabs" aria-label="Patient sections">
+            {TABS.map((t) => (
+              <button
+                key={t.id}
+                className="mc-subnav-tab"
+                aria-current={tab === t.id ? "page" : undefined}
+                onClick={() => setTab(t.id)}
+              >
+                {t.label}
+              </button>
+            ))}
+          </nav>
 
-        <div className="mc-subnav-aside" />
+          <div className="mc-subnav-aside" />
+        </div>
       </div>
 
       {tab === "overview" && (

@@ -99,7 +99,12 @@ export function LoginPageClient() {
       // a second person using the same browser all arrive here directly.
       clearQueryCache();
       setAccessToken(data.access);
-      router.push("/dashboard");
+      // Platform admins have no organization (`/dashboard` fetches one
+      // unconditionally and would hang on "Loading your hospital…"
+      // forever for this role) — a separate console at /platform instead.
+      router.push(
+        data.user?.role_code === "platform_admin" ? "/platform" : "/dashboard"
+      );
     } catch {
       setError(
         "Could not connect to server. Make sure the backend is running."

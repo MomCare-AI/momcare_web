@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import {
   Calendar,
   MapPin,
@@ -84,6 +85,28 @@ export function PatientHeaderBanner({
     };
   }, [running, setSeconds]);
 
+  // Matches the reference platform's own scrolled-header behaviour: the
+  // secondary detail row (everything but name/phone/DOB) collapses away
+  // once this sticky banner has scrolled under the main nav, so the stuck
+  // header reads as a compact strip rather than its full resting height.
+  // rAF-throttled so the scroll handler never runs more than once per
+  // frame.
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    let ticking = false;
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        setScrolled(window.scrollY > 28);
+        ticking = false;
+      });
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   const age = ageFromDob(patient.date_of_birth);
   const careTeam = [
     current?.provider_name && `Provider: ${current.provider_name}`,
@@ -92,7 +115,14 @@ export function PatientHeaderBanner({
   ].filter(Boolean) as string[];
 
   return (
-    <div className="mc-hero" style={{ marginBottom: 18, padding: "12px 18px" }}>
+    <div
+      className="mc-hero"
+      style={{
+        marginBottom: 18,
+        padding: scrolled ? "8px 18px" : "12px 18px",
+        transition: "padding 0.2s ease",
+      }}
+    >
       <div
         style={{
           display: "flex",
@@ -124,6 +154,10 @@ export function PatientHeaderBanner({
                 </>
               )}
             </div>
+
+            {/* Always visible, even scrolled — the two fields most useful
+                to have on screen the whole time a clinician is on this
+                record. */}
             <div
               className="mc-sub"
               style={{
@@ -136,23 +170,6 @@ export function PatientHeaderBanner({
                 fontSize: 12,
               }}
             >
-              {[age, patient.gender].filter(Boolean).join(" · ") && (
-                <span
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 4,
-                  }}
-                >
-                  <User size={11} strokeWidth={2} aria-hidden />
-                  {[age, patient.gender].filter(Boolean).join(" · ")}
-                </span>
-              )}
-              {[patient.mrn, patient.cnic].filter(Boolean).join(" · ") && (
-                <span>
-                  {[patient.mrn, patient.cnic].filter(Boolean).join(" · ")}
-                </span>
-              )}
               {patient.date_of_birth && (
                 <span
                   style={{
@@ -177,34 +194,87 @@ export function PatientHeaderBanner({
                   {patient.phone}
                 </span>
               )}
-              {patient.location_name && (
-                <span
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 4,
-                  }}
-                >
-                  <MapPin size={11} strokeWidth={2} aria-hidden />
-                  {patient.location_name}
-                </span>
-              )}
-              <span>
-                Enrolled {new Date(patient.created_at).toLocaleDateString()}
-              </span>
-              {careTeam.length > 0 && (
-                <span
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 4,
-                  }}
-                >
-                  <Stethoscope size={11} strokeWidth={2} aria-hidden />
-                  {careTeam.join(" · ")}
-                </span>
-              )}
             </div>
+
+            {/* Collapses away once the banner has scrolled under the nav —
+                matches the reference platform's own scrolled-header
+                behaviour, so the stuck strip reads as a compact summary
+                rather than its full resting height. */}
+            <AnimatePresence initial={false}>
+              {!scrolled && (
+                <motion.div
+                  key="header-secondary"
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2, ease: "easeInOut" }}
+                  style={{ overflow: "hidden" }}
+                >
+                  <div
+                    className="mc-sub"
+                    style={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      alignItems: "center",
+                      rowGap: 3,
+                      columnGap: 14,
+                      marginTop: 3,
+                      fontSize: 12,
+                    }}
+                  >
+                    {[age, patient.gender].filter(Boolean).join(" · ") && (
+                      <span
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 4,
+                        }}
+                      >
+                        <User size={11} strokeWidth={2} aria-hidden />
+                        {[age, patient.gender].filter(Boolean).join(" · ")}
+                      </span>
+                    )}
+                    {[patient.mrn, patient.cnic]
+                      .filter(Boolean)
+                      .join(" · ") && (
+                      <span>
+                        {[patient.mrn, patient.cnic]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </span>
+                    )}
+                    {patient.location_name && (
+                      <span
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 4,
+                        }}
+                      >
+                        <MapPin size={11} strokeWidth={2} aria-hidden />
+                        {patient.location_name}
+                      </span>
+                    )}
+                    <span>
+                      Enrolled{" "}
+                      {new Date(patient.created_at).toLocaleDateString()}
+                    </span>
+                    {careTeam.length > 0 && (
+                      <span
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 4,
+                        }}
+                      >
+                        <Stethoscope size={11} strokeWidth={2} aria-hidden />
+                        {careTeam.join(" · ")}
+                      </span>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
 

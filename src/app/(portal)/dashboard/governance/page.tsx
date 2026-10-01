@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 import { usePortal } from "../layout";
-import { AITemplatesTab } from "@/features/governance/components/AITemplatesTab";
 import { GovernanceStatsHeader } from "@/features/governance/components/GovernanceStatsHeader";
 import { LocationsTab } from "@/features/governance/components/LocationsTab";
 import { NoteTemplatesTab } from "@/features/governance/components/NoteTemplatesTab";
@@ -14,8 +13,7 @@ import { StatusLabelsTab } from "@/features/governance/components/StatusLabelsTa
 import { useSecondaryProviders } from "@/features/secondary-providers/hooks/useSecondaryProviders";
 import { usePageTitle } from "@/hooks/usePageTitle";
 
-type Tab =
-  "staff" | "locations" | "providers" | "statuses" | "notes" | "ai-templates";
+type Tab = "staff" | "locations" | "providers" | "statuses" | "notes";
 
 const VALID_TABS: Tab[] = [
   "staff",
@@ -23,7 +21,6 @@ const VALID_TABS: Tab[] = [
   "providers",
   "statuses",
   "notes",
-  "ai-templates",
 ];
 
 export default function GovernancePage() {
@@ -59,8 +56,7 @@ export default function GovernancePage() {
   // admin-curation role, and ad-hoc tag creation while logging a note still
   // works unchanged (`ClinicalTag`'s own inline get-or-create, untouched).
   const activeTab =
-    !isHospitalAdmin &&
-    (tab === "statuses" || tab === "notes" || tab === "ai-templates")
+    !isHospitalAdmin && (tab === "statuses" || tab === "notes")
       ? "locations"
       : tab;
 
@@ -128,18 +124,6 @@ export default function GovernancePage() {
             Notes
           </button>
         )}
-        {isHospitalAdmin && (
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === "ai-templates"}
-            aria-current={activeTab === "ai-templates" ? "page" : undefined}
-            className="mc-tab"
-            onClick={() => setTab("ai-templates")}
-          >
-            AI Assistance
-          </button>
-        )}
       </div>
 
       {activeTab === "staff" && (
@@ -149,7 +133,6 @@ export default function GovernancePage() {
       {activeTab === "providers" && <SecondaryProvidersTab />}
       {activeTab === "statuses" && <StatusLabelsTab />}
       {activeTab === "notes" && <NoteTemplatesTab />}
-      {activeTab === "ai-templates" && <AITemplatesTab />}
     </>
   );
 }

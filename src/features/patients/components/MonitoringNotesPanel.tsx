@@ -65,7 +65,6 @@ export function MonitoringNotesPanel({
     isHospitalAdmin || addedById === user.id;
 
   const entries = timeline.data?.results ?? [];
-  const totalFormatted = timeline.data?.totals.total_formatted;
 
   return (
     <section className="mc-card">
@@ -133,21 +132,6 @@ export function MonitoringNotesPanel({
           />
         ) : (
           <>
-            {totalFormatted && (
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "flex-end",
-                  marginBottom: 12,
-                }}
-              >
-                <span className="mc-badge mc-badge-neutral">
-                  <Clock size={12} strokeWidth={2.2} aria-hidden />{" "}
-                  {totalFormatted} logged this month
-                </span>
-              </div>
-            )}
-
             {timeline.isPending && (
               <div className="mc-rows">
                 <RowSkeleton count={3} variant="plain" />
@@ -262,8 +246,8 @@ function SearchResultRow({
     <motion.div
       className="mc-card"
       style={{
-        padding: "10px 12px",
-        marginBottom: 8,
+        padding: "8px 10px",
+        marginBottom: 6,
         border: "1px solid var(--c-border-soft)",
       }}
       initial={{ opacity: 0, y: 6 }}
@@ -273,7 +257,7 @@ function SearchResultRow({
         style={{
           display: "flex",
           justifyContent: "space-between",
-          alignItems: "center",
+          alignItems: "flex-start",
           gap: 10,
         }}
       >
@@ -313,31 +297,10 @@ function SearchResultRow({
               {tag.name}
             </span>
           ))}
-          {canEdit && (
-            <>
-              <TintedIconButton
-                icon={<Pencil size={12} strokeWidth={2.2} aria-hidden />}
-                tone="brand"
-                label="Edit note"
-                onClick={() => setShowEdit(true)}
-              />
-              <TintedIconButton
-                icon={<Trash2 size={12} strokeWidth={2.2} aria-hidden />}
-                tone="danger"
-                label="Delete note"
-                onClick={() => setShowDelete(true)}
-              />
-            </>
-          )}
         </div>
       </div>
 
-      <p
-        className="mc-pair-value"
-        style={{ marginTop: 6, fontSize: 13.5, whiteSpace: "pre-wrap" }}
-      >
-        {note.note}
-      </p>
+      <TruncatedNoteText text={note.note} />
       {(note.left_voicemail || note.two_way_communication) && (
         <span
           className="mc-badge mc-badge-info"
@@ -345,6 +308,30 @@ function SearchResultRow({
         >
           {note.left_voicemail ? "Left voicemail" : "Reached her"}
         </span>
+      )}
+
+      {canEdit && (
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            gap: 6,
+            marginTop: 4,
+          }}
+        >
+          <TintedIconButton
+            icon={<Pencil size={12} strokeWidth={2.2} aria-hidden />}
+            tone="brand"
+            label="Edit note"
+            onClick={() => setShowEdit(true)}
+          />
+          <TintedIconButton
+            icon={<Trash2 size={12} strokeWidth={2.2} aria-hidden />}
+            tone="danger"
+            label="Delete note"
+            onClick={() => setShowDelete(true)}
+          />
+        </div>
       )}
 
       <NoteEditModal
@@ -367,6 +354,36 @@ function formatDuration(totalSeconds: number): string {
   const m = Math.floor(totalSeconds / 60);
   const s = totalSeconds % 60;
   return s > 0 ? `${m}m ${s}s` : `${m} min`;
+}
+
+const NOTE_TRUNCATE_LENGTH = 220;
+
+/** A long note collapses to a few lines with an inline "Show more" —
+ *  matches the reference platform's own note-card truncation rather than
+ *  always rendering the full text, which could run many lines for a
+ *  detailed clinical note. */
+function TruncatedNoteText({ text }: { text: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const long = text.length > NOTE_TRUNCATE_LENGTH;
+
+  return (
+    <p
+      className="mc-pair-value"
+      style={{ marginTop: 4, fontSize: 13.5, whiteSpace: "pre-wrap" }}
+    >
+      {expanded || !long ? text : `${text.slice(0, NOTE_TRUNCATE_LENGTH)}…`}
+      {long && (
+        <button
+          type="button"
+          className="mc-link"
+          style={{ marginLeft: 6, display: "inline" }}
+          onClick={() => setExpanded((v) => !v)}
+        >
+          {expanded ? "Show less" : "Show more"}
+        </button>
+      )}
+    </p>
+  );
 }
 
 /**
@@ -400,8 +417,8 @@ function TimelineRow({
     <motion.div
       className="mc-card"
       style={{
-        padding: "10px 12px",
-        marginBottom: 8,
+        padding: "8px 10px",
+        marginBottom: 6,
         border: "1px solid var(--c-border-soft)",
       }}
       initial={{ opacity: 0, y: 6 }}
@@ -411,7 +428,7 @@ function TimelineRow({
         style={{
           display: "flex",
           justifyContent: "space-between",
-          alignItems: "center",
+          alignItems: "flex-start",
           gap: 10,
         }}
       >
@@ -467,41 +484,12 @@ function TimelineRow({
                 {formatDuration(session.duration_seconds)}
               </span>
             ))}
-          {rowCanEdit && (
-            <>
-              {note && (
-                <TintedIconButton
-                  icon={<Pencil size={12} strokeWidth={2.2} aria-hidden />}
-                  tone="brand"
-                  label="Edit note"
-                  onClick={() => setShowNoteEdit(true)}
-                />
-              )}
-              <TintedIconButton
-                icon={<Trash2 size={12} strokeWidth={2.2} aria-hidden />}
-                tone="danger"
-                label={
-                  session && note
-                    ? "Delete entry"
-                    : note
-                      ? "Delete note"
-                      : "Delete session"
-                }
-                onClick={() => setShowDelete(true)}
-              />
-            </>
-          )}
         </div>
       </div>
 
       {note && (
         <>
-          <p
-            className="mc-pair-value"
-            style={{ marginTop: 6, fontSize: 13.5, whiteSpace: "pre-wrap" }}
-          >
-            {note.note}
-          </p>
+          <TruncatedNoteText text={note.note} />
           {(note.left_voicemail || note.two_way_communication) && (
             <span
               className="mc-badge mc-badge-info"
@@ -511,6 +499,38 @@ function TimelineRow({
             </span>
           )}
         </>
+      )}
+
+      {rowCanEdit && (
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            gap: 6,
+            marginTop: 4,
+          }}
+        >
+          {note && (
+            <TintedIconButton
+              icon={<Pencil size={12} strokeWidth={2.2} aria-hidden />}
+              tone="brand"
+              label="Edit note"
+              onClick={() => setShowNoteEdit(true)}
+            />
+          )}
+          <TintedIconButton
+            icon={<Trash2 size={12} strokeWidth={2.2} aria-hidden />}
+            tone="danger"
+            label={
+              session && note
+                ? "Delete entry"
+                : note
+                  ? "Delete note"
+                  : "Delete session"
+            }
+            onClick={() => setShowDelete(true)}
+          />
+        </div>
       )}
 
       {session && (

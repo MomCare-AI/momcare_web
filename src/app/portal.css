@@ -1554,15 +1554,25 @@ select.mc-input {
   font-variant-numeric: tabular-nums;
 }
 
+/* ── Patient detail: header + sub-nav stick together ────────────────── */
+/* The reference platform keeps the patient banner and its tab strip
+   stuck together while the record underneath scrolls, not just the tabs
+   alone. One sticky wrapper around both (rather than two independently
+   `top`-offset sticky elements) means the subnav never needs to guess the
+   header's rendered height to stack correctly beneath it. */
+.mc-patient-sticky-head {
+  position: sticky;
+  top: 70px;
+  z-index: 30;
+  background: var(--c-ground);
+}
+
 /* ── Sub-navigation ──────────────────────────────────────────────────── */
 /* Where you are (breadcrumb) and what you can look at (tabs), on one row
    directly under the main bar rather than stacked as three separate ones —
    for a record a clinician stays on for a while, the tabs deserve to stay
    visible while the page underneath scrolls. */
 .mc-subnav {
-  position: sticky;
-  top: 70px;
-  z-index: 30;
   display: flex;
   align-items: center;
   gap: 20px;
