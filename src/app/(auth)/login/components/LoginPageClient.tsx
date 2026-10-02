@@ -28,10 +28,15 @@ export function LoginPageClient() {
   // so it gets its own calmer treatment rather than the red error style.
   const [notice, setNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [ngoSide, setNgoSide] = useState(false);
+  // `?portal=ngo` (used by the NGO password-recovery pages) opens on the NGO side.
+  const [ngoSide, setNgoSide] = useState(
+    () => searchParams.get("portal") === "ngo"
+  );
   // The NGO form only mounts once someone asks for it, so a password manager
   // never sees (or fills) a hidden second login form on the hospital view.
-  const [ngoMounted, setNgoMounted] = useState(false);
+  const [ngoMounted, setNgoMounted] = useState(
+    () => searchParams.get("portal") === "ngo"
+  );
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const emailRef = useRef<HTMLInputElement>(null);

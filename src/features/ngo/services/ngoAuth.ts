@@ -11,6 +11,14 @@ const SESSION_EVENT = "momcare-ngo-session";
 
 export class NgoAuthError extends Error {}
 
+// DEMO ONLY: the demo account's password can be changed through the reset
+// flow, but only for this page load. A real API stores it server-side.
+let demoPassword: string = DEMO_NGO_CREDENTIALS.password;
+
+export function setDemoNgoPassword(next: string): void {
+  demoPassword = next;
+}
+
 export async function signInNgo(
   email: string,
   password: string
@@ -19,7 +27,7 @@ export async function signInNgo(
   await new Promise((resolve) => setTimeout(resolve, 500));
   if (
     email.trim().toLowerCase() !== DEMO_NGO_CREDENTIALS.email ||
-    password !== DEMO_NGO_CREDENTIALS.password
+    password !== demoPassword
   ) {
     throw new NgoAuthError("Invalid business email or password.");
   }

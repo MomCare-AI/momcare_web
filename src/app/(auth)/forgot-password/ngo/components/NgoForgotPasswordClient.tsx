@@ -3,12 +3,16 @@
 import { useState } from "react";
 import Link from "next/link";
 
-import { API_BASE } from "@/core/api/apiBase";
-import { AuthSplitLayout } from "../../_components/AuthSplitLayout";
-import styles from "../../login/login.module.css";
+import {
+  NgoResetError,
+  requestNgoPasswordReset,
+} from "@/features/ngo/services/ngoPasswordReset";
+import { AuthSplitLayout } from "../../../_components/AuthSplitLayout";
+import styles from "../../../login/login.module.css";
 
-export function ForgotPasswordPageClient() {
+export function NgoForgotPasswordClient() {
   const [sent, setSent] = useState(false);
+  const [previewPath, setPreviewPath] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -22,36 +26,23 @@ export function ForgotPasswordPageClient() {
       new FormData(e.currentTarget).get("email") ?? ""
     ).trim();
     if (!email) {
-      setError("Enter the email address you sign in with.");
+      setError("Enter the business email you sign in with.");
       return;
     }
 
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/api/auth/forgot-password/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => null);
-        // 429 is the rate limit. Saying so is kinder than a generic failure,
-        // because the reader has usually just pressed the button twice.
-        setError(
-          res.status === 429
-            ? "Too many attempts. Wait a minute and try again."
-            : (data?.detail ?? "Could not send the link. Please try again.")
-        );
-        return;
-      }
-
-      // The server answers identically whether or not the address is
-      // registered, and so does this screen. Confirming that an address exists
-      // would tell anyone who asks who works at which hospital.
+      const result = await requestNgoPasswordReset(email);
+      // The screen reads the same whether or not the address has an account,
+      // so it cannot be used to find out which NGOs use MomCare.
+      setPreviewPath(result.previewPath);
       setSent(true);
-    } catch {
-      setError("Could not connect to the server. Check your connection.");
+    } catch (err) {
+      setError(
+        err instanceof NgoResetError
+          ? err.message
+          : "Could not send the link. Please try again."
+      );
     } finally {
       setLoading(false);
     }
@@ -59,9 +50,10 @@ export function ForgotPasswordPageClient() {
 
   return (
     <AuthSplitLayout
+      variant="ngo"
       headline={
         <>
-          Back in, <span className="text-blue-200">safely</span>.
+          Back in, <span className="text-teal-200">safely</span>.
         </>
       }
       pillars={[
@@ -75,38 +67,49 @@ export function ForgotPasswordPageClient() {
           <span className={styles.eyebrow}>Check your email</span>
           <h1 className={styles.heading}>Link sent</h1>
           <p className={styles.sub}>
-            If that address belongs to a MomCare account, a link to set a new
-            password is on its way. It works once and expires in an hour.
+            If that address belongs to a MomCare NGO account, a link to set a
+            new password is on its way. It works once and expires in an hour.
           </p>
           <p className={styles.sub}>
             Nothing arrived? Check the spam folder, and confirm you used the
-            address your hospital invited you with.
+            business email your organization was verified with.
+          </p>
+          <p className={styles.notice}>
+            Preview: NGO emails are not sent yet.
+            {previewPath && (
+              <>
+                {" "}
+                <Link href={previewPath} className={styles.link}>
+                  Open the demo reset link
+                </Link>
+              </>
+            )}
           </p>
           <p className={styles.footer}>
-            <Link href="/login" className={styles.link}>
+            <Link href="/login?portal=ngo" className={styles.link}>
               Back to sign in
             </Link>
           </p>
         </div>
       ) : (
         <form onSubmit={handleSubmit} noValidate className={styles.form}>
-          <span className={styles.eyebrow}>Account recovery</span>
+          <span className={styles.eyebrow}>NGO account recovery</span>
           <h1 className={styles.heading}>Forgot your password</h1>
           <p className={styles.sub}>
-            Enter the address you sign in with and we will send a link to set a
-            new one.
+            Enter the business email you sign in with and we will send a link to
+            set a new password.
           </p>
 
           <div className={styles.field2}>
             <label htmlFor="email" className={styles.label}>
-              Email address
+              Business email
             </label>
             <input
               id="email"
               name="email"
               type="email"
               autoComplete="username"
-              placeholder="you@yourhospital.com"
+              placeholder="ngo@example.org"
               required
               autoFocus
               className={styles.input}
@@ -121,7 +124,7 @@ export function ForgotPasswordPageClient() {
 
           <p className={styles.footer}>
             Remembered it?{" "}
-            <Link href="/login" className={styles.link}>
+            <Link href="/login?portal=ngo" className={styles.link}>
               Back to sign in
             </Link>
           </p>

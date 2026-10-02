@@ -275,3 +275,19 @@
   outline: 2px solid var(--pulse);
   outline-offset: 3px;
 }
+
+/* NGO variant of the auth screens: same layout, teal accent instead of blue.
+   Set on the page root; everything above reads these variables. */
+.ngo {
+  --pulse: #0d9488;
+  --pulse-dark: #0f766e;
+}
+.ngo .input:focus {
+  box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.12);
+}
+.ngo .button {
+  box-shadow: 0 10px 24px rgba(13, 148, 136, 0.32);
+}
+.ngo .button:hover:not(:disabled) {
+  box-shadow: 0 14px 30px rgba(13, 148, 136, 0.4);
+}

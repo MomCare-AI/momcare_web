@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 
@@ -141,15 +142,23 @@ export function NgoLoginForm() {
         </div>
       </div>
 
-      <label className="flex items-center gap-2 text-sm text-slate-600">
-        <input
-          ref={rememberRef}
-          name="remember"
-          type="checkbox"
-          className="rounded border-slate-300 text-teal-600 focus:ring-teal-600"
-        />
-        Remember me
-      </label>
+      <div className="flex items-center justify-between">
+        <label className="flex items-center gap-2 text-sm text-slate-600">
+          <input
+            ref={rememberRef}
+            name="remember"
+            type="checkbox"
+            className="rounded border-slate-300 text-teal-600 focus:ring-teal-600"
+          />
+          Remember me
+        </label>
+        <Link
+          href="/forgot-password/ngo"
+          className="text-sm font-medium text-teal-600 hover:text-teal-700"
+        >
+          Forgot password?
+        </Link>
+      </div>
 
       {error && (
         <p

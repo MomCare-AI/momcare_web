@@ -3,35 +3,20 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
-import { API_BASE } from "@/core/api/apiBase";
-import { AuthSplitLayout } from "../../../../_components/AuthSplitLayout";
-import styles from "../../../../login/login.module.css";
+import {
+  NgoResetError,
+  resetNgoPassword,
+  verifyNgoResetToken,
+} from "@/features/ngo/services/ngoPasswordReset";
+import { AuthSplitLayout } from "../../../../../_components/AuthSplitLayout";
+import styles from "../../../../../login/login.module.css";
 
 /**
- * The page the emailed reset link opens.
- *
- * The uid and token come from the URL and are never shown — they are a
- * credential, and a credential on screen is one somebody can photograph.
- *
- * The backend now exposes a dedicated verify-reset-token check, meant to be
- * called before the set-password form is shown — a deliberate change from an
- * earlier "never check on load" design, now that there's a real endpoint for
- * exactly this. So a dead link is caught immediately on page load, not only
- * after someone has typed a new password and submitted it.
+ * The page an NGO reset link opens. Mirrors the hospital reset page: the link
+ * is checked as soon as the page loads, so a dead link is caught before
+ * anyone types a new password, and the uid and token are never shown.
  */
-/**
- * DRF wraps validation messages in lists, even when a serializer raised a
- * single string — {"detail": ["..."]}. Rendering that array happens to look
- * right, which is what makes it easy to miss: the text appears, while any code
- * checking the shape silently takes the wrong branch.
- */
-function firstMessage(value: unknown): string | null {
-  if (Array.isArray(value))
-    return typeof value[0] === "string" ? value[0] : null;
-  return typeof value === "string" ? value : null;
-}
-
-export function ResetPasswordPageClient({
+export function NgoResetPasswordClient({
   uid,
   token,
 }: {
@@ -41,36 +26,23 @@ export function ResetPasswordPageClient({
   const [checking, setChecking] = useState(true);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Holds the server's own wording for a link that cannot be retried.
   const [dead, setDead] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-
-    (async () => {
-      try {
-        const res = await fetch(`${API_BASE}/api/auth/verify-reset-token/`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ uid, token }),
-        });
+    verifyNgoResetToken(uid, token)
+      .catch((err) => {
         if (cancelled) return;
-        if (!res.ok) {
-          const data = await res.json().catch(() => null);
-          setDead(
-            firstMessage(data?.detail) ?? "This link is no longer valid."
-          );
-        }
-      } catch {
-        if (!cancelled) {
-          setDead("Could not connect to the server. Check your connection.");
-        }
-      } finally {
+        setDead(
+          err instanceof NgoResetError
+            ? err.message
+            : "This link is no longer valid."
+        );
+      })
+      .finally(() => {
         if (!cancelled) setChecking(false);
-      }
-    })();
-
+      });
     return () => {
       cancelled = true;
     };
@@ -95,39 +67,19 @@ export function ResetPasswordPageClient({
 
     setSubmitting(true);
     try {
-      const res = await fetch(`${API_BASE}/api/auth/reset-password/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ uid, token, new_password: password }),
-      });
-
-      const data = await res.json().catch(() => null);
-
-      if (!res.ok) {
-        // The server returns the password validator's own words — "too short",
-        // "too common", "too similar to your email". They are more useful than
-        // anything this page could invent, so they are shown as written.
-        // validate_password() is called from the serializer's whole-object
-        // validate(), not a per-field validate_new_password() — DRF nests
-        // that under non_field_errors, not new_password.
-        const detail =
-          firstMessage(data?.detail) ??
-          firstMessage(data?.new_password) ??
-          firstMessage(data?.non_field_errors);
-
-        // A link that is expired or already used cannot be retried, so the form
-        // is replaced rather than left there inviting another attempt.
-        if (detail && /link/i.test(detail)) {
-          setDead(detail);
-          return;
-        }
-        setError(detail ?? "Could not set your password. Please try again.");
-        return;
-      }
-
+      await resetNgoPassword(uid, token, password);
       setDone(true);
-    } catch {
-      setError("Could not connect to the server. Check your connection.");
+    } catch (err) {
+      if (err instanceof NgoResetError && err.kind === "dead_link") {
+        // A used or expired link cannot be retried, so the form is replaced.
+        setDead(err.message);
+      } else {
+        setError(
+          err instanceof NgoResetError
+            ? err.message
+            : "Could not set your password. Please try again."
+        );
+      }
     } finally {
       setSubmitting(false);
     }
@@ -135,9 +87,10 @@ export function ResetPasswordPageClient({
 
   return (
     <AuthSplitLayout
+      variant="ngo"
       headline={
         <>
-          A new key, <span className="text-blue-200">only yours</span>.
+          A new key, <span className="text-teal-200">only yours</span>.
         </>
       }
       pillars={[
@@ -148,7 +101,7 @@ export function ResetPasswordPageClient({
     >
       {checking ? (
         <div className={styles.form}>
-          <span className={styles.eyebrow}>Account recovery</span>
+          <span className={styles.eyebrow}>NGO account recovery</span>
           <h1 className={styles.heading}>Checking your link…</h1>
         </div>
       ) : done ? (
@@ -160,7 +113,7 @@ export function ResetPasswordPageClient({
             was signed in to this account has been signed out.
           </p>
           <p className={styles.footer}>
-            <Link href="/login" className={styles.link}>
+            <Link href="/login?portal=ngo" className={styles.link}>
               Go to sign in
             </Link>
           </p>
@@ -175,14 +128,14 @@ export function ResetPasswordPageClient({
             a moment.
           </p>
           <p className={styles.footer}>
-            <Link href="/forgot-password" className={styles.link}>
+            <Link href="/forgot-password/ngo" className={styles.link}>
               Request a new link
             </Link>
           </p>
         </div>
       ) : (
         <form onSubmit={handleSubmit} noValidate className={styles.form}>
-          <span className={styles.eyebrow}>Account recovery</span>
+          <span className={styles.eyebrow}>NGO account recovery</span>
           <h1 className={styles.heading}>Set a new password</h1>
           <p className={styles.sub}>
             Choose something you have not used elsewhere. Setting it signs this
@@ -227,7 +180,7 @@ export function ResetPasswordPageClient({
           </button>
 
           <p className={styles.footer}>
-            <Link href="/login" className={styles.link}>
+            <Link href="/login?portal=ngo" className={styles.link}>
               Back to sign in
             </Link>
           </p>
