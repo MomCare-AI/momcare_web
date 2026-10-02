@@ -63,6 +63,7 @@ export default function NgoWizard() {
       isSubmitting={isSubmitting}
       submitError={submitError}
       finalActionLabel="Submit registration"
+      className="hw-theme-ngo"
       footer={
         <footer className="hw-footer">
           Already verified?{" "}

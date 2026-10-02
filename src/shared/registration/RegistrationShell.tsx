@@ -22,6 +22,8 @@ interface Props {
   /** Label of the button on the last step. */
   finalActionLabel?: string;
   footer?: React.ReactNode;
+  /** Extra class on the page root, e.g. `hw-theme-ngo` to recolour the flow. */
+  className?: string;
   /** The current step's form, or the success screen once finished. */
   children: React.ReactNode;
 }
@@ -39,12 +41,13 @@ export function RegistrationShell({
   submitError,
   finalActionLabel = "Submit application",
   footer,
+  className,
   children,
 }: Props) {
   const isDone = step >= steps.length;
 
   return (
-    <div className="hw-page">
+    <div className={`hw-page${className ? ` ${className}` : ""}`}>
       {/* ── Top progress fill ── */}
       <div className="hw-progress-track">
         <motion.div

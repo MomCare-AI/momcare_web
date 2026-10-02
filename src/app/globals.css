@@ -3388,3 +3388,63 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* ── NGO registration theme ─────────────────────────────────────────────
+   The NGO portal's colour is teal (hospital stays blue). Scoped to
+   .hw-theme-ngo so the shared hw-* form styles are untouched elsewhere. */
+.hw-theme-ngo .hw-progress-fill {
+  background: linear-gradient(90deg, #0d9488 0%, #2dd4bf 100%);
+}
+.hw-theme-ngo .hw-step-active {
+  background: #0d9488;
+}
+.hw-theme-ngo .hw-step-done {
+  background: #14b8a6;
+}
+.hw-theme-ngo .hw-step-line-done {
+  background: #14b8a6;
+}
+.hw-theme-ngo .hw-step-label-active,
+.hw-theme-ngo .hw-eyebrow,
+.hw-theme-ngo .hw-footer-link,
+.hw-theme-ngo .hw-upload-icon-wrap,
+.hw-theme-ngo .hw-upload-change-btn,
+.hw-theme-ngo .hw-info-badge svg,
+.hw-theme-ngo .hw-success-step-num,
+.hw-theme-ngo .hw-review-edit {
+  color: #0d9488;
+}
+.hw-theme-ngo .hw-input:focus {
+  border-color: #0d9488;
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.14);
+}
+.hw-theme-ngo .hw-upload-zone:hover,
+.hw-theme-ngo .hw-chip:hover {
+  border-color: #0d9488;
+}
+.hw-theme-ngo .hw-btn-primary,
+.hw-theme-ngo .hw-btn-home {
+  background: #0d9488;
+  box-shadow: 0 2px 12px rgba(13, 148, 136, 0.28);
+}
+.hw-theme-ngo .hw-btn-primary:hover:not(:disabled),
+.hw-theme-ngo .hw-btn-home:hover {
+  background: #0f766e;
+  box-shadow: 0 6px 20px rgba(13, 148, 136, 0.36);
+}
+.hw-theme-ngo .hw-btn-ghost:hover {
+  border-color: #0d9488;
+  color: #0d9488;
+}
+.hw-theme-ngo .hw-chip-on {
+  border-color: #0d9488;
+  background: rgba(13, 148, 136, 0.1);
+  color: #0d9488;
+}
+.hw-theme-ngo .hw-consent input {
+  accent-color: #0d9488;
+}
+.hw-theme-ngo .hw-success-ring {
+  background: linear-gradient(135deg, #2dd4bf 0%, #0f766e 100%);
+  box-shadow: 0 8px 28px rgba(13, 148, 136, 0.35);
+}
