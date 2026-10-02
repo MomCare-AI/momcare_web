@@ -11,14 +11,23 @@ const ITEMS = [
     title: "Hospital",
     hint: "Register your hospital",
     Icon: Building2,
-    tint: "bg-blue-50 text-blue-600",
+    // Full class strings (not built from parts) so Tailwind can see them.
+    row: "hover:bg-blue-50 focus-visible:bg-blue-50",
+    chip: "bg-blue-50 text-blue-600 group-hover:bg-blue-600 group-hover:text-white group-focus-visible:bg-blue-600 group-focus-visible:text-white",
+    titleText: "group-hover:text-blue-700 group-focus-visible:text-blue-700",
+    hintText:
+      "group-hover:text-blue-600/80 group-focus-visible:text-blue-600/80",
   },
   {
     href: "/register/ngo",
     title: "NGO",
     hint: "Apply for NGO access",
     Icon: HeartHandshake,
-    tint: "bg-teal-50 text-teal-600",
+    row: "hover:bg-teal-50 focus-visible:bg-teal-50",
+    chip: "bg-teal-50 text-teal-600 group-hover:bg-teal-600 group-hover:text-white group-focus-visible:bg-teal-600 group-focus-visible:text-white",
+    titleText: "group-hover:text-teal-700 group-focus-visible:text-teal-700",
+    hintText:
+      "group-hover:text-teal-600/80 group-focus-visible:text-teal-600/80",
   },
 ];
 
@@ -107,24 +116,30 @@ export function RegisterMenu() {
             className="absolute right-0 top-full z-50 w-64 pt-3"
           >
             <div className="rounded-2xl border border-slate-200 bg-white p-2 shadow-xl">
-              {ITEMS.map(({ href, title, hint, Icon, tint }) => (
+              {ITEMS.map(({ href, title, hint, Icon, row, chip, ...text }) => (
                 <Link
                   key={href}
                   href={href}
                   role="menuitem"
                   onClick={() => setOpen(false)}
-                  className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-left no-underline transition-colors hover:bg-slate-50 focus-visible:bg-slate-50 focus-visible:outline-none"
+                  className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-left no-underline transition-colors duration-200 focus-visible:outline-none ${row}`}
                 >
                   <span
-                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${tint}`}
+                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors duration-200 ${chip}`}
                   >
                     <Icon size={18} aria-hidden />
                   </span>
                   <span>
-                    <span className="block text-sm font-semibold text-slate-900">
+                    <span
+                      className={`block text-sm font-semibold text-slate-900 transition-colors duration-200 ${text.titleText}`}
+                    >
                       {title}
                     </span>
-                    <span className="block text-xs text-slate-500">{hint}</span>
+                    <span
+                      className={`block text-xs text-slate-500 transition-colors duration-200 ${text.hintText}`}
+                    >
+                      {hint}
+                    </span>
                   </span>
                 </Link>
               ))}
