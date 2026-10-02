@@ -4,8 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   BarChart3,
-  ChevronsLeft,
-  ChevronsRight,
   ClipboardList,
   FolderKanban,
   LayoutDashboard,
@@ -35,14 +33,49 @@ const NAV: NavItem[] = [
   { href: "/ngo/messages", label: "Messages", Icon: MessageSquare },
 ];
 
-function linkClass(active: boolean, collapsed: boolean) {
-  return `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-    collapsed ? "justify-center" : ""
-  } ${
+// Icons keep the same x-position whether expanded or collapsed (fixed 11px
+// padding inside a 40px-wide item), so nothing slides sideways mid-animation.
+const ITEM =
+  "group relative flex w-full items-center rounded-lg px-[11px] py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70";
+
+function itemClass(active: boolean) {
+  return `${ITEM} ${
     active
       ? "bg-white/20 text-white"
       : "text-teal-50 hover:bg-white/10 hover:text-white"
   }`;
+}
+
+/** Labels fade and clip in place instead of unmounting, so text never re-wraps. */
+function Label({
+  collapsed,
+  children,
+}: {
+  collapsed: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <span
+      aria-hidden={collapsed}
+      className={`overflow-hidden whitespace-nowrap transition-[max-width,opacity,margin] duration-300 ease-in-out motion-reduce:transition-none ${
+        collapsed ? "ml-0 max-w-0 opacity-0" : "ml-3 max-w-44 opacity-100"
+      }`}
+    >
+      {children}
+    </span>
+  );
+}
+
+function Tooltip({ show, text }: { show: boolean; text: string }) {
+  if (!show) return null;
+  return (
+    <span
+      role="tooltip"
+      className="pointer-events-none absolute left-full top-1/2 z-50 ml-3 -translate-y-1/2 whitespace-nowrap rounded-md bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100"
+    >
+      {text}
+    </span>
+  );
 }
 
 /**
@@ -53,46 +86,58 @@ export function NgoSidebar({
   session,
   pathname,
   collapsed = false,
-  onToggleCollapse,
   onNavigate,
   onSignOut,
 }: {
   session: NgoSession;
   pathname: string;
   collapsed?: boolean;
-  onToggleCollapse?: () => void;
   onNavigate?: () => void;
   onSignOut: () => void;
 }) {
   return (
     <div className="flex h-full flex-col bg-teal-700 text-white">
-      <div
-        className={`border-b border-white/15 py-5 ${collapsed ? "px-2" : "px-5"}`}
-      >
+      <div className="border-b border-white/15 px-3 py-4">
         <div
-          className={`rounded-xl bg-white p-2 ${collapsed ? "mx-auto w-11" : "w-32"}`}
+          className={`relative overflow-hidden rounded-xl bg-white transition-[width,height] duration-300 ease-in-out motion-reduce:transition-none ${
+            collapsed ? "h-10 w-10" : "h-[91px] w-32"
+          }`}
         >
           <Image
             src="/avatars/logo.png"
             alt="MomCare"
             width={256}
             height={171}
-            className={`h-auto ${collapsed ? "w-full" : "w-full"}`}
+            className={`absolute left-2 top-1/2 h-auto w-28 -translate-y-1/2 transition-opacity duration-300 motion-reduce:transition-none ${
+              collapsed ? "opacity-0" : "opacity-100"
+            }`}
           />
+          <span
+            aria-hidden
+            className={`absolute inset-0 flex items-center justify-center text-base font-bold text-teal-700 transition-opacity duration-300 motion-reduce:transition-none ${
+              collapsed ? "opacity-100" : "opacity-0"
+            }`}
+          >
+            M
+          </span>
         </div>
-        {!collapsed && (
-          <>
-            <p className="mt-3 text-sm font-semibold">
-              {session.organizationName}
-            </p>
-            <p className="text-xs text-teal-100">NGO Portal</p>
-          </>
-        )}
+        <div
+          aria-hidden={collapsed}
+          className={`overflow-hidden whitespace-nowrap transition-[max-height,opacity,margin] duration-300 ease-in-out motion-reduce:transition-none ${
+            collapsed ? "mt-0 max-h-0 opacity-0" : "mt-3 max-h-12 opacity-100"
+          }`}
+        >
+          <p className="text-sm font-semibold">{session.organizationName}</p>
+          <p className="text-xs text-teal-100">NGO Portal</p>
+        </div>
       </div>
 
       <nav
         aria-label="NGO navigation"
-        className="flex-1 space-y-1 overflow-y-auto px-3 py-4"
+        // Collapsed: let tooltips escape the rail. Expanded: scroll on short screens.
+        className={`flex-1 space-y-1 px-3 py-4 ${
+          collapsed ? "overflow-visible" : "overflow-y-auto"
+        }`}
       >
         {NAV.map(({ href, label, Icon }) => {
           const active = pathname.startsWith(href);
@@ -101,13 +146,18 @@ export function NgoSidebar({
               key={href}
               href={href}
               onClick={onNavigate}
-              title={collapsed ? label : undefined}
               aria-label={collapsed ? label : undefined}
-              className={linkClass(active, collapsed)}
               aria-current={active ? "page" : undefined}
+              className={itemClass(active)}
             >
-              <Icon size={18} strokeWidth={1.9} aria-hidden />
-              {!collapsed && label}
+              <Icon
+                size={18}
+                strokeWidth={1.9}
+                className="shrink-0"
+                aria-hidden
+              />
+              <Label collapsed={collapsed}>{label}</Label>
+              <Tooltip show={collapsed} text={label} />
             </Link>
           );
         })}
@@ -117,61 +167,59 @@ export function NgoSidebar({
         <Link
           href="/ngo/settings"
           onClick={onNavigate}
-          title={collapsed ? "Settings" : undefined}
           aria-label={collapsed ? "Settings" : undefined}
-          className={linkClass(pathname.startsWith("/ngo/settings"), collapsed)}
+          aria-current={
+            pathname.startsWith("/ngo/settings") ? "page" : undefined
+          }
+          className={itemClass(pathname.startsWith("/ngo/settings"))}
         >
-          <Settings size={18} strokeWidth={1.9} aria-hidden />
-          {!collapsed && "Settings"}
+          <Settings
+            size={18}
+            strokeWidth={1.9}
+            className="shrink-0"
+            aria-hidden
+          />
+          <Label collapsed={collapsed}>Settings</Label>
+          <Tooltip show={collapsed} text="Settings" />
         </Link>
-        <div
-          className={`flex items-center gap-3 px-3 py-2 ${collapsed ? "justify-center px-0" : ""}`}
-        >
+
+        <div className="flex items-center px-1 py-2">
           <span
             className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-xs font-bold text-teal-700"
             aria-hidden
           >
             NA
           </span>
-          {!collapsed && (
-            <span className="min-w-0">
-              <span className="block truncate text-sm font-medium">
-                {session.displayName}
-              </span>
-              <span className="block truncate text-xs text-teal-100">
-                Demo NGO
-              </span>
+          <span
+            aria-hidden={collapsed}
+            className={`min-w-0 overflow-hidden transition-[max-width,opacity,margin] duration-300 ease-in-out motion-reduce:transition-none ${
+              collapsed ? "ml-0 max-w-0 opacity-0" : "ml-3 max-w-40 opacity-100"
+            }`}
+          >
+            <span className="block truncate text-sm font-medium">
+              {session.displayName}
             </span>
-          )}
+            <span className="block truncate text-xs text-teal-100">
+              Demo NGO
+            </span>
+          </span>
         </div>
+
         <button
           type="button"
           onClick={onSignOut}
-          title={collapsed ? "Sign out" : undefined}
           aria-label={collapsed ? "Sign out" : undefined}
-          className={`${linkClass(false, collapsed)} w-full`}
+          className={itemClass(false)}
         >
-          <LogOut size={18} strokeWidth={1.9} aria-hidden />
-          {!collapsed && "Sign out"}
+          <LogOut
+            size={18}
+            strokeWidth={1.9}
+            className="shrink-0"
+            aria-hidden
+          />
+          <Label collapsed={collapsed}>Sign out</Label>
+          <Tooltip show={collapsed} text="Sign out" />
         </button>
-        {onToggleCollapse && (
-          <button
-            type="button"
-            onClick={onToggleCollapse}
-            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            className={`${linkClass(false, collapsed)} w-full`}
-          >
-            {collapsed ? (
-              <ChevronsRight size={18} strokeWidth={1.9} aria-hidden />
-            ) : (
-              <>
-                <ChevronsLeft size={18} strokeWidth={1.9} aria-hidden />
-                Collapse
-              </>
-            )}
-          </button>
-        )}
       </div>
     </div>
   );
