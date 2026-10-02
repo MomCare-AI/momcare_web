@@ -8,6 +8,7 @@ import type {
   BandStatus,
   NgoBand,
   NgoBandApplication,
+  NgoAccessRequest,
   NgoBandSummary,
   NgoDashboardSummary,
 } from "../types";
@@ -34,6 +35,8 @@ let applications: NgoBandApplication[] = DEMO_APPLICATIONS.map((a) => ({
   ...a,
 }));
 
+const accessRequests: NgoAccessRequest[] = [];
+
 const delay = () => new Promise((r) => setTimeout(r, 250));
 
 const IN_FIELD: BandStatus[] = [
@@ -57,6 +60,21 @@ function find(id: string): NgoBand {
 export const ngoRepository = {
   async getDashboardSummary(): Promise<NgoDashboardSummary> {
     return DEMO_DASHBOARD_SUMMARY;
+  },
+
+  /** DEMO ONLY: kept in memory. A real API will send this to MomCare for review. */
+  async submitAccessRequest(request: NgoAccessRequest): Promise<void> {
+    await delay();
+    if (!request.organizationName.trim() || !request.contactName.trim()) {
+      throw new Error("Enter the organization and a contact person.");
+    }
+    if (!/^\S+@\S+\.\S+$/.test(request.email.trim())) {
+      throw new Error("Enter a valid business email.");
+    }
+    if (request.services.length === 0) {
+      throw new Error("Choose at least one service you provide.");
+    }
+    accessRequests.push({ ...request });
   },
 
   async listBands(): Promise<NgoBand[]> {

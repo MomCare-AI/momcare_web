@@ -68,3 +68,16 @@ export interface NgoBandSummary {
   needsAttention: number;
   pendingApplications: number;
 }
+
+export type NgoService = "bands" | "ambulance";
+
+/** An NGO's request for a portal account. Reviewed by MomCare, never self-served. */
+export interface NgoAccessRequest {
+  organizationName: string;
+  contactName: string;
+  email: string;
+  phone: string;
+  country: string;
+  services: NgoService[];
+  message: string;
+}

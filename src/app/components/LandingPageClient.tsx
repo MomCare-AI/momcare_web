@@ -22,6 +22,7 @@ import {
 import { AboutFlip } from "./AboutFlip";
 import { MobileAppSection } from "./MobileAppSection";
 import { ThreePillars } from "./ThreePillars";
+import { RegisterMenu } from "./RegisterMenu";
 import {
   FaqCarouselSkeleton,
   ValuePillarsSkeleton,
@@ -345,11 +346,7 @@ export function LandingPageClient() {
             <Link href="/login" className="nav-signin">
               Log in
             </Link>
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.96 }}>
-              <Link href="/register" className="nav-cta">
-                Register Hospital
-              </Link>
-            </motion.div>
+            <RegisterMenu />
           </div>
           {/* Mobile-only hamburger toggle */}
           <button
@@ -436,6 +433,13 @@ export function LandingPageClient() {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Register Hospital
+              </Link>
+              <Link
+                href="/register/ngo"
+                className="nav-mobile-link"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Register NGO
               </Link>
             </motion.div>
           )}
