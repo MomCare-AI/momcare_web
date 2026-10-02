@@ -56,33 +56,3 @@ describe("ngoRepository band lifecycle", () => {
     await expect(ngoRepository.restock("b4")).rejects.toThrow(/returned/i);
   });
 });
-
-describe("ngoRepository access requests", () => {
-  const valid = {
-    organizationName: "Helping Hands",
-    contactName: "Sara Ali",
-    email: "sara@helpinghands.org",
-    phone: "",
-    country: "Pakistan",
-    services: ["bands" as const],
-    message: "",
-  };
-
-  it("accepts a complete request", async () => {
-    await expect(
-      ngoRepository.submitAccessRequest(valid)
-    ).resolves.toBeUndefined();
-  });
-
-  it("rejects missing names, a bad email, or no service", async () => {
-    await expect(
-      ngoRepository.submitAccessRequest({ ...valid, organizationName: " " })
-    ).rejects.toThrow(/organization/i);
-    await expect(
-      ngoRepository.submitAccessRequest({ ...valid, email: "not-an-email" })
-    ).rejects.toThrow(/email/i);
-    await expect(
-      ngoRepository.submitAccessRequest({ ...valid, services: [] })
-    ).rejects.toThrow(/service/i);
-  });
-});

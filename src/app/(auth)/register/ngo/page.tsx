@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 
-import { NgoAccessRequestForm } from "@/features/ngo/components/NgoAccessRequestForm";
+import NgoWizard from "@/features/ngo-onboarding/components/NgoWizard";
 
 export const metadata: Metadata = {
-  title: "Apply for NGO access",
+  title: "Register your NGO",
   description:
-    "NGOs that supply health bands or run ambulance services can apply for a MomCare NGO portal account.",
+    "Register your NGO with MomCare. Applications are verified by hand by the MomCare team.",
   alternates: { canonical: "/register/ngo" },
 };
 
 export default function RegisterNgoPage() {
-  return <NgoAccessRequestForm />;
+  return <NgoWizard />;
 }
