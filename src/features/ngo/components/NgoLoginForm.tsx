@@ -11,11 +11,7 @@ const INPUT =
   "w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-teal-600 focus:border-transparent outline-none transition-all";
 
 /** The back face of the login card. Demo auth only — see services/ngoAuth. */
-export function NgoLoginForm({
-  onSwitchToHospital,
-}: {
-  onSwitchToHospital: () => void;
-}) {
+export function NgoLoginForm() {
   const router = useRouter();
   const emailRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
@@ -171,17 +167,6 @@ export function NgoLoginForm({
       >
         {loading ? "Signing in…" : "Sign in"}
       </button>
-
-      <p className="pt-6 border-t border-slate-200 text-sm text-slate-500">
-        Are you hospital staff?{" "}
-        <button
-          type="button"
-          onClick={onSwitchToHospital}
-          className="font-semibold text-teal-600 hover:underline"
-        >
-          Go to hospital login
-        </button>
-      </p>
     </form>
   );
 }
