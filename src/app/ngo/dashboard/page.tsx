@@ -2,6 +2,7 @@
 
 import { BarChart3, FolderKanban, Users } from "lucide-react";
 
+import { StatValueSkeleton } from "@/features/ngo/components/NgoSkeletons";
 import { useNGODashboard } from "@/features/ngo/hooks/useNGODashboard";
 import { useNgoBandSummary } from "@/features/ngo/hooks/useNgoBands";
 
@@ -44,9 +45,11 @@ export default function NgoDashboardPage() {
               <Icon size={15} aria-hidden />
               {label}
             </div>
-            <p className="mt-3 text-xl font-bold text-slate-900">
-              {value ?? "—"}
-            </p>
+            {value ? (
+              <p className="mt-3 text-xl font-bold text-slate-900">{value}</p>
+            ) : (
+              <StatValueSkeleton />
+            )}
           </div>
         ))}
       </div>
@@ -68,9 +71,11 @@ export default function NgoDashboardPage() {
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
               {label}
             </p>
-            <p className="mt-3 text-2xl font-bold text-slate-900">
-              {value ?? "�"}
-            </p>
+            {value === undefined ? (
+              <StatValueSkeleton />
+            ) : (
+              <p className="mt-3 text-2xl font-bold text-slate-900">{value}</p>
+            )}
           </div>
         ))}
       </div>

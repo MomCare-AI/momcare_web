@@ -8,6 +8,7 @@ import { BandDrawer } from "@/features/ngo/components/BandDrawer";
 import { BAND_STATUS } from "@/features/ngo/components/bandStatus";
 import { useNgoBands } from "@/features/ngo/hooks/useNgoBands";
 import type { BandStatus } from "@/features/ngo/types";
+import { TableRowsSkeleton } from "@/features/ngo/components/NgoSkeletons";
 
 export default function NgoBandsPage() {
   const { data, isLoading } = useNgoBands();
@@ -84,13 +85,7 @@ export default function NgoBandsPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {isLoading && (
-              <tr>
-                <td className="px-4 py-6 text-slate-500" colSpan={6}>
-                  Loading…
-                </td>
-              </tr>
-            )}
+            {isLoading && <TableRowsSkeleton cols={6} />}
             {rows?.length === 0 && (
               <tr>
                 <td className="px-4 py-6 text-slate-500" colSpan={6}>

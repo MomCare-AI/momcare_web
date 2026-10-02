@@ -7,6 +7,7 @@ import { ChevronsLeft, ChevronsRight, Menu, X } from "lucide-react";
 import { useNgoSession } from "../hooks/useNgoSession";
 import { useSidebarCollapsed } from "../hooks/useSidebarCollapsed";
 import { signOutNgo } from "../services/ngoAuth";
+import { NgoShellSkeleton } from "./NgoSkeletons";
 import { NgoSidebar } from "./NgoSidebar";
 
 const EASE = "duration-300 ease-in-out motion-reduce:transition-none";
@@ -51,7 +52,7 @@ export function NgoShell({ children }: { children: React.ReactNode }) {
   }, [open]);
 
   if (!session) {
-    return <div className="min-h-screen bg-slate-50" aria-busy="true" />;
+    return <NgoShellSkeleton />;
   }
 
   const signOut = () => {

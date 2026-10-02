@@ -59,6 +59,7 @@ function find(id: string): NgoBand {
 /** The NGO data boundary. Swap the body for a real NGO API call later. */
 export const ngoRepository = {
   async getDashboardSummary(): Promise<NgoDashboardSummary> {
+    await delay();
     return DEMO_DASHBOARD_SUMMARY;
   },
 
@@ -78,14 +79,17 @@ export const ngoRepository = {
   },
 
   async listBands(): Promise<NgoBand[]> {
+    await delay();
     return bands;
   },
 
   async listApplications(): Promise<NgoBandApplication[]> {
+    await delay();
     return applications;
   },
 
   async getBandSummary(): Promise<NgoBandSummary> {
+    await delay();
     return {
       inStock: bands.filter((b) => b.status === "in_stock").length,
       deployed: bands.filter((b) => b.status === "deployed").length,

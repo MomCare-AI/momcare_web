@@ -6,6 +6,7 @@ import {
   useNgoApplications,
 } from "@/features/ngo/hooks/useNgoBands";
 import type { ApplicationStatus } from "@/features/ngo/types";
+import { TableRowsSkeleton } from "@/features/ngo/components/NgoSkeletons";
 
 const STATUS: Record<ApplicationStatus, string> = {
   pending: "bg-amber-50 text-amber-800",
@@ -48,13 +49,7 @@ export default function NgoApplicationsPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {isLoading && (
-              <tr>
-                <td className="px-4 py-6 text-slate-500" colSpan={6}>
-                  Loading…
-                </td>
-              </tr>
-            )}
+            {isLoading && <TableRowsSkeleton cols={6} />}
             {data?.map((a) => (
               <tr key={a.id}>
                 <td className="px-4 py-3 font-medium text-slate-900">
