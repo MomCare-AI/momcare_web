@@ -9,6 +9,7 @@ import { clearQueryCache } from "@/core/query/queryClient";
 
 import { API_BASE } from "@/core/api/apiBase";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { NgoLoginForm } from "@/features/ngo/components/NgoLoginForm";
 
 const REMEMBERED_EMAIL_KEY = "momcare_remembered_email";
 
@@ -20,6 +21,10 @@ export function LoginPageClient() {
   // so it gets its own calmer treatment rather than the red error style.
   const [notice, setNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [ngoSide, setNgoSide] = useState(false);
+  // The NGO form only mounts once someone asks for it, so a password manager
+  // never sees (or fills) a hidden second login form on the hospital view.
+  const [ngoMounted, setNgoMounted] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const emailRef = useRef<HTMLInputElement>(null);
@@ -173,141 +178,188 @@ export function LoginPageClient() {
 
       {/* ── Right: authentication form ───────────────────────────────── */}
       <section className="flex-1 flex items-center justify-center p-8 lg:p-16 min-h-screen bg-white">
-        <form
-          onSubmit={handleSubmit}
-          noValidate
-          className="w-full max-w-md space-y-6"
-        >
-          <div>
-            <span className="block text-xs font-semibold uppercase tracking-wider text-blue-600 mb-3">
-              Clinical Access
-            </span>
-            <h1 className="text-3xl font-bold text-slate-900 mb-2">Sign in</h1>
-            <p className="text-sm text-slate-500">
-              For registered hospital staff. Your account is created by your
-              hospital administrator.
-            </p>
-          </div>
-
-          <div>
-            <label
-              htmlFor="email"
-              className="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2"
+        {/* One card, two faces: hospital staff (front) and NGO (back). */}
+        <div className="w-full max-w-md" style={{ perspective: 1400 }}>
+          <div
+            className="grid transition-transform duration-700 ease-in-out motion-reduce:transition-none"
+            style={{
+              transformStyle: "preserve-3d",
+              transform: ngoSide ? "rotateY(180deg)" : "none",
+            }}
+          >
+            <div
+              style={{ gridArea: "1 / 1", backfaceVisibility: "hidden" }}
+              aria-hidden={ngoSide}
+              inert={ngoSide}
             >
-              Email address
-            </label>
-            <div className="relative">
-              <Mail
-                size={17}
-                strokeWidth={2}
-                className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
-                aria-hidden
-              />
-              <input
-                ref={emailRef}
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="username"
-                placeholder="owner@yourhospital.com"
-                required
-                className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none transition-all"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label
-              htmlFor="password"
-              className="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2"
-            >
-              Password
-            </label>
-            <div className="relative">
-              <Lock
-                size={17}
-                strokeWidth={2}
-                className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
-                aria-hidden
-              />
-              <input
-                id="password"
-                name="password"
-                type={showPassword ? "text" : "password"}
-                autoComplete="current-password"
-                placeholder="••••••••"
-                required
-                className="w-full pl-11 pr-11 py-3 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none transition-all"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((v) => !v)}
-                aria-label={showPassword ? "Hide password" : "Show password"}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              <form
+                onSubmit={handleSubmit}
+                noValidate
+                className="w-full max-w-md space-y-6"
               >
-                {showPassword ? (
-                  <EyeOff size={17} strokeWidth={2} aria-hidden />
-                ) : (
-                  <Eye size={17} strokeWidth={2} aria-hidden />
+                <div>
+                  <span className="block text-xs font-semibold uppercase tracking-wider text-blue-600 mb-3">
+                    Clinical Access
+                  </span>
+                  <h1 className="text-3xl font-bold text-slate-900 mb-2">
+                    Sign in
+                  </h1>
+                  <p className="text-sm text-slate-500">
+                    For registered hospital staff. Your account is created by
+                    your hospital administrator.
+                  </p>
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="email"
+                    className="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2"
+                  >
+                    Email address
+                  </label>
+                  <div className="relative">
+                    <Mail
+                      size={17}
+                      strokeWidth={2}
+                      className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+                      aria-hidden
+                    />
+                    <input
+                      ref={emailRef}
+                      id="email"
+                      name="email"
+                      type="email"
+                      autoComplete="username"
+                      placeholder="owner@yourhospital.com"
+                      required
+                      className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="password"
+                    className="block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2"
+                  >
+                    Password
+                  </label>
+                  <div className="relative">
+                    <Lock
+                      size={17}
+                      strokeWidth={2}
+                      className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+                      aria-hidden
+                    />
+                    <input
+                      id="password"
+                      name="password"
+                      type={showPassword ? "text" : "password"}
+                      autoComplete="current-password"
+                      placeholder="••••••••"
+                      required
+                      className="w-full pl-11 pr-11 py-3 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none transition-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((v) => !v)}
+                      aria-label={
+                        showPassword ? "Hide password" : "Show password"
+                      }
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    >
+                      {showPassword ? (
+                        <EyeOff size={17} strokeWidth={2} aria-hidden />
+                      ) : (
+                        <Eye size={17} strokeWidth={2} aria-hidden />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between mt-4">
+                  <label className="flex items-center gap-2 text-sm text-slate-600">
+                    <input
+                      type="checkbox"
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                      className="rounded border-slate-300 text-blue-600 focus:ring-blue-600"
+                    />
+                    Remember me
+                  </label>
+                  <Link
+                    href="/forgot-password"
+                    className="text-sm font-medium text-blue-600 hover:text-blue-700"
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
+
+                {error && (
+                  <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
+                    {error}
+                  </p>
                 )}
-              </button>
+                {notice && (
+                  <p className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                    {notice}
+                  </p>
+                )}
+
+                <div>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full rounded-xl bg-blue-600 py-3.5 font-medium text-white shadow-sm transition-all duration-200 hover:bg-blue-700 hover:shadow disabled:bg-slate-300 disabled:cursor-progress"
+                  >
+                    {loading ? "Signing in…" : "Sign in"}
+                  </button>
+
+                  <div className="flex items-center justify-center gap-2 text-xs text-slate-500 mt-4">
+                    <Lock size={12} strokeWidth={2.25} aria-hidden />
+                    <span>Row-Level Security · Tenant-Isolated Data</span>
+                  </div>
+                </div>
+
+                <p className="pt-6 border-t border-slate-200 text-sm text-slate-500">
+                  Registering a hospital for the first time?{" "}
+                  <Link
+                    href="/register"
+                    className="font-semibold text-blue-600 hover:underline"
+                  >
+                    Apply for access
+                  </Link>
+                </p>
+                <p className="text-sm text-slate-500">
+                  Are you an NGO?{" "}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNgoMounted(true);
+                      setNgoSide(true);
+                    }}
+                    className="font-semibold text-blue-600 hover:underline"
+                  >
+                    Go to NGO login
+                  </button>
+                </p>
+              </form>
+            </div>
+            <div
+              style={{
+                gridArea: "1 / 1",
+                backfaceVisibility: "hidden",
+                transform: "rotateY(180deg)",
+              }}
+              aria-hidden={!ngoSide}
+              inert={!ngoSide}
+            >
+              {ngoMounted && (
+                <NgoLoginForm onSwitchToHospital={() => setNgoSide(false)} />
+              )}
             </div>
           </div>
-
-          <div className="flex items-center justify-between mt-4">
-            <label className="flex items-center gap-2 text-sm text-slate-600">
-              <input
-                type="checkbox"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-                className="rounded border-slate-300 text-blue-600 focus:ring-blue-600"
-              />
-              Remember me
-            </label>
-            <Link
-              href="/forgot-password"
-              className="text-sm font-medium text-blue-600 hover:text-blue-700"
-            >
-              Forgot password?
-            </Link>
-          </div>
-
-          {error && (
-            <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
-              {error}
-            </p>
-          )}
-          {notice && (
-            <p className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800">
-              {notice}
-            </p>
-          )}
-
-          <div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full rounded-xl bg-blue-600 py-3.5 font-medium text-white shadow-sm transition-all duration-200 hover:bg-blue-700 hover:shadow disabled:bg-slate-300 disabled:cursor-progress"
-            >
-              {loading ? "Signing in…" : "Sign in"}
-            </button>
-
-            <div className="flex items-center justify-center gap-2 text-xs text-slate-500 mt-4">
-              <Lock size={12} strokeWidth={2.25} aria-hidden />
-              <span>Row-Level Security · Tenant-Isolated Data</span>
-            </div>
-          </div>
-
-          <p className="pt-6 border-t border-slate-200 text-sm text-slate-500">
-            Registering a hospital for the first time?{" "}
-            <Link
-              href="/register"
-              className="font-semibold text-blue-600 hover:underline"
-            >
-              Apply for access
-            </Link>
-          </p>
-        </form>
+        </div>
       </section>
     </div>
   );
