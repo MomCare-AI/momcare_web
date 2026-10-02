@@ -39,3 +39,38 @@ export function useAllocateBand() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["ngo"] }),
   });
 }
+
+export function useAddBands() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (v: { batch: string; quantity: number }) =>
+      ngoRepository.addBands(v.batch, v.quantity),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["ngo"] }),
+  });
+}
+
+export type BandAction =
+  | { kind: "recall"; id: string; reason: string }
+  | { kind: "returned"; id: string }
+  | { kind: "restock"; id: string }
+  | { kind: "retire"; id: string; reason: string };
+
+/** One mutation for every band lifecycle action, so the UI has one error/pending state. */
+export function useBandAction() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (a: BandAction) => {
+      switch (a.kind) {
+        case "recall":
+          return ngoRepository.requestRecall(a.id, a.reason);
+        case "returned":
+          return ngoRepository.markReturned(a.id);
+        case "restock":
+          return ngoRepository.restock(a.id);
+        case "retire":
+          return ngoRepository.retire(a.id, a.reason);
+      }
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["ngo"] }),
+  });
+}

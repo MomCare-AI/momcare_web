@@ -12,10 +12,33 @@ export interface NgoDashboardSummary {
 }
 
 export type BandStatus =
-  "in_stock" | "deployed" | "offline" | "low_battery" | "returned" | "retired";
+  | "in_stock"
+  | "deployed"
+  | "offline"
+  | "low_battery"
+  | "recall_pending"
+  | "returned"
+  | "retired";
+
+export type BandEventType =
+  | "added"
+  | "allocated"
+  | "recall_requested"
+  | "returned"
+  | "restocked"
+  | "retired";
+
+export interface BandEvent {
+  id: string;
+  at: string;
+  type: BandEventType;
+  note: string;
+}
 
 /** An NGO-owned band, on loan once deployed (see docs/ngo-portal-design.md). */
 export interface NgoBand {
+  /** Newest last. Written by the repository, never by the UI. */
+  events: BandEvent[];
   id: string;
   serial: string;
   batch: string;

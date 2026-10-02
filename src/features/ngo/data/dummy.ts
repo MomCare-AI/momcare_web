@@ -23,7 +23,7 @@ export const DEMO_DASHBOARD_SUMMARY: NgoDashboardSummary = {
 };
 
 // DEMO ONLY — band program placeholder data.
-export const DEMO_BANDS: import("../types").NgoBand[] = [
+export const DEMO_BANDS: Omit<import("../types").NgoBand, "events">[] = [
   {
     id: "b1",
     serial: "MCB-0001",

@@ -1,23 +1,20 @@
 "use client";
 
 import { useState } from "react";
+import { Plus } from "lucide-react";
 
+import { AddBandsDialog } from "@/features/ngo/components/AddBandsDialog";
+import { BandDrawer } from "@/features/ngo/components/BandDrawer";
+import { BAND_STATUS } from "@/features/ngo/components/bandStatus";
 import { useNgoBands } from "@/features/ngo/hooks/useNgoBands";
 import type { BandStatus } from "@/features/ngo/types";
-
-const STATUS: Record<BandStatus, { label: string; cls: string }> = {
-  in_stock: { label: "In stock", cls: "bg-slate-100 text-slate-700" },
-  deployed: { label: "Deployed", cls: "bg-emerald-50 text-emerald-700" },
-  offline: { label: "Offline", cls: "bg-amber-50 text-amber-800" },
-  low_battery: { label: "Low battery", cls: "bg-amber-50 text-amber-800" },
-  returned: { label: "Returned", cls: "bg-teal-50 text-teal-700" },
-  retired: { label: "Retired", cls: "bg-red-50 text-red-700" },
-};
 
 export default function NgoBandsPage() {
   const { data, isLoading } = useNgoBands();
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<BandStatus | "all">("all");
+  const [adding, setAdding] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const q = query.trim().toLowerCase();
   const rows = data?.filter(
@@ -27,14 +24,28 @@ export default function NgoBandsPage() {
         b.serial.toLowerCase().includes(q) ||
         (b.holderName ?? "").toLowerCase().includes(q))
   );
+  // Derived from live data so the drawer reflects each action immediately.
+  const selected = data?.find((b) => b.id === selectedId) ?? null;
 
   return (
     <>
-      <h1 className="text-2xl font-bold text-slate-900">Bands</h1>
-      <p className="mt-1 text-sm text-slate-500">
-        Inventory of NGO-owned health bands. Shows status only — no clinical
-        data.
-      </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Bands</h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Inventory of NGO-owned health bands. Shows status only — no clinical
+            data.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setAdding(true)}
+          className="flex items-center gap-2 rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-teal-700"
+        >
+          <Plus size={16} aria-hidden />
+          Add bands
+        </button>
+      </div>
 
       <div className="mt-6 flex flex-wrap gap-3">
         <input
@@ -52,9 +63,9 @@ export default function NgoBandsPage() {
           className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-teal-600"
         >
           <option value="all">All statuses</option>
-          {(Object.keys(STATUS) as BandStatus[]).map((s) => (
+          {(Object.keys(BAND_STATUS) as BandStatus[]).map((s) => (
             <option key={s} value={s}>
-              {STATUS[s].label}
+              {BAND_STATUS[s].label}
             </option>
           ))}
         </select>
@@ -88,16 +99,29 @@ export default function NgoBandsPage() {
               </tr>
             )}
             {rows?.map((b) => (
-              <tr key={b.id}>
+              <tr
+                key={b.id}
+                onClick={() => setSelectedId(b.id)}
+                className="cursor-pointer hover:bg-slate-50"
+              >
                 <td className="px-4 py-3 font-medium text-slate-900">
-                  {b.serial}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedId(b.id);
+                    }}
+                    className="rounded text-left hover:text-teal-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600"
+                  >
+                    {b.serial}
+                  </button>
                 </td>
                 <td className="px-4 py-3 text-slate-600">{b.batch}</td>
                 <td className="px-4 py-3">
                   <span
-                    className={`rounded-full px-2.5 py-1 text-xs font-medium ${STATUS[b.status].cls}`}
+                    className={`rounded-full px-2.5 py-1 text-xs font-medium ${BAND_STATUS[b.status].cls}`}
                   >
-                    {STATUS[b.status].label}
+                    {BAND_STATUS[b.status].label}
                   </span>
                 </td>
                 <td className="px-4 py-3 text-slate-600">
@@ -114,6 +138,15 @@ export default function NgoBandsPage() {
           </tbody>
         </table>
       </div>
+
+      {adding && <AddBandsDialog onClose={() => setAdding(false)} />}
+      {selected && (
+        <BandDrawer
+          key={selected.id}
+          band={selected}
+          onClose={() => setSelectedId(null)}
+        />
+      )}
     </>
   );
 }
