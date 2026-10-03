@@ -35,7 +35,7 @@ let hospitals: HospitalApplication[] = SEED_HOSPITALS.map((h) => ({ ...h }));
 let activity: ActivityEvent[] = [];
 let nextEvent = 1;
 
-const delay = () => new Promise((r) => setTimeout(r, 250));
+const delay = () => new Promise((r) => setTimeout(r, 120));
 
 async function ensureSeeded() {
   seedDemoNgoApplications(SEED_NGOS);

@@ -15,6 +15,7 @@ import {
 } from "../repositories/platformAdminRepository";
 import type { HospitalAction, StatusGroup } from "../types";
 import { DecisionModal } from "./DecisionModal";
+import { DecisionNotice, useDecisionNotice } from "./DecisionNotice";
 import { DetailCard } from "./DetailCard";
 import { fmtDate, fmtDateTime } from "./format";
 import { StatusBadge, TypeChip } from "./StatusBadge";
@@ -71,6 +72,13 @@ const CONFIG: Record<HospitalAction, Config> = {
   },
 };
 
+const PAST: Record<HospitalAction, string> = {
+  approve: "approved",
+  reject: "rejected",
+  suspend: "suspended",
+  reactivate: "reactivated",
+};
+
 const GROUP: Record<string, StatusGroup> = {
   pending: "pending",
   approved: "approved",
@@ -82,6 +90,7 @@ export function HospitalReview({ id }: { id: string }) {
   const query = useHospital(id);
   const decide = useDecideHospital(id);
   const [open, setOpen] = useState<HospitalAction | null>(null);
+  const { notice, show, clear } = useDecisionNotice();
   const h = query.data;
 
   if (query.isPending) {
@@ -110,6 +119,8 @@ export function HospitalReview({ id }: { id: string }) {
   return (
     <>
       <BackButton label="Applications" />
+      <div style={{ height: 14 }} />
+      <DecisionNotice message={notice} onClose={clear} />
       <div
         style={{
           margin: "14px 0 20px",
@@ -219,7 +230,10 @@ export function HospitalReview({ id }: { id: string }) {
           required={cfg.required}
           confirmLabel={cfg.confirm}
           danger={cfg.danger}
-          onConfirm={(note) => decide.mutateAsync({ action: open, note })}
+          onConfirm={async (note) => {
+            await decide.mutateAsync({ action: open, note });
+            show(`${h.name} ${PAST[open]}.`);
+          }}
         />
       )}
     </>

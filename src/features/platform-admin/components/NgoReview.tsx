@@ -27,6 +27,7 @@ import {
 } from "../repositories/platformAdminRepository";
 import type { NgoAction, StatusGroup } from "../types";
 import { DecisionModal } from "./DecisionModal";
+import { DecisionNotice, useDecisionNotice } from "./DecisionNotice";
 import { DetailCard } from "./DetailCard";
 import { fmtDate, fmtDateTime, maskCnic } from "./format";
 import { StatusBadge, TypeChip } from "./StatusBadge";
@@ -85,6 +86,13 @@ const CONFIG: Record<Exclude<NgoAction, "start_review">, Config> = {
   },
 };
 
+const PAST: Record<Exclude<NgoAction, "start_review">, string> = {
+  approve: "verified by MomCare",
+  reject: "rejected",
+  suspend: "suspended",
+  reactivate: "reactivated",
+};
+
 const GROUP: Record<string, StatusGroup> = {
   pending: "pending",
   under_review: "pending",
@@ -113,6 +121,7 @@ export function NgoReview({ id }: { id: string }) {
   const [infoOpen, setInfoOpen] = useState(false);
   const [showCnic, setShowCnic] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const { notice, show, clear } = useDecisionNotice();
 
   const n = query.data;
 
@@ -143,10 +152,11 @@ export function NgoReview({ id }: { id: string }) {
   );
   const canAskInfo = n.status === "pending" || n.status === "under_review";
 
-  const run = async (fn: () => Promise<unknown>) => {
+  const run = async (fn: () => Promise<unknown>, message?: string) => {
     setActionError(null);
     try {
       await fn();
+      if (message) show(message);
     } catch (e) {
       setActionError(e instanceof Error ? e.message : "Something went wrong.");
     }
@@ -157,6 +167,8 @@ export function NgoReview({ id }: { id: string }) {
   return (
     <>
       <BackButton label="Applications" />
+      <div style={{ height: 14 }} />
+      <DecisionNotice message={notice} onClose={clear} />
       <div
         style={{
           margin: "14px 0 20px",
@@ -217,7 +229,10 @@ export function NgoReview({ id }: { id: string }) {
                   className="mc-btn"
                   disabled={decide.isPending}
                   onClick={() =>
-                    run(() => decide.mutateAsync({ action: a, note: "" }))
+                    run(
+                      () => decide.mutateAsync({ action: a, note: "" }),
+                      "Review started."
+                    )
                   }
                 >
                   Start review
@@ -368,12 +383,14 @@ export function NgoReview({ id }: { id: string }) {
                         className="mc-btn mc-btn-sm"
                         disabled={decideDoc.isPending}
                         onClick={() =>
-                          run(() =>
-                            decideDoc.mutateAsync({
-                              documentId: d.id,
-                              decision: "verified",
-                              reason: "",
-                            })
+                          run(
+                            () =>
+                              decideDoc.mutateAsync({
+                                documentId: d.id,
+                                decision: "verified",
+                                reason: "",
+                              }),
+                            "Document verified."
                           )
                         }
                       >
@@ -426,7 +443,10 @@ export function NgoReview({ id }: { id: string }) {
           required={cfg.required}
           confirmLabel={cfg.confirm}
           danger={cfg.danger}
-          onConfirm={(note) => decide.mutateAsync({ action: dialog, note })}
+          onConfirm={async (note) => {
+            await decide.mutateAsync({ action: dialog, note });
+            show(`${n.organization.name} ${PAST[dialog]}.`);
+          }}
         />
       )}
 
@@ -441,13 +461,14 @@ export function NgoReview({ id }: { id: string }) {
           required
           confirmLabel="Reject document"
           danger
-          onConfirm={(reason) =>
-            decideDoc.mutateAsync({
+          onConfirm={async (reason) => {
+            await decideDoc.mutateAsync({
               documentId: rejectDoc,
               decision: "rejected",
               reason,
-            })
-          }
+            });
+            show("Document rejected.");
+          }}
         />
       )}
 
@@ -461,7 +482,10 @@ export function NgoReview({ id }: { id: string }) {
           hint="Be specific, for example which document or detail is missing."
           required
           confirmLabel="Send request"
-          onConfirm={(message) => requestInfo.mutateAsync(message)}
+          onConfirm={async (message) => {
+            await requestInfo.mutateAsync(message);
+            show("Request recorded.");
+          }}
         />
       )}
     </>

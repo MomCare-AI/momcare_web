@@ -138,3 +138,5 @@ Built first, on sample data, ahead of the backend (Phase 2, plus the hospital an
 - Assumed until decided: one admin role (D2), rejected applicants must reapply (D5), licence image shown as "not uploaded yet" (D6).
 - NGO applications submitted at `/register/ngo` appear in the same inbox (shared demo store).
 - Not built yet: deactivation requests, real documents (no files are kept in the preview), the reviewer vs super-admin split.
+
+**Polish pass (3 Oct 2026):** collapsible sidebar (smooth rail, remembered, `Ctrl+B`, tooltips, pending dot); skeletons for the whole shell, page changes and every list; lists keep their old rows (dimmed) while a filter loads; the open page updates instantly after a decision and shows a confirmation; review pages prefetch on row hover; Applications filters live in the URL with debounced search and a "Clear filters" action; no horizontal overflow at 375, 768 or 1280 px on any page.

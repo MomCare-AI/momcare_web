@@ -44,6 +44,10 @@ describe("hospital review", () => {
     );
 
     expect(await screen.findByText(/by Sam Admin/, {}, SLOW)).toBeTruthy();
+    // And a plain confirmation that it went through.
+    expect(
+      screen.getByText("Noor Mother & Child Hospital approved.")
+    ).toBeTruthy();
     // Approved hospitals can now only be suspended.
     expect(screen.getByRole("button", { name: "Suspend" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Approve" })).toBeNull();

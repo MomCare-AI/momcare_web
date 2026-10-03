@@ -3448,3 +3448,19 @@ body {
   background: linear-gradient(135deg, #2dd4bf 0%, #0f766e 100%);
   box-shadow: 0 8px 28px rgba(13, 148, 136, 0.35);
 }
+
+/* ── Platform Admin: page padding that tightens on small screens ──────── */
+.pa-main {
+  width: 100%;
+  padding: 28px 40px 64px;
+}
+@media (max-width: 1023px) {
+  .pa-main {
+    padding: 24px 24px 56px;
+  }
+}
+@media (max-width: 639px) {
+  .pa-main {
+    padding: 18px 16px 48px;
+  }
+}

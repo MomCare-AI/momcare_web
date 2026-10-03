@@ -9,6 +9,7 @@ import {
   SessionExpiredError,
 } from "@/core/api/authFetch";
 import { clearQueryCache } from "@/core/query/queryClient";
+import { PlatformShellSkeleton } from "@/features/platform-admin/components/PlatformSkeletons";
 import { PlatformShell } from "@/features/platform-admin/components/PlatformShell";
 import { useCurrentUser } from "@/features/portal/hooks/usePortalData";
 import "../../portal.css";
@@ -57,7 +58,7 @@ export default function PlatformAdminLayout({
   if (userQuery.isPending) {
     return (
       <div className="mc-portal">
-        <div className="mc-loading">Loading…</div>
+        <PlatformShellSkeleton />
       </div>
     );
   }
@@ -67,7 +68,7 @@ export default function PlatformAdminLayout({
     // there's nothing safe to render here.
     return (
       <div className="mc-portal">
-        <div className="mc-loading">Loading…</div>
+        <PlatformShellSkeleton />
       </div>
     );
   }

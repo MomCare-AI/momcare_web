@@ -6,10 +6,22 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import ApplicationsPage from "./page";
 
+const replace = vi.fn();
+let search = "";
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ replace, push: vi.fn(), back: vi.fn() }),
+  usePathname: () => "/platform/applications",
+  useSearchParams: () => new URLSearchParams(search),
+}));
+
+beforeEach(() => {
+  replace.mockClear();
+  search = "";
+});
 afterEach(cleanup);
 
 function renderPage() {
@@ -76,5 +88,55 @@ describe("applications inbox", () => {
     expect(row.closest("a")?.getAttribute("href")).toBe(
       "/platform/applications/hospital/h1"
     );
+  });
+
+  it("starts from the filters in the URL", async () => {
+    search = "type=ngo&status=suspended";
+    renderPage();
+    expect(
+      await screen.findByText("MotherCare Foundation", {}, SLOW)
+    ).toBeTruthy();
+    expect(screen.queryByText("Noor Mother & Child Hospital")).toBeNull();
+    expect(
+      screen.getByRole("tab", { name: "NGOs" }).getAttribute("aria-selected")
+    ).toBe("true");
+  });
+
+  it("writes the filters back to the URL as they change", async () => {
+    renderPage();
+    await screen.findByText("Care Foundation", {}, SLOW);
+
+    fireEvent.click(screen.getByRole("tab", { name: "Hospitals" }));
+    await waitFor(() =>
+      expect(replace).toHaveBeenCalledWith(
+        "/platform/applications?type=hospital",
+        { scroll: false }
+      )
+    );
+  });
+
+  it("offers to clear filters when nothing matches", async () => {
+    renderPage();
+    await screen.findByText("Care Foundation", {}, SLOW);
+    fireEvent.change(screen.getByLabelText("Search applications"), {
+      target: { value: "nothing-matches-this" },
+    });
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Clear filters" }, SLOW)
+    );
+    expect(await screen.findByText("Care Foundation", {}, SLOW)).toBeTruthy();
+    expect(
+      (screen.getByLabelText("Search applications") as HTMLInputElement).value
+    ).toBe("");
+  });
+
+  it("keeps the old rows on screen while a new filter loads", async () => {
+    const { container } = renderPage();
+    await screen.findByText("Care Foundation", {}, SLOW);
+
+    fireEvent.click(screen.getByRole("tab", { name: "Hospitals" }));
+    // No skeleton flash: the previous rows stay (dimmed) until the new ones arrive.
+    expect(container.querySelectorAll("[data-slot='skeleton']").length).toBe(0);
+    expect(screen.getByText("Care Foundation")).toBeTruthy();
   });
 });
