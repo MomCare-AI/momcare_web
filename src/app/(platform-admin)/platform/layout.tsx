@@ -9,6 +9,7 @@ import {
   SessionExpiredError,
 } from "@/core/api/authFetch";
 import { clearQueryCache } from "@/core/query/queryClient";
+import { PlatformShell } from "@/features/platform-admin/components/PlatformShell";
 import { useCurrentUser } from "@/features/portal/hooks/usePortalData";
 import "../../portal.css";
 
@@ -17,9 +18,8 @@ import "../../portal.css";
  * portal's `(portal)/dashboard/layout.tsx`, which fetches `/api/organization
  * /me/` unconditionally and would hang on "Loading your hospital…" forever
  * for a platform_admin (`User.organization` is null for this role — see
- * backend CLAUDE.md's Roles section). No Sidebar, no org fetch, no
- * hospital-scoped nav — just the one console this role has today (AI
- * Summary Templates). Reuses `portal.css`'s generic design tokens
+ * backend CLAUDE.md's Roles section). Its own sidebar and
+ * navigation (see PlatformShell), no org fetch, no hospital-scoped nav. Reuses `portal.css`'s generic design tokens
  * (`.mc-card`, `.mc-btn`, `.mc-input`...) via the same `.mc-portal` wrapper
  * that defines them, without any of that layout's sidebar/shell markup.
  */
@@ -74,33 +74,12 @@ export default function PlatformAdminLayout({
 
   return (
     <div className="mc-portal">
-      <div style={{ width: "100%" }}>
-        <header
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: "18px 40px",
-            borderBottom: "1px solid var(--c-border)",
-            background: "var(--c-card)",
-          }}
-        >
-          <div>
-            <div
-              style={{ fontWeight: 700, fontSize: 15, color: "var(--c-ink)" }}
-            >
-              MomCare — Platform Admin
-            </div>
-            <div className="mc-hint">
-              {user.first_name} {user.last_name} · {user.email}
-            </div>
-          </div>
-          <button type="button" className="mc-btn-ghost" onClick={signOut}>
-            Sign out
-          </button>
-        </header>
-        <div className="mc-page">{children}</div>
-      </div>
+      <PlatformShell
+        userLabel={`${user.first_name} ${user.last_name} · ${user.email}`}
+        onSignOut={signOut}
+      >
+        {children}
+      </PlatformShell>
     </div>
   );
 }

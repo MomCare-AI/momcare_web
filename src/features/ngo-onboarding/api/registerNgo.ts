@@ -92,3 +92,30 @@ export async function listNgoApplications(): Promise<NgoApplication[]> {
   await delay();
   return applications;
 }
+
+// ── Hooks for the Platform Admin preview (DEMO ONLY) ─────────────────────
+// The admin screens read and update the same in-memory store the wizard
+// writes to, so an application submitted at /register/ngo shows up there.
+let seeded = false;
+
+/** Adds sample applications once; later calls do nothing. */
+export function seedDemoNgoApplications(items: NgoApplication[]): void {
+  if (seeded) return;
+  seeded = true;
+  applications = [...applications, ...items.map((a) => structuredClone(a))];
+}
+
+export function getNgoApplication(id: string): NgoApplication | undefined {
+  return applications.find((a) => a.id === id);
+}
+
+export function updateNgoApplication(
+  id: string,
+  change: (a: NgoApplication) => NgoApplication
+): NgoApplication {
+  const current = getNgoApplication(id);
+  if (!current) throw new Error("Application not found.");
+  const next = change(current);
+  applications = applications.map((a) => (a.id === id ? next : a));
+  return next;
+}
