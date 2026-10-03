@@ -9,6 +9,7 @@ import {
   SessionExpiredError,
 } from "@/core/api/authFetch";
 import { clearQueryCache } from "@/core/query/queryClient";
+import { isPlatformPreview } from "@/features/platform-admin/devPreview";
 import { PlatformShellSkeleton } from "@/features/platform-admin/components/PlatformSkeletons";
 import { PlatformShell } from "@/features/platform-admin/components/PlatformShell";
 import { useCurrentUser } from "@/features/portal/hooks/usePortalData";
@@ -24,11 +25,7 @@ import "../../portal.css";
  * (`.mc-card`, `.mc-btn`, `.mc-input`...) via the same `.mc-portal` wrapper
  * that defines them, without any of that layout's sidebar/shell markup.
  */
-export default function PlatformAdminLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+function AuthedPlatformLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const userQuery = useCurrentUser();
   const user = userQuery.data;
@@ -82,5 +79,35 @@ export default function PlatformAdminLayout({
         {children}
       </PlatformShell>
     </div>
+  );
+}
+
+/**
+ * Local preview only (see devPreview.ts): the same shell and pages, no role
+ * check and no network call, so the screens can be viewed without a backend.
+ */
+function PreviewPlatformLayout({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  return (
+    <div className="mc-portal">
+      <PlatformShell
+        userLabel="Local preview · not signed in"
+        onSignOut={() => router.replace("/login")}
+      >
+        {children}
+      </PlatformShell>
+    </div>
+  );
+}
+
+export default function PlatformAdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return isPlatformPreview() ? (
+    <PreviewPlatformLayout>{children}</PreviewPlatformLayout>
+  ) : (
+    <AuthedPlatformLayout>{children}</AuthedPlatformLayout>
   );
 }
