@@ -200,28 +200,32 @@ export function LoginPageClient() {
           <div
             role="group"
             aria-label="Choose your portal"
-            className="mb-8 grid grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1"
+            // Explicit radii: the theme defines --radius-lg as 26px, so `rounded-lg`
+            // would make pills. Inner radius = outer radius minus the 4px padding.
+            className="mb-8 grid grid-cols-2 gap-1 rounded-[14px] bg-slate-100 p-1"
           >
             {[
               {
                 ngo: false,
                 label: "Healthcare",
                 Icon: Stethoscope,
-                active: "bg-blue-600 text-white shadow",
+                active: "bg-blue-600 text-white shadow-sm",
+                ring: "focus-visible:ring-blue-600",
               },
               {
                 ngo: true,
                 label: "NGO",
                 Icon: HeartHandshake,
-                active: "bg-teal-600 text-white shadow",
+                active: "bg-teal-600 text-white shadow-sm",
+                ring: "focus-visible:ring-teal-600",
               },
-            ].map(({ ngo, label, Icon, active }) => (
+            ].map(({ ngo, label, Icon, active, ring }) => (
               <button
                 key={label}
                 type="button"
                 aria-pressed={ngoSide === ngo}
                 onClick={() => selectPortal(ngo)}
-                className={`flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 ${
+                className={`flex items-center justify-center gap-2 rounded-[10px] px-4 py-2.5 text-sm font-semibold transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-100 ${ring} ${
                   ngoSide === ngo
                     ? active
                     : "text-slate-600 hover:text-slate-900"
