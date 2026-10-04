@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { setAccessToken } from "@/core/api/authFetch";
+import { clearAccessToken, logout, setAccessToken } from "@/core/api/authFetch";
 import { clearQueryCache } from "@/core/query/queryClient";
 
 import { API_BASE } from "@/core/api/apiBase";
@@ -116,17 +116,22 @@ export function LoginPageClient() {
         return;
       }
 
+      // Platform admins have their own sign-in. They get the same message as a
+      // wrong password here, and the session the server just opened is revoked.
+      if (data.user?.role_code === "platform_admin") {
+        setAccessToken(data.access);
+        await logout();
+        clearAccessToken();
+        setError("Invalid email or password.");
+        return;
+      }
+
       // Belt and braces. Signing out clears the cache, but not every route into
       // this page goes through it - an expired session, a bookmarked /login, or
       // a second person using the same browser all arrive here directly.
       clearQueryCache();
       setAccessToken(data.access);
-      // Platform admins have no organization (`/dashboard` fetches one
-      // unconditionally and would hang on "Loading your hospital…"
-      // forever for this role) — a separate console at /platform instead.
-      router.push(
-        data.user?.role_code === "platform_admin" ? "/platform" : "/dashboard"
-      );
+      router.push("/dashboard");
     } catch {
       setError(
         "Could not connect to server. Make sure the backend is running."

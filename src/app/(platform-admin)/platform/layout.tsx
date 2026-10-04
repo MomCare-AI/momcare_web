@@ -49,7 +49,7 @@ function AuthedPlatformLayout({ children }: { children: React.ReactNode }) {
     void logout();
     clearAccessToken();
     clearQueryCache();
-    router.replace("/login");
+    router.replace("/ops/login");
   };
 
   if (userQuery.isPending) {
