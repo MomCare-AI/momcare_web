@@ -3,14 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import {
-  AlertCircle,
-  Info,
-  Stethoscope,
-  UserPlus,
-  Users,
-  X,
-} from "lucide-react";
+import { AlertCircle, Info, Stethoscope, UserPlus, Users } from "lucide-react";
 import { useLocationScope } from "@/features/locations/LocationScopeContext";
 import { SessionExpiredError } from "@/core/api/authFetch";
 import { useJoinRequests } from "@/features/join-requests/hooks/useJoinRequests";
@@ -134,6 +127,7 @@ export default function OverviewPage() {
 
   const hasStaff = org.staff_count > 0;
 
+  // Only used to word the empty state; the tile itself shows the active filter.
   const activeFilterLabel = workflowFilter
     ? WORKFLOW_FILTER_LABELS[workflowFilter]
     : careActivityFilter
@@ -171,29 +165,6 @@ export default function OverviewPage() {
             <Info size={12} strokeWidth={2.2} aria-hidden />
             Vitals, risk scoring and alert escalation are all live
           </span>
-        </div>
-      )}
-
-      {listTab === "patients" && activeFilterLabel && (
-        <div
-          className="mc-badge mc-badge-info"
-          style={{ marginBottom: 14, display: "inline-flex", gap: 6 }}
-        >
-          {activeFilterLabel}
-          {selectedLocationId !== null && (
-            <span style={{ opacity: 0.75 }}>— showing every location</span>
-          )}
-          <Link
-            href="/dashboard"
-            aria-label="Clear filter"
-            style={{
-              display: "inline-flex",
-              marginLeft: 6,
-              color: "inherit",
-            }}
-          >
-            <X size={12} strokeWidth={2.4} aria-hidden />
-          </Link>
         </div>
       )}
 
