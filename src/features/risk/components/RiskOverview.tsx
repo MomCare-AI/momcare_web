@@ -102,11 +102,7 @@ export function RiskOverview({ assignedToMe }: { assignedToMe: boolean }) {
 
   return (
     <>
-      <h1 className="mc-h1">Risk</h1>
-      <p className="mc-sub" style={{ marginBottom: 18 }}>
-        Each patient&rsquo;s current risk level, highest first. Open a patient
-        to review or escalate an assessment.
-      </p>
+      <h1 className="sr-only">Risk</h1>
 
       <div className="mc-tabs" role="tablist" aria-label="Risk view">
         {tabs.map((t) => {
@@ -166,46 +162,49 @@ export function RiskOverview({ assignedToMe }: { assignedToMe: boolean }) {
               aria-pressed={active}
               onClick={() => setBucket(active ? "all" : b)}
               className={`mc-kpi-tile${active ? " mc-kpi-tile-selected" : ""}`}
+              // One compact row: marker, count, label. Overrides the tile's
+              // default two-line padding and 120px minimum width.
+              style={{ gap: 8, padding: "6px 12px", minWidth: 0 }}
             >
               <span
                 aria-hidden
                 style={{
-                  width: 10,
-                  height: 10,
+                  width: 8,
+                  height: 8,
                   borderRadius: "50%",
                   flexShrink: 0,
                   // The level's own colour; white on the selected (blue) tile.
                   background: active ? "#ffffff" : LEVEL_DOT[b],
                 }}
               />
-              <span>
-                <span
-                  className="mc-kpi-value"
-                  style={{
-                    fontSize: 20,
-                    color: active ? "#ffffff" : undefined,
-                  }}
-                >
-                  {list.isPending ? (
-                    <Skeleton
-                      aria-hidden
-                      className={`inline-block h-5 w-6 align-middle ${
-                        active ? "bg-white/30" : ""
-                      }`}
-                    />
-                  ) : (
-                    counts[b]
-                  )}
-                </span>
-                <span
-                  className="mc-kpi-label"
-                  style={{
-                    display: "block",
-                    color: active ? "rgba(255, 255, 255, 0.82)" : undefined,
-                  }}
-                >
-                  {BUCKET_LABEL[b]}
-                </span>
+              <span
+                className="mc-kpi-value"
+                style={{
+                  fontSize: 15,
+                  lineHeight: 1.2,
+                  color: active ? "#ffffff" : undefined,
+                }}
+              >
+                {list.isPending ? (
+                  <Skeleton
+                    aria-hidden
+                    className={`inline-block h-4 w-5 align-middle ${
+                      active ? "bg-white/30" : ""
+                    }`}
+                  />
+                ) : (
+                  counts[b]
+                )}
+              </span>
+              <span
+                className="mc-kpi-label"
+                style={{
+                  fontSize: 11.5,
+                  lineHeight: 1.2,
+                  color: active ? "rgba(255, 255, 255, 0.82)" : undefined,
+                }}
+              >
+                {BUCKET_LABEL[b]}
               </span>
             </button>
           );
