@@ -3126,14 +3126,30 @@ a.mc-kpi:hover,
 .mc-kpi-tile:hover {
   background: var(--c-teal-wash);
 }
+.mc-kpi-tile {
+  position: relative;
+  isolation: isolate;
+}
+/* The selected look is painted by .mc-kpi-pill, a shared element that
+   slides between tiles; the tile itself just goes transparent. */
 .mc-kpi-tile-selected,
 .mc-kpi-tile-selected:hover {
+  background: transparent;
+  border-color: transparent;
+}
+.mc-kpi-pill {
+  position: absolute;
+  inset: -1px;
+  z-index: -1;
+  border-radius: var(--r-control);
   background: var(--c-teal);
-  border-color: var(--c-teal);
 }
 .mc-kpi-tile-selected .mc-kpi-icon {
   background: rgba(255, 255, 255, 0.18);
   color: #ffffff;
+}
+.mc-kpi-row {
+  scroll-behavior: smooth;
 }
 
 .mc-kpi-roster-row {

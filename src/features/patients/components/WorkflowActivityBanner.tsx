@@ -2,6 +2,7 @@
 
 import { useRef } from "react";
 import Link from "next/link";
+import { motion } from "motion/react";
 import {
   AlertTriangle,
   Bell,
@@ -52,12 +53,24 @@ function tileClassName(selected: boolean): string {
 function TileContent({ label, value, icon, selected }: TileContentProps) {
   return (
     <>
+      {/* One shared pill: it slides from the previously selected tile to
+          this one (across both rows) instead of each tile snapping its own
+          background on and off. */}
+      {selected && (
+        <motion.span
+          layoutId="kpi-selected-pill"
+          className="mc-kpi-pill"
+          transition={{ type: "spring", stiffness: 420, damping: 38 }}
+          aria-hidden
+        />
+      )}
       <span className="mc-kpi-icon">{icon}</span>
       <span>
         <div
           style={{
             fontSize: 17,
             fontWeight: 700,
+            transition: "color 0.2s ease",
             color: selected
               ? "#ffffff"
               : value === undefined
@@ -71,6 +84,7 @@ function TileContent({ label, value, icon, selected }: TileContentProps) {
         <div
           style={{
             fontSize: 11.5,
+            transition: "color 0.2s ease",
             color: selected ? "rgba(255, 255, 255, 0.82)" : "var(--c-faint)",
             marginTop: 3,
           }}
