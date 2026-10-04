@@ -18,6 +18,7 @@ import type { ReadingPeriod } from "@/features/monitoring/api";
 import { RiskPanel } from "@/features/monitoring/components/RiskPanel";
 import { ScoreResult } from "@/features/monitoring/components/ScoreVitalsForm";
 import { VitalsChart } from "@/features/monitoring/components/VitalsChart";
+import { usePatient } from "../hooks/usePatients";
 import { AddReadingModal } from "./AddReadingModal";
 import { AISummaryPanel } from "./AISummaryPanel";
 import { PatientQuickLogPanel } from "./PatientQuickLogPanel";
@@ -116,6 +117,40 @@ function toCsv(readings: VitalReading[], metric: VitalMetric): string {
   return header + rows;
 }
 
+/** One column per vital, the blood-pressure pair counting as one. */
+const ALL_VITAL_COLUMNS = VITAL_METRICS.map((m) => ({
+  key: m.metric,
+  title: m.metric === "blood_pressure" ? "Blood pressure" : m.label,
+  spec: m,
+}));
+
+function allVitalsCell(
+  r: VitalReading,
+  spec: (typeof VITAL_METRICS)[number]
+): string {
+  const value = vitalValue(r, spec.field);
+  if (value === null) return "—";
+  if (spec.secondaryField) {
+    const secondary = vitalValue(r, spec.secondaryField);
+    return `${value}/${secondary ?? "—"} ${spec.unit}`;
+  }
+  return `${value} ${spec.unit}`;
+}
+
+function toAllVitalsCsv(readings: VitalReading[]): string {
+  const header = `Recorded at,${ALL_VITAL_COLUMNS.map((c) => c.title).join(",")},Source\n`;
+  const rows = readings
+    .map((r) =>
+      [
+        r.recorded_at,
+        ...ALL_VITAL_COLUMNS.map((c) => allVitalsCell(r, c.spec)),
+        r.source_display,
+      ].join(",")
+    )
+    .join("\n");
+  return header + rows;
+}
+
 function downloadCsv(csv: string, filename: string) {
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
@@ -158,7 +193,10 @@ export function PatientReadingsPanel({
 }: Props) {
   const [range, setRange] = useState<Range>("1m");
   const [metric, setMetric] = useState<VitalMetric>("blood_pressure");
-  const [view, setView] = useState<"chart" | "table">("chart");
+  // Opens as a table of every vital; the chart is one vital at a time (the
+  // scales differ too much to share an axis), so picking it narrows to one.
+  const [view, setView] = useState<"chart" | "table">("table");
+  const [allVitals, setAllVitals] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [showChartModal, setShowChartModal] = useState(false);
   // Only meaningful for the Blood Pressure chart — see VitalsChart's own
@@ -168,6 +206,9 @@ export function PatientReadingsPanel({
   const [showDiastolic, setShowDiastolic] = useState(true);
   const [showHeartRateLine, setShowHeartRateLine] = useState(true);
 
+  // The patient page already holds this in the query cache, so it costs no
+  // extra request.
+  const patientQuery = usePatient(patientId);
   const readingsQuery = useReadings(pregnancyId);
   const riskQuery = useRiskHistory(pregnancyId);
 
@@ -237,14 +278,14 @@ export function PatientReadingsPanel({
                   className="mc-card-title"
                   style={{ textTransform: "uppercase", letterSpacing: 0.3 }}
                 >
-                  {spec.label}
+                  {allVitals ? "All vitals" : spec.label}
                 </div>
                 <div className="mc-card-sub">
                   {RANGE_OPTIONS.find((r) => r.value === range)?.label}
                 </div>
               </div>
-              <div className="mc-actions" style={{ gap: 6 }}>
-                <div style={{ width: "100%", maxWidth: 104 }}>
+              <div className="mc-actions mc-actions-compact">
+                <div style={{ width: 88, flex: "none" }}>
                   <Select
                     aria-label="Time range"
                     value={range}
@@ -256,16 +297,27 @@ export function PatientReadingsPanel({
                     }))}
                   />
                 </div>
-                <div style={{ width: "100%", maxWidth: 130 }}>
+                <div style={{ width: 124, flex: "none" }}>
                   <Select
                     aria-label="Vital"
-                    value={metric}
-                    onChange={(v) => setMetric(v as VitalMetric)}
+                    value={allVitals ? "all" : metric}
+                    onChange={(v) => {
+                      if (v === "all") {
+                        setAllVitals(true);
+                        setView("table");
+                      } else {
+                        setAllVitals(false);
+                        setMetric(v as VitalMetric);
+                      }
+                    }}
                     placeholder="Vital"
-                    options={VITAL_METRICS.map((m) => ({
-                      value: m.metric,
-                      label: m.label,
-                    }))}
+                    options={[
+                      { value: "all", label: "All vitals" },
+                      ...VITAL_METRICS.map((m) => ({
+                        value: m.metric,
+                        label: m.label,
+                      })),
+                    ]}
                   />
                 </div>
                 <div className="mc-segmented">
@@ -273,7 +325,10 @@ export function PatientReadingsPanel({
                     type="button"
                     className="mc-segment"
                     aria-pressed={view === "chart"}
-                    onClick={() => setView("chart")}
+                    onClick={() => {
+                      setAllVitals(false);
+                      setView("chart");
+                    }}
                     aria-label="Chart view"
                   >
                     <LineChartIcon size={15} strokeWidth={2} aria-hidden />
@@ -296,8 +351,10 @@ export function PatientReadingsPanel({
                   disabled={filteredReadings.length === 0}
                   onClick={() =>
                     downloadCsv(
-                      toCsv(filteredReadings, metric),
-                      `${patientName.replace(/\s+/g, "_")}_${metric}_${range}.csv`
+                      allVitals
+                        ? toAllVitalsCsv(filteredReadings)
+                        : toCsv(filteredReadings, metric),
+                      `${patientName.replace(/\s+/g, "_")}_${allVitals ? "all_vitals" : metric}_${range}.csv`
                     )
                   }
                 >
@@ -393,7 +450,11 @@ export function PatientReadingsPanel({
                   <thead>
                     <tr>
                       <th>Reading Date</th>
-                      {spec.secondaryField ? (
+                      {allVitals ? (
+                        ALL_VITAL_COLUMNS.map((c) => (
+                          <th key={c.key}>{c.title}</th>
+                        ))
+                      ) : spec.secondaryField ? (
                         <>
                           <th>Systolic</th>
                           <th>Diastolic</th>
@@ -413,7 +474,11 @@ export function PatientReadingsPanel({
                       return (
                         <tr key={r.id} className="mc-dtable-row">
                           <td>{new Date(r.recorded_at).toLocaleString()}</td>
-                          {spec.secondaryField ? (
+                          {allVitals ? (
+                            ALL_VITAL_COLUMNS.map((c) => (
+                              <td key={c.key}>{allVitalsCell(r, c.spec)}</td>
+                            ))
+                          ) : spec.secondaryField ? (
                             <>
                               <td>
                                 {value !== null ? `${value} ${spec.unit}` : "—"}
@@ -601,6 +666,7 @@ export function PatientReadingsPanel({
       <AddReadingModal
         pregnancyId={pregnancyId}
         patientName={patientName}
+        dateOfBirth={patientQuery.data?.date_of_birth}
         open={showAdd}
         onClose={() => setShowAdd(false)}
       />

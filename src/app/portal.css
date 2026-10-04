@@ -694,6 +694,47 @@ body::-webkit-scrollbar-thumb:hover {
   border-color: var(--c-border);
 }
 
+/* A one-row toolbar of small controls (Readings chart header): everything
+   shrinks so range, vital, view toggle, download and Add fit on one line. */
+.mc-actions-compact {
+  flex-wrap: nowrap;
+  gap: 5px;
+}
+.mc-actions-compact .mc-select-trigger {
+  min-height: 0;
+  height: 30px;
+  padding: 0 8px;
+  font-size: 12px;
+}
+/* The list is wider than its small trigger so names stay on one line, and
+   tall enough to show every option without scrolling. */
+.mc-actions-compact .mc-select-list {
+  right: auto !important;
+  min-width: 100% !important;
+  width: max-content !important;
+  max-height: 320px !important;
+  padding: 3px !important;
+}
+.mc-actions-compact .mc-select-option {
+  padding: 5px 9px !important;
+  font-size: 12px !important;
+  white-space: nowrap;
+  gap: 10px;
+}
+.mc-actions-compact .mc-iconbtn {
+  width: 30px;
+  height: 30px;
+}
+.mc-actions-compact .mc-segment {
+  padding: 5px 9px;
+}
+.mc-actions-compact .mc-btn {
+  height: 30px;
+  padding: 0 10px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
 .mc-burger {
   display: none;
 }
