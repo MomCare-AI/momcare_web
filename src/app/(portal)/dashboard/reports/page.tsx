@@ -16,6 +16,7 @@ import {
   Wifi,
 } from "lucide-react";
 
+import { latestRisk } from "@/features/patients/types";
 import { useAlerts } from "@/features/alerts/hooks/useAlerts";
 import { useDevices } from "@/features/monitoring/hooks/useMonitoring";
 import { useStaffList } from "@/features/staff/hooks/useStaff";
@@ -206,7 +207,7 @@ function ClinicalOverviewTab() {
               header: "Pregnancy status",
               value: (p) => p.pregnancy_status ?? "",
             },
-            { header: "Risk level", value: (p) => p.risk_level ?? "" },
+            { header: "Risk level", value: (p) => latestRisk(p) ?? "" },
           ]}
         />
       </div>

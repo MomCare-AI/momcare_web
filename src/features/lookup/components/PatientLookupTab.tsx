@@ -8,6 +8,7 @@ import {
   usePatientList,
   useQuickLookupKpis,
 } from "@/features/patients/hooks/usePatients";
+import { latestRisk } from "@/features/patients/types";
 import { RiskBadge } from "@/features/monitoring/components/RiskBadge";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { RowSkeleton } from "@/shared/ui/RowSkeleton";
@@ -167,9 +168,9 @@ export function PatientLookupTab() {
                     >
                       {p.full_name}
                     </Link>
-                    {p.risk_level && (
+                    {latestRisk(p) && (
                       <div style={{ marginTop: 4 }}>
-                        <RiskBadge level={p.risk_level} />
+                        <RiskBadge level={latestRisk(p)} />
                       </div>
                     )}
                   </td>

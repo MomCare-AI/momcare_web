@@ -107,14 +107,15 @@ describe("patient list formats", () => {
           makePatient({
             id: "a",
             full_name: "High Risk",
-            risk_level: "high",
+            risk_latest_level: "high",
+            risk_this_month_level: "medium",
             pregnancy_status: "active",
             statuses: [{ name: "Motion", description: "", color: "#d65f58" }],
           }),
           makePatient({
             id: "b",
             full_name: "No Pregnancy",
-            risk_level: null,
+            risk_latest_level: "not_assessed",
             pregnancy_status: null,
           }),
         ]}
@@ -134,7 +135,10 @@ describe("patient list formats", () => {
     expect(headers).toContain("Risk");
     expect(headers).not.toContain("Device");
     expect(screen.getByText("High")).toBeTruthy();
-    expect(screen.getByText("Not assessed")).toBeTruthy();
+    // Latest and this month are both shown, each tagged.
+    expect(screen.getByText("Medium")).toBeTruthy();
+    expect(screen.getAllByText("Latest").length).toBe(2);
+    expect(screen.getAllByText("Not assessed").length).toBeGreaterThan(0);
     expect(screen.queryByText("No pregnancy recorded")).toBeNull();
     expect(screen.queryByText("No active pregnancy")).toBeNull();
     expect(screen.getByText("Motion")).toBeTruthy();

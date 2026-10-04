@@ -6,9 +6,10 @@
  */
 
 import type { Device } from "@/features/monitoring/types";
-import type {
-  PatientListItem,
-  WorklistResponse,
+import {
+  latestRisk,
+  type PatientListItem,
+  type WorklistResponse,
 } from "@/features/patients/types";
 import type { StaffMember } from "@/features/staff/hooks/useStaff";
 import type { Alert } from "@/features/alerts/types";
@@ -114,7 +115,7 @@ export function aggregateRiskLevels(
   const active = patients.filter((p) => p.pregnancy_status === "active");
   const counts = { high: 0, medium: 0, low: 0, not_assessed: 0 };
   for (const p of active) {
-    const key = p.risk_level ?? "not_assessed";
+    const key = latestRisk(p) ?? "not_assessed";
     if (key in counts) counts[key as keyof typeof counts] += 1;
   }
   return {

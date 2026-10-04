@@ -97,8 +97,15 @@ export interface PatientListItem {
    *  backend sends the short "3w 5d"; formatGestationalAge() normalises it. */
   gestational_age_long_display: string | null;
   pregnancy_status: PregnancyStatus | null;
-  /** Null means never assessed — which the list must not render as "stable". */
-  risk_level: RiskLevel | null;
+  /** Newest assessment's level, or "not_assessed" (never null, never a made-up
+   *  Low). Replaced `risk_level`; both are read through latestRisk() below so
+   *  the list works against a backend on either side of that rename. */
+  risk_latest_level?: RiskLevel | "not_assessed";
+  /** The month's most common level (ties to the more severe), or
+   *  "not_assessed". Absent on a backend that predates it. */
+  risk_this_month_level?: RiskLevel | "not_assessed";
+  /** @deprecated the old name for risk_latest_level (null = not assessed). */
+  risk_level?: RiskLevel | null;
   risk_assessed_at: string | null;
   /** Assessments still waiting for a clinician (high/medium, or low model
    *  confidence); see the risk review workflow. */
@@ -297,4 +304,22 @@ export function pregnancyTone(status: PregnancyStatus | null): string {
   if (status === "active") return "stable";
   if (status === "delivered") return "info";
   return "neutral";
+}
+
+/** A patient's latest risk as a level, or null when never assessed. */
+export function latestRisk(
+  p: Pick<PatientListItem, "risk_latest_level" | "risk_level">
+): RiskLevel | null {
+  const v = p.risk_latest_level ?? p.risk_level ?? null;
+  return v === "not_assessed" ? null : v;
+}
+
+/** This month's risk as a level, null when not assessed, undefined when the
+ *  backend does not send it at all. */
+export function monthRisk(
+  p: Pick<PatientListItem, "risk_this_month_level">
+): RiskLevel | null | undefined {
+  const v = p.risk_this_month_level;
+  if (v === undefined) return undefined;
+  return v === "not_assessed" ? null : v;
 }

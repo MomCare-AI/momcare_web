@@ -13,7 +13,12 @@ import {
   PatientAdvanceFilterModal,
   type FilterRule,
 } from "./PatientAdvanceFilterModal";
-import { type PatientListItem, type PregnancyStatus } from "../types";
+import {
+  latestRisk,
+  monthRisk,
+  type PatientListItem,
+  type PregnancyStatus,
+} from "../types";
 import { formatGestationalAgeBrief } from "@/shared/lib/gestation";
 import { PatientStatusPills } from "./PatientStatusPills";
 import { formatDuration } from "@/shared/lib/duration";
@@ -26,6 +31,32 @@ const PREGNANCY_STATUS_LABELS: Record<PregnancyStatus, string> = {
   stillbirth: "Stillbirth",
   ended_other: "Ended (other)",
 };
+
+/** Latest and this-month risk, stacked, each tagged so the two can't be mixed
+ *  up. The monthly line is left out when the backend does not send it. */
+function RiskCell({ patient }: { patient: PatientListItem }) {
+  const month = monthRisk(patient);
+  const tag = {
+    fontSize: 10.5,
+    color: "var(--c-faint)",
+    width: 52,
+    flex: "none",
+  } as const;
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <span style={tag}>Latest</span>
+        <RiskBadge level={latestRisk(patient)} />
+      </div>
+      {month !== undefined && (
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={tag}>This month</span>
+          <RiskBadge level={month} />
+        </div>
+      )}
+    </div>
+  );
+}
 
 /** The human-readable text each filterable field shows in the table today —
  *  matched against, not the raw enum code, so typing what you see (e.g.
@@ -41,7 +72,7 @@ function fieldTextValue(
     case "full_name":
       return patient.full_name;
     case "risk_level":
-      return riskLabel(patient.risk_level);
+      return riskLabel(latestRisk(patient));
     case "monitoring_status":
       return patient.pregnancy_status
         ? PREGNANCY_STATUS_LABELS[patient.pregnancy_status]
@@ -103,7 +134,8 @@ function matchesRule(patient: PatientListItem, rule: FilterRule): boolean {
  * (`PatientListSerializer`'s enrichment fields) and render "—" only when
  * that field is genuinely null (nobody assigned, no reading yet) — never a
  * fabricated value. Risk is the patient's latest assessed level
- * (`risk_level`), "Not assessed" when there is none yet.
+ * and this month's (`risk_latest_level` / `risk_this_month_level`),
+ * "Not assessed" when there is none yet.
  *
  * No column is sortable — `/api/patients/` has no `ordering=` param, so a
  * client-side sort would silently only reorder whatever's currently loaded.
@@ -251,7 +283,7 @@ export function PatientsTable({
                       {formatDuration(patient.monitoring_seconds_this_month)}
                     </td>
                     <td>
-                      <RiskBadge level={patient.risk_level} />
+                      <RiskCell patient={patient} />
                     </td>
                   </tr>
                 );
