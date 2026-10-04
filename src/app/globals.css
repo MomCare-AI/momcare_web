@@ -67,6 +67,18 @@
    always wins over layered utilities regardless of specificity, so a
    plain `* { margin: 0; padding: 0; }` here silently zeroed out every
    Tailwind spacing utility (p-*, m-*, gap was unaffected) in the app. */
+/* No up/down spinner arrows on number inputs, anywhere. They invite an
+   accidental click that changes a clinical value; typing is the way in. */
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 @layer base {
   *,
   *::before,
