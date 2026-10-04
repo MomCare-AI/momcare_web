@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Check, ChevronDown, MapPin, Search } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
+import { Check, ChevronDown, Globe2, MapPin, Search } from "lucide-react";
 
 import { useLocations } from "../hooks/useLocations";
 import { useLocationScope } from "../LocationScopeContext";
@@ -81,6 +82,30 @@ export function LocationSwitcher({ collapsed }: Props) {
     };
   }, [open]);
 
+  // "All Locations" first, then whatever the search leaves.
+  const options = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const all = !q || "all locations".includes(q);
+    return [
+      ...(all ? [{ id: null as string | null, name: "All Locations" }] : []),
+      ...filtered.map((l) => ({ id: l.id as string | null, name: l.name })),
+    ];
+  }, [filtered, search]);
+  const [focusIndex, setFocusIndex] = useState(0);
+
+  const onSearchKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setFocusIndex((i) => Math.min(i + 1, options.length - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setFocusIndex((i) => Math.max(i - 1, 0));
+    } else if (e.key === "Enter" && options[focusIndex]) {
+      e.preventDefault();
+      choose(options[focusIndex].id);
+    }
+  };
+
   const choose = (id: string | null) => {
     setSelectedLocationId(id);
     setOpen(false);
@@ -117,94 +142,94 @@ export function LocationSwitcher({ collapsed }: Props) {
         />
       </button>
 
-      {open &&
+      {typeof document !== "undefined" &&
         pos &&
-        typeof document !== "undefined" &&
         createPortal(
-          <div
-            ref={panelRef}
-            role="listbox"
-            aria-label="Choose a location"
-            className="mc-locationswitch-panel"
-            style={{
-              position: "fixed",
-              top: pos.top,
-              left: pos.left,
-              width: Math.max(pos.width, 240),
-              zIndex: 200,
-            }}
-          >
-            <div className="mc-locationswitch-search">
-              <Search size={13} strokeWidth={2} aria-hidden />
-              <input
-                autoFocus
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search location…"
-                aria-label="Search locations"
-              />
-            </div>
-
-            <ul className="mc-locationswitch-list">
-              <li role="option" aria-selected={selectedLocationId === null}>
-                <button
-                  type="button"
-                  className="mc-locationswitch-option"
-                  onClick={() => choose(null)}
-                >
-                  <span
-                    className="mc-locationswitch-dot"
-                    data-active={selectedLocationId === null}
-                    aria-hidden
+          <AnimatePresence>
+            {open && (
+              <motion.div
+                key="panel"
+                ref={panelRef}
+                role="listbox"
+                aria-label="Choose a location"
+                className="mc-locationswitch-panel"
+                initial={{ opacity: 0, y: -8, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                transition={{ duration: 0.16, ease: [0.4, 0, 0.2, 1] }}
+                style={{
+                  position: "fixed",
+                  top: pos.top,
+                  left: pos.left,
+                  width: Math.max(pos.width, 252),
+                  zIndex: 200,
+                }}
+              >
+                <div className="mc-locationswitch-heading">Switch location</div>
+                <div className="mc-locationswitch-search">
+                  <Search size={14} strokeWidth={2} aria-hidden />
+                  <input
+                    autoFocus
+                    value={search}
+                    onChange={(e) => {
+                      setSearch(e.target.value);
+                      setFocusIndex(0);
+                    }}
+                    onKeyDown={onSearchKey}
+                    placeholder="Search locations…"
+                    aria-label="Search locations"
                   />
-                  All Locations
-                  {selectedLocationId === null && (
-                    <Check
-                      size={13}
-                      strokeWidth={2.4}
-                      aria-hidden
-                      style={{ marginLeft: "auto" }}
-                    />
-                  )}
-                </button>
-              </li>
+                </div>
 
-              {locationsQuery.isPending && (
-                <li className="mc-locationswitch-empty">Loading…</li>
-              )}
-              {locationsQuery.isSuccess && filtered.length === 0 && (
-                <li className="mc-locationswitch-empty">No locations match</li>
-              )}
-              {filtered.map((loc) => (
-                <li
-                  key={loc.id}
-                  role="option"
-                  aria-selected={selectedLocationId === loc.id}
-                >
-                  <button
-                    type="button"
-                    className="mc-locationswitch-option"
-                    onClick={() => choose(loc.id)}
-                  >
-                    <span
-                      className="mc-locationswitch-dot"
-                      data-active={selectedLocationId === loc.id}
-                      aria-hidden
-                    />
-                    {loc.name}
-                    {selectedLocationId === loc.id && (
-                      <Check
-                        size={13}
-                        strokeWidth={2.4}
-                        aria-hidden
-                        style={{ marginLeft: "auto" }}
-                      />
-                    )}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>,
+                <ul className="mc-locationswitch-list">
+                  {locationsQuery.isPending && (
+                    <li className="mc-locationswitch-empty">Loading…</li>
+                  )}
+                  {locationsQuery.isSuccess && options.length === 0 && (
+                    <li className="mc-locationswitch-empty">
+                      No locations match
+                    </li>
+                  )}
+                  {options.map((opt, i) => {
+                    const active = selectedLocationId === opt.id;
+                    return (
+                      <li
+                        key={opt.id ?? "all"}
+                        role="option"
+                        aria-selected={active}
+                      >
+                        <button
+                          type="button"
+                          className="mc-locationswitch-option"
+                          data-active={active}
+                          data-focused={i === focusIndex}
+                          onMouseEnter={() => setFocusIndex(i)}
+                          onClick={() => choose(opt.id)}
+                        >
+                          <span className="mc-locationswitch-icon" aria-hidden>
+                            {opt.id === null ? (
+                              <Globe2 size={14} strokeWidth={2} />
+                            ) : (
+                              <MapPin size={14} strokeWidth={2} />
+                            )}
+                          </span>
+                          {opt.name}
+                          {active && (
+                            <Check
+                              size={14}
+                              strokeWidth={2.4}
+                              aria-hidden
+                              style={{ marginLeft: "auto" }}
+                            />
+                          )}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </motion.div>
+            )}
+          </AnimatePresence>,
           document.querySelector(".mc-portal") ?? document.body
         )}
     </div>
