@@ -19,8 +19,11 @@ import {
   assessmentCategories,
   assessmentSource,
   riskLabel,
+  VITAL_METRICS,
+  vitalValue,
   type RiskAssessment,
   type RiskLevel,
+  type VitalReading,
 } from "../types";
 import { useOrganization } from "@/features/portal/hooks/usePortalData";
 import { EmptyState } from "@/shared/ui/EmptyState";
@@ -175,7 +178,7 @@ export function RiskPanel({ pregnancyId, canVerify = true }: Props) {
         </>
       )}
 
-      {history.length > 1 && <RiskHistoryList history={history} />}
+      {history.length > 0 && <RiskHistoryList history={history} />}
     </section>
   );
 }
@@ -345,35 +348,75 @@ function ReviewControl({
   );
 }
 
+/** One compact cell per vital, "—" where that vital was not measured. */
+function vitalsCell(reading: VitalReading | null, metric: VitalMetricSpec) {
+  if (!reading) return "—";
+  const value = vitalValue(reading, metric.field);
+  if (value === null) return "—";
+  if (metric.secondaryField) {
+    const second = vitalValue(reading, metric.secondaryField);
+    return `${value}/${second ?? "—"}`;
+  }
+  return String(value);
+}
+
+type VitalMetricSpec = (typeof VITAL_METRICS)[number];
+
+// Blood pressure, heart rate, temperature, glucose, hemoglobin — the five the
+// model categorises. Stress and activity scores are inputs too, but they are
+// not what a clinician scans a risk history for.
+const HISTORY_METRICS = VITAL_METRICS.slice(0, 5);
+
 /**
- * Past transitions.
- *
- * Only changes are stored, so this reads as a clinical narrative rather than a
- * log — "became high at 14:32, recovered at 19:05" — which is exactly what
- * someone picking up the case needs.
+ * Every assessment, newest first: when it was scored, the vitals it was
+ * scored from, and the level that came out. One row per reading, so scrolling
+ * down is scrolling back through how this pregnancy's risk has moved.
  */
 function RiskHistoryList({ history }: { history: RiskAssessment[] }) {
   return (
-    <div
-      className="mc-card-body"
-      style={{ borderTop: "1px solid var(--c-border-soft)" }}
-    >
-      <div className="mc-card-sub" style={{ marginBottom: 10 }}>
-        Earlier changes
+    <div style={{ borderTop: "1px solid var(--c-border-soft)" }}>
+      <div className="mc-card-body" style={{ paddingBottom: 6 }}>
+        <div className="mc-card-title" style={{ fontSize: 14 }}>
+          Assessment history
+        </div>
+        <div className="mc-card-sub">
+          Every reading and the risk level it produced
+        </div>
       </div>
-      <ol className="mc-timeline">
-        {history.slice(1).map((entry) => (
-          <li key={entry.id} className="mc-timeline-row">
-            <RiskBadge level={entry.final_risk_level} />
-            <span className="mc-timeline-when">
-              {new Date(entry.assessed_at).toLocaleString()}
-            </span>
-            <span className="mc-timeline-why">
-              {assessmentCategories(entry)[0]?.value ?? "Returned to range."}
-            </span>
-          </li>
-        ))}
-      </ol>
+      <div className="mc-dtable-wrap">
+        <table className="mc-dtable">
+          <thead>
+            <tr>
+              <th>Assessed</th>
+              {HISTORY_METRICS.map((m) => (
+                <th key={m.metric}>
+                  {m.short} <span className="mc-unit">({m.unit})</span>
+                </th>
+              ))}
+              <th>Risk</th>
+              <th>Review</th>
+            </tr>
+          </thead>
+          <tbody>
+            {history.map((entry) => (
+              <tr key={entry.id} className="mc-dtable-row">
+                <td>{new Date(entry.assessed_at).toLocaleString()}</td>
+                {HISTORY_METRICS.map((m) => (
+                  <td key={m.metric}>{vitalsCell(entry.reading, m)}</td>
+                ))}
+                <td>
+                  <RiskBadge level={entry.final_risk_level} />
+                </td>
+                <td className="mc-dtable-sub">
+                  {entry.needs_review || entry.verified_at
+                    ? entry.review_status_display
+                    : "—"}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

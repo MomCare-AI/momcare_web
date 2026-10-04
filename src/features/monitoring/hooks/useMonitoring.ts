@@ -194,6 +194,10 @@ export function useRiskHistory(pregnancyId: string | undefined) {
     enabled: Boolean(pregnancyId),
     retry: retryUnlessSessionExpired,
     staleTime: 30 * 1000,
+    // A reading can arrive from a band or another clinician, not just from
+    // this screen, so keep the assessment current while it is on view.
+    refetchOnMount: "always",
+    refetchInterval: 20 * 1000,
   });
 }
 

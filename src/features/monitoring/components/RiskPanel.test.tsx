@@ -313,15 +313,15 @@ describe("RiskPanel", () => {
     screen.getByText(/Reviewed by a clinician on/);
   });
 
-  it("shows past transitions only when there is more than the current one", () => {
+  it("shows no history table when there are no assessments yet", () => {
     stubMutations();
-    history({ current: assessment(), history: [assessment({ id: "cur" })] });
+    history({ current: assessment(), history: [] });
 
     render(<RiskPanel pregnancyId="preg1" />);
-    expect(screen.queryByText("Earlier changes")).toBeNull();
+    expect(screen.queryByText("Assessment history")).toBeNull();
   });
 
-  it("lists past transitions once there are earlier ones", () => {
+  it("lists every assessment, not only the changes", () => {
     stubMutations();
     history({
       current: assessment({ id: "cur" }),
@@ -336,6 +336,6 @@ describe("RiskPanel", () => {
     });
 
     render(<RiskPanel pregnancyId="preg1" />);
-    screen.getByText("Earlier changes");
+    screen.getByText("Assessment history");
   });
 });
