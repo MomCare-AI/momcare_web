@@ -36,7 +36,7 @@ import {
 } from "@/features/reports/lib/aggregate";
 import { downloadCsv, toCsv, type CsvColumn } from "@/shared/lib/exportCsv";
 import { formatDateTime } from "@/shared/lib/formatDateTime";
-import { usePortal } from "../layout";
+import { usePortal } from "../portal";
 import { usePageTitle } from "@/hooks/usePageTitle";
 
 // Tinted KPI-tile backgrounds, matching the reference platform's own

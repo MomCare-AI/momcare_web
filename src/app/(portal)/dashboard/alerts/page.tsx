@@ -15,7 +15,7 @@ import type { Alert, AlertEvent } from "@/features/alerts/types";
 import { RiskBadge } from "@/features/monitoring/components/RiskBadge";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { RowSkeleton } from "@/shared/ui/RowSkeleton";
-import { usePortal } from "../layout";
+import { usePortal } from "../portal";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { formatGestationalAge } from "@/shared/lib/gestation";
 

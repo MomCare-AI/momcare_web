@@ -7,6 +7,7 @@ import { AlertCircle, ChevronRight, Search, ShieldAlert } from "lucide-react";
 import { SessionExpiredError } from "@/core/api/authFetch";
 import { useLocationScope } from "@/features/locations/LocationScopeContext";
 import { RiskBadge } from "@/features/monitoring/components/RiskBadge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { PatientsTableSkeleton } from "@/features/patients/components/PatientsTableSkeleton";
 import {
   useDashboardKpis,
@@ -123,8 +124,15 @@ export function RiskOverview({ assignedToMe }: { assignedToMe: boolean }) {
               }}
             >
               {t.label}
-              {t.count !== undefined && (
+              {t.count !== undefined ? (
                 <span className="mc-tab-count">{t.count}</span>
+              ) : (
+                t.value !== "all" && (
+                  <Skeleton
+                    aria-hidden
+                    className="ml-1.5 inline-block h-4 w-5 align-middle"
+                  />
+                )
               )}
             </button>
           );
@@ -152,7 +160,14 @@ export function RiskOverview({ assignedToMe }: { assignedToMe: boolean }) {
             >
               <span>
                 <span className="mc-kpi-value" style={{ fontSize: 20 }}>
-                  {list.isPending ? "–" : counts[b]}
+                  {list.isPending ? (
+                    <Skeleton
+                      aria-hidden
+                      className="inline-block h-5 w-6 align-middle"
+                    />
+                  ) : (
+                    counts[b]
+                  )}
                 </span>
                 <span className="mc-kpi-label" style={{ display: "block" }}>
                   {BUCKET_LABEL[b]}

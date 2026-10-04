@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { MapPin, Plus, Search } from "lucide-react";
 
-import { usePortal } from "@/app/(portal)/dashboard/layout";
+import { usePortal } from "@/app/(portal)/dashboard/portal";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { Select } from "@/shared/ui/Select";
 import { SortableHeader, type SortDirection } from "@/shared/ui/SortableHeader";

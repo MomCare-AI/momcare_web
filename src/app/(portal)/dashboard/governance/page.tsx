@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 
-import { usePortal } from "../layout";
+import { usePortal } from "../portal";
 import { GovernanceStatsHeader } from "@/features/governance/components/GovernanceStatsHeader";
 import { LocationsTab } from "@/features/governance/components/LocationsTab";
 import { NoteTemplatesTab } from "@/features/governance/components/NoteTemplatesTab";

@@ -11,7 +11,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import AlertsPage from "./page";
-import { usePortal } from "../layout";
+import { usePortal } from "../portal";
 import {
   useAcknowledgeAlert,
   useAlert,
@@ -24,7 +24,7 @@ import type {
   OrgSummary,
 } from "@/features/portal/hooks/usePortalData";
 
-vi.mock("../layout", () => ({ usePortal: vi.fn() }));
+vi.mock("../portal", () => ({ usePortal: vi.fn() }));
 vi.mock("@/features/alerts/hooks/useAlerts", () => ({
   useAlerts: vi.fn(),
   useAlert: vi.fn(),

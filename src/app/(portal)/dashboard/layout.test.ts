@@ -6,8 +6,8 @@
 
 import { describe, expect, it } from "vitest";
 
-import { displayNameFor, roleLabelFor } from "./layout";
-import type { CurrentUser } from "./layout";
+import { displayNameFor, roleLabelFor } from "./portal";
+import type { CurrentUser } from "./portal";
 
 function user(overrides: Partial<CurrentUser> = {}): CurrentUser {
   return {

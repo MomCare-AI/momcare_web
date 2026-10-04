@@ -17,7 +17,7 @@ import {
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import EnrolPatientPage from "./page";
-import { usePortal } from "../../layout";
+import { usePortal } from "../../portal";
 import {
   useClinicians,
   useEnrolPatient,
@@ -30,7 +30,7 @@ const replace = vi.fn();
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push, replace }),
 }));
-vi.mock("../../layout", () => ({ usePortal: vi.fn() }));
+vi.mock("../../portal", () => ({ usePortal: vi.fn() }));
 vi.mock("@/features/patients/hooks/usePatients", () => ({
   useClinicians: vi.fn(),
   useEnrolPatient: vi.fn(),

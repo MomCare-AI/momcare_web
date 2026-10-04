@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Clock, FileText, Pencil, Plus, Trash2 } from "lucide-react";
 
-import { usePortal } from "@/app/(portal)/dashboard/layout";
+import { usePortal } from "@/app/(portal)/dashboard/portal";
 import { usePatientMonitoring } from "@/features/monitoring-notes/hooks/useMonitoringNotes";
 import { NoteDeleteModal } from "@/features/monitoring-notes/components/NoteDeleteModal";
 import { NoteEditModal } from "@/features/monitoring-notes/components/NoteEditModal";

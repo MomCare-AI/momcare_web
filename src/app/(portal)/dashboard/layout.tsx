@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-  useSyncExternalStore,
-} from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { usePathname } from "next/navigation";
 import {
@@ -31,8 +25,6 @@ import {
   useCurrentUser,
   useOrganization,
   useRefreshPortal,
-  type CurrentUser,
-  type OrgSummary,
 } from "@/features/portal/hooks/usePortalData";
 import { AppHeader } from "./components/AppHeader";
 import { DashboardSkeleton } from "./components/DashboardSkeleton";
@@ -40,60 +32,14 @@ import { MobileSidebarDrawer } from "./components/MobileSidebarDrawer";
 import { Sidebar } from "./components/Sidebar";
 import type { NavItem } from "./components/SidebarNavItem";
 import "../../portal.css";
-
-// Re-exported so pages can keep importing these from the layout they already
-// depend on; the shapes themselves live with the queries that fetch them.
-export type { CurrentUser, OrgSummary };
-
-interface PortalValue {
-  org: OrgSummary;
-  user: CurrentUser;
-  isHospitalAdmin: boolean;
-  /** May make a clinical judgement — acknowledge an alert, review an
-   *  assessment. Mirrors the server's IsClinician, which is what actually
-   *  enforces it; this only decides what is worth putting on screen. */
-  isClinician: boolean;
-  refresh: () => Promise<void>;
-}
+import {
+  PortalContext,
+  displayNameFor,
+  roleLabelFor,
+  type PortalValue,
+} from "./portal";
 
 const CLINICAL_ROLES = new Set(["provider", "nurse", "care_manager"]);
-
-/**
- * How a role reads on the sidebar's own identity card. "Dr." is a role
- * convention shown for every provider, not a stored title on any one
- * person's record — provider is this system's doctor role (see
- * core/common/permissions.py's IsClinician), so the prefix is derived,
- * never a per-user hardcode.
- */
-const ROLE_LABELS: Record<string, string> = {
-  hospital_admin: "Hospital Administrator",
-  provider: "Doctor",
-  nurse: "Nurse",
-  care_manager: "Care Manager",
-  platform_admin: "Platform Administrator",
-  patient: "Patient",
-};
-
-// Exported for tests only — not part of this module's real public surface,
-// since nothing outside the sidebar itself has a reason to format identity.
-export function displayNameFor(user: CurrentUser): string {
-  const name = `${user.first_name} ${user.last_name}`.trim() || user.email;
-  return user.role_code === "provider" ? `Dr. ${name}` : name;
-}
-
-export function roleLabelFor(roleCode: string): string {
-  return ROLE_LABELS[roleCode] ?? roleCode.replace(/_/g, " ");
-}
-
-const PortalContext = createContext<PortalValue | null>(null);
-
-/** Portal data, fetched once by the shell rather than by every page. */
-export function usePortal(): PortalValue {
-  const ctx = useContext(PortalContext);
-  if (!ctx)
-    throw new Error("usePortal must be used inside the dashboard layout");
-  return ctx;
-}
 
 const NAV: NavItem[] = [
   { href: "/dashboard", label: "Clinical Overview", Icon: LayoutDashboard },

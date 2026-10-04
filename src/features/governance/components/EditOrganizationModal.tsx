@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Building2, MapPin, ShieldCheck } from "lucide-react";
 
-import { usePortal } from "@/app/(portal)/dashboard/layout";
+import { usePortal } from "@/app/(portal)/dashboard/portal";
 import {
   useUpdateOrganization,
   type OrganizationUpdateInput,

@@ -26,7 +26,7 @@ import {
   type RiskAnswer,
   type RiskFactorField,
 } from "@/features/patients/types";
-import { usePortal } from "../../layout";
+import { usePortal } from "../../portal";
 import { usePageTitle } from "@/hooks/usePageTitle";
 
 const GENDER_OPTIONS = [

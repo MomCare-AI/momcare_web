@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { AlertCircle, Clock, Pencil, Plus, Search, Trash2 } from "lucide-react";
 
-import { usePortal } from "@/app/(portal)/dashboard/layout";
+import { usePortal } from "@/app/(portal)/dashboard/portal";
 import { NoteDeleteModal } from "@/features/monitoring-notes/components/NoteDeleteModal";
 import { NoteEditModal } from "@/features/monitoring-notes/components/NoteEditModal";
 import { SessionEditModal } from "@/features/monitoring-notes/components/SessionEditModal";

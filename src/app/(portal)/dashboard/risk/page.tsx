@@ -2,7 +2,7 @@
 
 import { RiskOverview } from "@/features/risk/components/RiskOverview";
 import { usePageTitle } from "@/hooks/usePageTitle";
-import { usePortal } from "../layout";
+import { usePortal } from "../portal";
 
 export default function RiskPage() {
   usePageTitle("Risk");

@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { AlertCircle, Contact, Plus, Search } from "lucide-react";
 
-import { usePortal } from "@/app/(portal)/dashboard/layout";
+import { usePortal } from "@/app/(portal)/dashboard/portal";
 import {
   useCreateSecondaryProvider,
   useSecondaryProviders,

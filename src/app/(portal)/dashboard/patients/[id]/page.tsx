@@ -34,7 +34,7 @@ import { PatientStatusesPanel } from "@/features/patients/components/PatientStat
 import { RecentActivityCards } from "@/features/patients/components/RecentActivityCards";
 import { BackButton } from "@/shared/ui/BackButton";
 import { EmptyState } from "@/shared/ui/EmptyState";
-import { usePortal } from "../../layout";
+import { usePortal } from "../../portal";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { formatGestationalAge } from "@/shared/lib/gestation";
 

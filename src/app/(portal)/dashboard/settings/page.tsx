@@ -5,7 +5,7 @@ import { GraduationCap, KeyRound, ShieldCheck, Gauge } from "lucide-react";
 
 import { authFetch, clearAccessToken } from "@/core/api/authFetch";
 import { clearQueryCache } from "@/core/query/queryClient";
-import { usePortal } from "../layout";
+import { usePortal } from "../portal";
 import {
   useUpdateConfidenceThreshold,
   type OrgSummary,

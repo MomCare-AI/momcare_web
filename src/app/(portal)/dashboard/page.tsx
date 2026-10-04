@@ -28,7 +28,7 @@ import {
 } from "@/features/patients/hooks/usePatients";
 import { Card, CardBody } from "@/shared/ui/Card";
 import { EmptyState } from "@/shared/ui/EmptyState";
-import { usePortal } from "./layout";
+import { usePortal } from "./portal";
 import { usePageTitle } from "@/hooks/usePageTitle";
 
 const WORKFLOW_FILTER_LABELS: Record<PatientWorkflowFilter, string> = {

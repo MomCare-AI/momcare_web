@@ -10,7 +10,7 @@ import {
   Trash2,
 } from "lucide-react";
 
-import { usePortal } from "@/app/(portal)/dashboard/layout";
+import { usePortal } from "@/app/(portal)/dashboard/portal";
 import {
   useCreateNoteTemplate,
   useDeleteNoteTemplate,

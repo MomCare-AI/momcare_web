@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { MapPin } from "lucide-react";
 
-import { usePortal } from "@/app/(portal)/dashboard/layout";
+import { usePortal } from "@/app/(portal)/dashboard/portal";
 import { useStaffList } from "@/features/staff/hooks/useStaff";
 import { useLocations } from "@/features/locations/hooks/useLocations";
 import { LocationsTable } from "@/features/locations/components/LocationsTable";

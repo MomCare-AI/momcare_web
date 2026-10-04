@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { AlertCircle, Check, Tag as TagIcon } from "lucide-react";
 
-import { usePortal } from "@/app/(portal)/dashboard/layout";
+import { usePortal } from "@/app/(portal)/dashboard/portal";
 import { useCreateClinicalTag } from "@/features/monitoring-notes/hooks/useMonitoringNotes";
 import type { TagSpec } from "@/features/monitoring-notes/types";
 import { Modal } from "@/shared/ui/Modal";

@@ -137,6 +137,9 @@ describe("Risk page", () => {
     render(<RiskOverview assignedToMe={false} />);
     expect(screen.getByText("Loading patients…")).toBeTruthy();
     expect(screen.queryByText("Hina")).toBeNull();
+    // The level counts are placeholders too, not a dash or a stale number.
+    const high = screen.getByRole("button", { name: /High/ });
+    expect(high.querySelector("[data-slot='skeleton']")).toBeTruthy();
   });
 
   it("says plainly when a queue is empty, and offers to clear filters when a filter hides everyone", () => {

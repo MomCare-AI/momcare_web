@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Building2, Pencil } from "lucide-react";
 
-import { usePortal } from "@/app/(portal)/dashboard/layout";
+import { usePortal } from "@/app/(portal)/dashboard/portal";
 import { Card } from "@/shared/ui/Card";
 import { EditOrganizationModal } from "./EditOrganizationModal";
 
