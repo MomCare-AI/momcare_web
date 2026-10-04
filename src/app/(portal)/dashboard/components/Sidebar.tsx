@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, LogOut, Settings } from "lucide-react";
+import { ChevronLeft, LogOut, Settings } from "lucide-react";
 
 import { LocationSwitcher } from "@/features/locations/components/LocationSwitcher";
 import { SidebarNavItem, type NavItem } from "./SidebarNavItem";
@@ -91,44 +91,29 @@ export function Sidebar({
             </span>
           )}
         </span>
-        {!iconOnly && (
-          <>
-            <span className="mc-sidebar-brandtext">
-              <span className="mc-sidebar-brand-momcare">MomCare</span>
-              {/* Truncated with the full name on hover/focus — a long
-                  hospital name must never push the nav below the fold to
-                  stay legible. */}
-              <span className="mc-sidebar-brand-org" title={orgName}>
-                {orgName}
-              </span>
-            </span>
-            {variant === "desktop" && onToggleCollapse && (
-              <button
-                type="button"
-                className="mc-sidebar-collapse-btn"
-                onClick={onToggleCollapse}
-                aria-label="Collapse sidebar"
-              >
-                <ChevronLeft size={14} strokeWidth={2.2} aria-hidden />
-              </button>
-            )}
-          </>
+        <span className="mc-sidebar-brandtext mc-sidebar-fade">
+          <span className="mc-sidebar-brand-momcare">MomCare</span>
+          {/* Truncated with the full name on hover/focus — a long
+              hospital name must never push the nav below the fold to
+              stay legible. */}
+          <span className="mc-sidebar-brand-org" title={orgName}>
+            {orgName}
+          </span>
+        </span>
+        {/* One button in both states: it glides from the brand row's far
+            edge to its own spot under the mark, rather than one unmounting
+            while another mounts. */}
+        {variant === "desktop" && onToggleCollapse && (
+          <button
+            type="button"
+            className="mc-sidebar-collapse-btn"
+            onClick={onToggleCollapse}
+            aria-label={iconOnly ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            <ChevronLeft size={14} strokeWidth={2.2} aria-hidden />
+          </button>
         )}
       </div>
-
-      {/* Collapsed rail has no room for the toggle beside the mark, so it
-          drops to its own centered row instead — the one case the brand
-          row can't hold it. */}
-      {variant === "desktop" && onToggleCollapse && iconOnly && (
-        <button
-          type="button"
-          className="mc-sidebar-collapse-btn mc-sidebar-collapse-btn-standalone"
-          onClick={onToggleCollapse}
-          aria-label="Expand sidebar"
-        >
-          <ChevronRight size={14} strokeWidth={2.2} aria-hidden />
-        </button>
-      )}
 
       <LocationSwitcher collapsed={iconOnly} />
 
@@ -156,14 +141,10 @@ export function Sidebar({
           <span className="mc-avatar" aria-hidden>
             {initials}
           </span>
-          {!iconOnly && (
-            <span className="mc-sidebar-identity-text">
-              <span className="mc-sidebar-identity-name">
-                {userDisplayName}
-              </span>
-              <span className="mc-sidebar-identity-role">{roleLabel}</span>
-            </span>
-          )}
+          <span className="mc-sidebar-identity-text mc-sidebar-fade">
+            <span className="mc-sidebar-identity-name">{userDisplayName}</span>
+            <span className="mc-sidebar-identity-role">{roleLabel}</span>
+          </span>
         </div>
 
         <Link
@@ -175,9 +156,9 @@ export function Sidebar({
           <span className="mc-sidebar-navitem-icon">
             <Settings size={17} strokeWidth={1.9} aria-hidden />
           </span>
-          {!iconOnly && (
-            <span className="mc-sidebar-navitem-label">Settings</span>
-          )}
+          <span className="mc-sidebar-navitem-label mc-sidebar-fade">
+            Settings
+          </span>
           {iconOnly && (
             <span className="mc-sidebar-tooltip" role="tooltip">
               Settings
@@ -194,9 +175,9 @@ export function Sidebar({
           <span className="mc-sidebar-navitem-icon">
             <LogOut size={17} strokeWidth={1.9} aria-hidden />
           </span>
-          {!iconOnly && (
-            <span className="mc-sidebar-navitem-label">Logout</span>
-          )}
+          <span className="mc-sidebar-navitem-label mc-sidebar-fade">
+            Logout
+          </span>
           {iconOnly && (
             <span className="mc-sidebar-tooltip" role="tooltip">
               Logout

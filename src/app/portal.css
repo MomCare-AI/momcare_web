@@ -176,18 +176,44 @@ body::-webkit-scrollbar-thumb:hover {
   overflow-x: hidden;
   overflow-y: auto;
   scrollbar-width: thin;
-  transition: width 0.25s ease;
+  transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: width;
 }
 .mc-sidebar[data-collapsed="true"] {
   width: 68px;
 }
 
+/* Text that exists in both states and only fades. Unmounting it made labels
+   pop in and out while the width was still moving; keeping it mounted lets
+   the width glide and the text cross-fade with it. Fading in waits a beat
+   so it never shows while the rail is still too narrow. */
+.mc-sidebar-fade {
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity 0.16s ease 0.1s,
+    visibility 0s;
+}
+.mc-sidebar[data-collapsed="true"] .mc-sidebar-fade {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 0.1s ease,
+    visibility 0s 0.1s;
+}
+
 .mc-sidebar-brand {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 9px;
   padding: 16px 16px 10px;
   min-width: 0;
+  transition: padding-bottom 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.mc-sidebar[data-collapsed="true"] .mc-sidebar-brand {
+  padding-bottom: 38px;
 }
 .mc-sidebar-mark {
   position: relative;
@@ -235,27 +261,36 @@ body::-webkit-scrollbar-thumb:hover {
   flex: none;
   width: 22px;
   height: 22px;
-  margin-left: auto;
+  position: absolute;
+  top: 19px;
+  right: 16px;
   border-radius: 50%;
   border: 1px solid var(--sb-border);
   background: rgba(255, 255, 255, 0.06);
   color: var(--sb-text-muted);
   cursor: pointer;
   transition:
+    top 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+    right 0.28s cubic-bezier(0.4, 0, 0.2, 1),
     background 0.15s ease,
     color 0.15s ease;
+}
+.mc-sidebar-collapse-btn svg {
+  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+/* Collapsed rail: the mark fills the brand row, so the toggle sits centred
+   beneath it and its chevron turns to point the other way. */
+.mc-sidebar[data-collapsed="true"] .mc-sidebar-collapse-btn {
+  top: 52px;
+  right: 23px;
+}
+.mc-sidebar[data-collapsed="true"] .mc-sidebar-collapse-btn svg {
+  transform: rotate(180deg);
 }
 .mc-sidebar-collapse-btn:hover {
   background: var(--sb-bg-hover);
   color: var(--sb-text);
 }
-/* Collapsed rail: the mark alone fills the brand row, so the toggle drops
-   to its own centered row below instead of crowding beside it. */
-.mc-sidebar-collapse-btn-standalone {
-  align-self: center;
-  margin: 0 auto 4px;
-}
-
 .mc-sidebar-divider {
   height: 1px;
   margin: 4px 16px 8px;
@@ -267,7 +302,20 @@ body::-webkit-scrollbar-thumb:hover {
    The trigger sits inside .mc-sidebar (on-blue tokens); its dropdown panel
    is portaled into .mc-portal with position: fixed (see the component's
    own note on why), so it uses the ordinary light card tokens instead. */
+.mc-locationswitch-wrap {
+  padding: 0 14px;
+  margin-bottom: 4px;
+  transition: padding 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.mc-sidebar[data-collapsed="true"] .mc-locationswitch-wrap {
+  padding: 0 10px;
+}
+.mc-sidebar[data-collapsed="true"] .mc-locationswitch {
+  padding-left: 15px;
+  padding-right: 15px;
+}
 .mc-locationswitch {
+  overflow: hidden;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -285,7 +333,11 @@ body::-webkit-scrollbar-thumb:hover {
 .mc-locationswitch:hover {
   background: var(--sb-bg-active);
 }
+.mc-locationswitch > svg {
+  flex: none;
+}
 .mc-locationswitch-label {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -385,8 +437,14 @@ body::-webkit-scrollbar-thumb:hover {
   white-space: nowrap;
   cursor: pointer;
   transition:
+    padding 0.28s cubic-bezier(0.4, 0, 0.2, 1),
     background 0.16s ease,
     color 0.16s ease;
+}
+/* Puts the icon on the 68px rail's centre line. */
+.mc-sidebar[data-collapsed="true"] .mc-sidebar-navitem {
+  padding-left: 15px;
+  padding-right: 15px;
 }
 .mc-sidebar-navitem:hover {
   background: var(--sb-bg-hover);
@@ -467,6 +525,11 @@ body::-webkit-scrollbar-thumb:hover {
   gap: 8px;
   padding: 6px 10px 10px;
   min-width: 0;
+  transition: padding 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.mc-sidebar[data-collapsed="true"] .mc-sidebar-identity {
+  padding-left: 20px;
+  padding-right: 20px;
 }
 .mc-sidebar-identity-text {
   display: flex;

@@ -44,9 +44,9 @@ export function SidebarNavItem({ item, active, collapsed, onNavigate }: Props) {
       <span className="mc-sidebar-navitem-icon">
         <Icon size={18} strokeWidth={1.9} aria-hidden />
       </span>
-      {!collapsed && (
-        <span className="mc-sidebar-navitem-label">{item.label}</span>
-      )}
+      <span className="mc-sidebar-navitem-label mc-sidebar-fade">
+        {item.label}
+      </span>
       {collapsed && (
         <span className="mc-sidebar-tooltip" role="tooltip">
           {item.label}

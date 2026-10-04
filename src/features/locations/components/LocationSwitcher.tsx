@@ -88,7 +88,7 @@ export function LocationSwitcher({ collapsed }: Props) {
   };
 
   return (
-    <div style={{ padding: collapsed ? "0 10px" : "0 14px", marginBottom: 4 }}>
+    <div className="mc-locationswitch-wrap">
       <button
         ref={btnRef}
         type="button"
@@ -101,23 +101,20 @@ export function LocationSwitcher({ collapsed }: Props) {
         onClick={() => setOpen((v) => !v)}
       >
         <MapPin size={15} strokeWidth={2} aria-hidden />
-        {!collapsed && (
-          <>
-            <span className="mc-locationswitch-label">
-              {selected ? selected.name : "All Locations"}
-            </span>
-            <ChevronDown
-              size={14}
-              strokeWidth={2}
-              aria-hidden
-              style={{
-                marginLeft: "auto",
-                transition: "transform 0.15s ease",
-                transform: open ? "rotate(180deg)" : undefined,
-              }}
-            />
-          </>
-        )}
+        <span className="mc-locationswitch-label mc-sidebar-fade">
+          {selected ? selected.name : "All Locations"}
+        </span>
+        <ChevronDown
+          className="mc-sidebar-fade"
+          size={14}
+          strokeWidth={2}
+          aria-hidden
+          style={{
+            marginLeft: "auto",
+            flex: "none",
+            transform: open ? "rotate(180deg)" : undefined,
+          }}
+        />
       </button>
 
       {open &&
