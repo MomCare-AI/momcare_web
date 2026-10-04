@@ -212,7 +212,7 @@ function NoteCard({
     <div
       className="mc-card"
       style={{
-        padding: "10px 12px",
+        padding: "6px 10px",
         boxShadow: "var(--shadow-card)",
         border: "1px solid var(--c-border-soft)",
       }}
@@ -228,9 +228,17 @@ function NoteCard({
         <div
           style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}
         >
-          <InitialsAvatar name={note.added_by_name || "?"} size={26} />
-          <div style={{ minWidth: 0 }}>
-            <div className="mc-row-title" style={{ fontSize: 13.5 }}>
+          <InitialsAvatar name={note.added_by_name || "?"} size={22} />
+          <div
+            style={{
+              minWidth: 0,
+              display: "flex",
+              alignItems: "baseline",
+              gap: 8,
+              flexWrap: "wrap",
+            }}
+          >
+            <div className="mc-row-title" style={{ fontSize: 13 }}>
               {note.added_by_name}
             </div>
             <div
@@ -240,6 +248,7 @@ function NoteCard({
                 alignItems: "center",
                 gap: 4,
                 whiteSpace: "nowrap",
+                fontSize: 11.5,
               }}
             >
               <Clock size={10} strokeWidth={2.2} aria-hidden />
@@ -282,7 +291,12 @@ function NoteCard({
 
       <p
         className="mc-pair-value"
-        style={{ marginTop: 6, fontSize: 13.5, whiteSpace: "pre-wrap" }}
+        style={{
+          margin: "3px 0 0",
+          fontSize: 13,
+          lineHeight: 1.4,
+          whiteSpace: "pre-wrap",
+        }}
       >
         {note.note}
       </p>
