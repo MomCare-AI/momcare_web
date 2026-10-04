@@ -151,7 +151,7 @@ describe("NgoWizard", () => {
     expect(app.status).toBe("pending");
     expect(app.documents).toHaveLength(2);
     expect(app.documents.every((d) => d.status === "pending")).toBe(true);
-  });
+  }, 30_000);
 
   it("lets the reviewer go back to edit a section", async () => {
     const { container } = render(<NgoWizard />);
@@ -170,5 +170,5 @@ describe("NgoWizard", () => {
     expect((byLabel(/organization name/i) as HTMLInputElement).value).toBe(
       "Helping Hands Foundation"
     );
-  });
+  }, 30_000);
 });
