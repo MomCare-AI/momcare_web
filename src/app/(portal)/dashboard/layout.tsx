@@ -9,7 +9,7 @@ import {
   Search,
   ShieldCheck,
   UserCog,
-  ShieldAlert,
+  Watch,
 } from "lucide-react";
 import {
   clearAccessToken,
@@ -44,7 +44,7 @@ const CLINICAL_ROLES = new Set(["provider", "nurse", "care_manager"]);
 const NAV: NavItem[] = [
   { href: "/dashboard", label: "Clinical Overview", Icon: LayoutDashboard },
   { href: "/dashboard/lookup", label: "Quick Lookup", Icon: Search },
-  { href: "/dashboard/risk", label: "Risk", Icon: ShieldAlert },
+  { href: "/dashboard/devices", label: "Devices", Icon: Watch },
   {
     href: "/dashboard/account-insights",
     label: "Account Insights",

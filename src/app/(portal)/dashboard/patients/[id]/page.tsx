@@ -69,12 +69,23 @@ const PatientDocumentsPanel = dynamic(() =>
   )
 );
 
+const RiskPanel = dynamic(() =>
+  import("@/features/monitoring/components/RiskPanel").then((m) => m.RiskPanel)
+);
+
 type Tab =
-  "overview" | "readings" | "notes" | "devices" | "documents" | "history";
+  | "overview"
+  | "readings"
+  | "risk"
+  | "notes"
+  | "devices"
+  | "documents"
+  | "history";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "overview", label: "Overview" },
   { id: "readings", label: "Readings" },
+  { id: "risk", label: "Risk" },
   { id: "notes", label: "Clinical Notes" },
   { id: "devices", label: "Devices" },
   { id: "documents", label: "Documents" },
@@ -239,6 +250,18 @@ export default function PatientProfilePage({
             <EmptyState
               title="No active pregnancy"
               text="Readings need an active pregnancy to attach to."
+            />
+          </div>
+        ))}
+
+      {tab === "risk" &&
+        (current ? (
+          <RiskPanel pregnancyId={current.id} canVerify={isClinician} />
+        ) : (
+          <div className="mc-card">
+            <EmptyState
+              title="No active pregnancy"
+              text="Risk is assessed from readings on an active pregnancy."
             />
           </div>
         ))}
