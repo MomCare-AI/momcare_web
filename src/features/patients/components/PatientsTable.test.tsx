@@ -99,7 +99,7 @@ describe("patient list formats", () => {
     expect(list.style.flexDirection).toBe("column");
   });
 
-  it("has a single statuses column, and shows no risk or pregnancy badge", () => {
+  it("has a single statuses column, with risk in its own Risk column", () => {
     render(
       <PatientsTable
         initialSearch=""
@@ -129,9 +129,12 @@ describe("patient list formats", () => {
       "Statuses",
     ]);
 
-    // Risk lives on the Risk page; nothing but staff-added statuses appears here.
-    expect(screen.queryByText("High")).toBeNull();
-    expect(screen.queryByText("Not assessed")).toBeNull();
+    // Risk has its own column (it replaced Device), so its badges show there
+    // while the Statuses cell still carries only staff-added statuses.
+    expect(headers).toContain("Risk");
+    expect(headers).not.toContain("Device");
+    expect(screen.getByText("High")).toBeTruthy();
+    expect(screen.getByText("Not assessed")).toBeTruthy();
     expect(screen.queryByText("No pregnancy recorded")).toBeNull();
     expect(screen.queryByText("No active pregnancy")).toBeNull();
     expect(screen.getByText("Motion")).toBeTruthy();

@@ -5,9 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Search, SlidersHorizontal, Users } from "lucide-react";
 
-import { useDevices } from "@/features/monitoring/hooks/useMonitoring";
+import { RiskBadge } from "@/features/monitoring/components/RiskBadge";
 import { riskLabel } from "@/features/monitoring/types";
-import type { Device } from "@/features/monitoring/types";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import {
   FIELDS_WITHOUT_DATA,
@@ -103,10 +102,8 @@ function matchesRule(patient: PatientListItem, rule: FilterRule): boolean {
  * monthly monitoring-time all come straight off `/api/patients/`
  * (`PatientListSerializer`'s enrichment fields) and render "—" only when
  * that field is genuinely null (nobody assigned, no reading yet) — never a
- * fabricated value. Device is the one column not on that serializer:
- * `/api/devices/` returns `assigned_pregnancy`, which joins straight onto
- * this table's own `pregnancy_id` column, so it's fetched once here and
- * looked up per row.
+ * fabricated value. Risk is the patient's latest assessed level
+ * (`risk_level`), "Not assessed" when there is none yet.
  *
  * No column is sortable — `/api/patients/` has no `ordering=` param, so a
  * client-side sort would silently only reorder whatever's currently loaded.
@@ -119,18 +116,9 @@ export function PatientsTable({
   initialSearch?: string;
 }) {
   const router = useRouter();
-  const devicesQuery = useDevices();
   const [search, setSearch] = useState(initialSearch);
   const [filters, setFilters] = useState<FilterRule[]>([]);
   const [showFilterModal, setShowFilterModal] = useState(false);
-
-  const deviceByPregnancy = useMemo(() => {
-    const map = new Map<string, Device>();
-    for (const device of devicesQuery.data ?? []) {
-      if (device.assigned_pregnancy) map.set(device.assigned_pregnancy, device);
-    }
-    return map;
-  }, [devicesQuery.data]);
 
   const rows = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -205,15 +193,11 @@ export function PatientsTable({
                 <th>Last Reading</th>
                 <th>Last Call</th>
                 <th>Monitoring Time</th>
-                <th>Device</th>
+                <th>Risk</th>
               </tr>
             </thead>
             <tbody>
               {rows.map((patient) => {
-                const device = patient.pregnancy_id
-                  ? deviceByPregnancy.get(patient.pregnancy_id)
-                  : undefined;
-
                 return (
                   <tr
                     key={patient.id}
@@ -267,13 +251,7 @@ export function PatientsTable({
                       {formatDuration(patient.monitoring_seconds_this_month)}
                     </td>
                     <td>
-                      {device ? (
-                        <span className="mc-badge mc-badge-neutral">
-                          {device.serial_number}
-                        </span>
-                      ) : (
-                        <span className="mc-dtable-sub">—</span>
-                      )}
+                      <RiskBadge level={patient.risk_level} />
                     </td>
                   </tr>
                 );
