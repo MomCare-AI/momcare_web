@@ -59,6 +59,9 @@ export function listPatients(
      *  counts with. At most one of the two is ever meaningful at a time. */
     workflow?: PatientWorkflowFilter;
     careActivity?: PatientCareActivityFilter;
+    /** `?location=` — one site's roster. Combines with the filters above,
+     *  which the per-location sub-resource endpoint cannot do. */
+    location?: string | null;
   } = {}
 ) {
   const query = new URLSearchParams();
@@ -71,6 +74,7 @@ export function listPatients(
   if (params.assignedToMe) query.set("assigned_to", "me");
   if (params.workflow) query.set("workflow", params.workflow);
   if (params.careActivity) query.set("care_activity", params.careActivity);
+  if (params.location) query.set("location", params.location);
   const suffix = query.toString() ? `?${query}` : "";
   return authJson<Paginated<PatientListItem>>(`/api/patients/${suffix}`);
 }
@@ -88,8 +92,14 @@ export function getPatient(id: string) {
   return authJson<PatientDetail>(`/api/patients/${id}/`);
 }
 
-export function getDashboardKpis() {
-  return authJson<DashboardKpis>(`/api/patients/dashboard-kpis/`);
+/**
+ * Counts for the Overview tiles. With a location, every number (total,
+ * active, inactive, each workflow and care activity) is that site's own;
+ * without one it is the caller's whole roster.
+ */
+export function getDashboardKpis(location?: string | null) {
+  const suffix = location ? `?location=${encodeURIComponent(location)}` : "";
+  return authJson<DashboardKpis>(`/api/patients/dashboard-kpis/${suffix}`);
 }
 
 export function getQuickLookupKpis() {

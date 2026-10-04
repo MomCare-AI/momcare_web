@@ -36,6 +36,7 @@ import { BackButton } from "@/shared/ui/BackButton";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { usePortal } from "../../layout";
 import { usePageTitle } from "@/hooks/usePageTitle";
+import { formatGestationalAge } from "@/shared/lib/gestation";
 
 // Lazy-loaded: the patient detail route was shipping ~850KB of JS (2-3x
 // every other route) because these four tab panels were statically
@@ -308,7 +309,9 @@ export default function PatientProfilePage({
                     </div>
                   </div>
                   {p.status === "active" && (
-                    <span className="mc-ga">{p.gestational_age_display}</span>
+                    <span className="mc-ga">
+                      {formatGestationalAge(p.gestational_age_display)}
+                    </span>
                   )}
                   <span
                     className={`mc-badge mc-badge-${pregnancyTone(p.status)}`}

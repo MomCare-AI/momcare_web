@@ -7,6 +7,7 @@ import { Bell, Check, ChevronRight, Clock, UserX } from "lucide-react";
 import { RiskBadge } from "@/features/monitoring/components/RiskBadge";
 import { useAcknowledgeAlert, useAlerts } from "../hooks/useAlerts";
 import { raisedAgo, timeToEscalation, type Alert } from "../types";
+import { formatGestationalAge } from "@/shared/lib/gestation";
 
 /**
  * The notification bell — how an alert reaches somebody who is not looking at
@@ -143,7 +144,7 @@ function AlertRow({
       </div>
 
       <div className="mc-bell-meta">
-        <span>{alert.gestational_age}</span>
+        <span>{formatGestationalAge(alert.gestational_age)}</span>
         {alert.assigned_staff_name ? (
           <span>{alert.assigned_staff_name}</span>
         ) : (

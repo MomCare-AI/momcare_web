@@ -6,6 +6,7 @@ import { ClipboardList } from "lucide-react";
 
 import { useWorklist } from "../hooks/usePatients";
 import { EmptyState } from "@/shared/ui/EmptyState";
+import { formatGestationalAge } from "@/shared/lib/gestation";
 
 const MotionLink = motion.create(Link);
 
@@ -78,7 +79,7 @@ export function WorklistPanel({ assignedToMe }: Props) {
             </div>
           </div>
           <div className="mc-queue-meta">
-            <span>{row.gestational_age}</span>
+            <span>{formatGestationalAge(row.gestational_age)}</span>
           </div>
         </MotionLink>
       ))}

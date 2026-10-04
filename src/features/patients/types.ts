@@ -93,10 +93,18 @@ export interface PatientListItem {
   date_of_birth: string | null;
   pregnancy_id: string | null;
   gestational_age_display: string | null;
+  /** "7 months 2 weeks 4 days" (a month is 4 weeks). Under one month the
+   *  backend sends the short "3w 5d"; formatGestationalAge() normalises it. */
+  gestational_age_long_display: string | null;
   pregnancy_status: PregnancyStatus | null;
   /** Null means never assessed — which the list must not render as "stable". */
   risk_level: RiskLevel | null;
   risk_assessed_at: string | null;
+  /** Assessments still waiting for a clinician (high/medium, or low model
+   *  confidence); see the risk review workflow. */
+  pending_risk_count: number;
+  needs_risk_review: boolean;
+  needs_low_confidence_review: boolean;
   /** Null when nobody is assigned to that role — render as "—", never blank. */
   provider_name: string | null;
   nurse_name: string | null;

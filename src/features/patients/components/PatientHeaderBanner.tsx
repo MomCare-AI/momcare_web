@@ -17,6 +17,7 @@ import {
 import { InitialsAvatar } from "@/shared/ui/InitialsAvatar";
 import { pregnancyTone, type PatientDetail, type Pregnancy } from "../types";
 import { LogSessionModal } from "./LogSessionModal";
+import { formatGestationalAge } from "@/shared/lib/gestation";
 
 function ageFromDob(dob: string | null): string | null {
   if (!dob) return null;
@@ -144,7 +145,7 @@ export function PatientHeaderBanner({
               {current && (
                 <>
                   <span className="mc-ga" style={{ fontSize: 12 }}>
-                    {current.gestational_age_display}
+                    {formatGestationalAge(current.gestational_age_display)}
                   </span>
                   <span
                     className={`mc-badge mc-badge-${pregnancyTone(current.status)}`}

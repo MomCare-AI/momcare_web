@@ -15,7 +15,7 @@ import {
   Search,
   ShieldCheck,
   UserCog,
-  Watch,
+  ShieldAlert,
 } from "lucide-react";
 import {
   clearAccessToken,
@@ -98,7 +98,7 @@ export function usePortal(): PortalValue {
 const NAV: NavItem[] = [
   { href: "/dashboard", label: "Clinical Overview", Icon: LayoutDashboard },
   { href: "/dashboard/lookup", label: "Quick Lookup", Icon: Search },
-  { href: "/dashboard/devices", label: "Devices", Icon: Watch },
+  { href: "/dashboard/risk", label: "Risk", Icon: ShieldAlert },
   {
     href: "/dashboard/account-insights",
     label: "Account Insights",

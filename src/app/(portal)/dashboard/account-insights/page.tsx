@@ -21,14 +21,7 @@ import { EmptyState } from "@/shared/ui/EmptyState";
 import { InitialsAvatar } from "@/shared/ui/InitialsAvatar";
 import { RowSkeleton } from "@/shared/ui/RowSkeleton";
 import { Select } from "@/shared/ui/Select";
-
-function formatSeconds(totalSeconds: number): string {
-  const s = Math.max(0, Math.round(totalSeconds));
-  const h = Math.floor(s / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  const sec = s % 60;
-  return `${h}h ${m}m ${sec}s`;
-}
+import { formatDuration } from "@/shared/lib/duration";
 
 const PERIODS: { value: AuditPeriodCode; label: string }[] = [
   { value: "2d", label: "Last 2 days" },
@@ -213,7 +206,7 @@ export default function AccountInsightsPage() {
                     </span>
                   </div>
                   <span className="mc-kpi-value">
-                    {report.monitoring_time.total_formatted}
+                    {formatDuration(report.monitoring_time.total_seconds)}
                   </span>
                 </div>
                 <div className="mc-kpi">
@@ -285,7 +278,7 @@ export default function AccountInsightsPage() {
                     </span>
                   </div>
                   <span className="mc-kpi-value">
-                    {formatSeconds(
+                    {formatDuration(
                       report.monitoring_time.total_seconds / periodDays
                     )}
                   </span>

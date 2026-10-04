@@ -44,12 +44,13 @@ export const patientKeys = {
     page: number,
     assignedToMe: boolean,
     workflow?: PatientWorkflowFilter,
-    careActivity?: PatientCareActivityFilter
+    careActivity?: PatientCareActivityFilter,
+    location?: string | null
   ) =>
     [
       ...patientKeys.all,
       "list",
-      { search, page, assignedToMe, workflow, careActivity },
+      { search, page, assignedToMe, workflow, careActivity, location },
     ] as const,
   detail: (id: string) => [...patientKeys.all, "detail", id] as const,
   pregnancies: (id: string) => [...patientKeys.all, "pregnancies", id] as const,
@@ -77,12 +78,19 @@ export function usePatientList(
   pageSize?: number,
   workflow?: PatientWorkflowFilter,
   careActivity?: PatientCareActivityFilter,
-  options: { keepPreviousData?: boolean } = {}
+  options: { keepPreviousData?: boolean; location?: string | null } = {}
 ) {
-  const { keepPreviousData = true } = options;
+  const { keepPreviousData = true, location = null } = options;
   return useQuery({
     queryKey: [
-      ...patientKeys.list(search, page, assignedToMe, workflow, careActivity),
+      ...patientKeys.list(
+        search,
+        page,
+        assignedToMe,
+        workflow,
+        careActivity,
+        location
+      ),
       pageSize,
     ],
     queryFn: () =>
@@ -93,6 +101,7 @@ export function usePatientList(
         pageSize,
         workflow,
         careActivity,
+        location,
       }),
     retry: retryUnlessSessionExpired,
     // Keeps the previous page on screen while the next one loads, so paging
@@ -117,10 +126,10 @@ export function useWorklist(assignedToMe = false) {
   });
 }
 
-export function useDashboardKpis() {
+export function useDashboardKpis(location: string | null = null) {
   return useQuery({
-    queryKey: patientKeys.dashboardKpis,
-    queryFn: getDashboardKpis,
+    queryKey: [...patientKeys.dashboardKpis, location ?? "all"],
+    queryFn: () => getDashboardKpis(location),
     retry: retryUnlessSessionExpired,
   });
 }

@@ -11,7 +11,6 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { useLocationPatients } from "@/features/locations/hooks/useLocations";
 import { useLocationScope } from "@/features/locations/LocationScopeContext";
 import { SessionExpiredError } from "@/core/api/authFetch";
 import { useJoinRequests } from "@/features/join-requests/hooks/useJoinRequests";
@@ -69,7 +68,11 @@ export default function OverviewPage() {
   const assignedToMe = isClinician && !isHospitalAdmin;
   const [listTab, setListTab] = useState<"patients" | "requests">("patients");
   const joinRequests = useJoinRequests("pending");
-  const dashboardKpis = useDashboardKpis();
+  // The sidebar's location switcher: null is "All Locations". Every count
+  // on this page and the list itself follow it, so a site shows its own
+  // numbers rather than the whole hospital's.
+  const { selectedLocationId } = useLocationScope();
+  const dashboardKpis = useDashboardKpis(selectedLocationId);
 
   const searchParams = useSearchParams();
   const initialSearch = searchParams.get("search") ?? "";
@@ -106,27 +109,18 @@ export default function OverviewPage() {
     100,
     workflowFilter,
     careActivityFilter,
-    // Each KPI tile is a different list, so switching tiles shows the
-    // skeleton rather than the previous tile's patients.
-    { keepPreviousData: false }
+    // Each KPI tile (and each location) is a different list, so switching
+    // shows the skeleton rather than the previous one's patients.
+    { keepPreviousData: false, location: selectedLocationId }
   );
 
-  // The sidebar's location switcher — "All Locations" (null) uses the
-  // hospital-wide query above; a specific site swaps in its own
-  // sub-resource endpoint (`/api/locations/<id>/patients/`), the only
-  // place a per-location patient list actually exists server-side today.
-  // That endpoint only ever accepts `?is_active=` — it has no idea what
-  // `?workflow=`/`?care_activity=` mean (see LocationPatientsView) — so a
-  // KPI tile's filter used to be silently ignored whenever a location was
-  // already selected. A workflow/care-activity filter now always wins and
-  // falls back to the hospital-wide query, since matching what the tile
-  // promised matters more than staying location-scoped for that one view.
-  const { selectedLocationId } = useLocationScope();
-  const locationResult = useLocationPatients(selectedLocationId);
-  const filterCrossesLocations = Boolean(workflowFilter || careActivityFilter);
-  const scopedToLocation =
-    selectedLocationId !== null && !filterCrossesLocations;
-  const activeResult = scopedToLocation ? locationResult : listResult;
+  // `?location=` combines with the workflow and care-activity filters on the
+  // same endpoint, so a site's list and its tile counts always agree. (The
+  // per-location sub-resource endpoint cannot take those filters, which is
+  // why this page used to fall back to the whole hospital whenever a tile
+  // was selected.)
+  const scopedToLocation = selectedLocationId !== null;
+  const activeResult = listResult;
 
   useEffect(() => {
     if (listResult.error instanceof SessionExpiredError)

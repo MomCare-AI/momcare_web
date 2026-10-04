@@ -17,6 +17,7 @@ import { EmptyState } from "@/shared/ui/EmptyState";
 import { RowSkeleton } from "@/shared/ui/RowSkeleton";
 import { usePortal } from "../layout";
 import { usePageTitle } from "@/hooks/usePageTitle";
+import { formatGestationalAge } from "@/shared/lib/gestation";
 
 /**
  * Every alert this hospital has raised, and what happened to each.
@@ -194,7 +195,7 @@ function AlertRow({
         </div>
 
         <div className="mc-alertrow-meta">
-          <span>{alert.gestational_age || "—"}</span>
+          <span>{formatGestationalAge(alert.gestational_age)}</span>
           <span>
             {/* Where the alert has climbed to, in words. "Tier 2" means
                 nothing to somebody who has not read the policy. */}

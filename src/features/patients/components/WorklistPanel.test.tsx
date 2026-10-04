@@ -98,7 +98,7 @@ describe("WorklistPanel", () => {
 
     render(<WorklistPanel assignedToMe={false} />);
     screen.getByText("Ayesha Bibi");
-    screen.getByText("28w");
+    screen.getByText("7 months");
     screen.getByText("No reading in 9 days.");
     screen.getByText("No lead clinician assigned.");
     screen.getByText("2 outstanding");

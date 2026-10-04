@@ -20,6 +20,8 @@ import {
   type PatientListItem,
   type PregnancyStatus,
 } from "../types";
+import { formatGestationalAge } from "@/shared/lib/gestation";
+import { formatDuration } from "@/shared/lib/duration";
 
 const PREGNANCY_STATUS_LABELS: Record<PregnancyStatus, string> = {
   active: "Active",
@@ -283,7 +285,12 @@ export function PatientsTable({
                         ))}
                       </div>
                     </td>
-                    <td>{patient.gestational_age_display || "—"}</td>
+                    <td>
+                      {formatGestationalAge(
+                        patient.gestational_age_display,
+                        patient.gestational_age_long_display
+                      )}
+                    </td>
                     <td className="mc-dtable-sub">
                       {patient.care_manager_name || "—"}
                     </td>
@@ -298,7 +305,7 @@ export function PatientsTable({
                       {patient.last_monitoring_contact_display || "—"}
                     </td>
                     <td className="mc-dtable-sub">
-                      {patient.monitoring_time_display || "—"}
+                      {formatDuration(patient.monitoring_seconds_this_month)}
                     </td>
                     <td>
                       {device ? (
