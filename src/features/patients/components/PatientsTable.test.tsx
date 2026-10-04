@@ -14,7 +14,7 @@ vi.mock("@/features/monitoring/hooks/useMonitoring", () => ({
 afterEach(cleanup);
 
 describe("patient list formats", () => {
-  it("shows gestational age as months, weeks and days", () => {
+  it("shows gestational age as whole months once past a month", () => {
     render(
       <PatientsTable
         initialSearch=""
@@ -26,11 +26,11 @@ describe("patient list formats", () => {
         ]}
       />
     );
-    expect(screen.getByText("7 months 2 weeks 2 days")).toBeTruthy();
+    expect(screen.getByText("7 months")).toBeTruthy();
     expect(screen.queryByText("30w 2d")).toBeNull();
   });
 
-  it("formats a pregnancy under a month in weeks and days, not the 3w 5d shorthand", () => {
+  it("shows only weeks under a month, not the 3w 5d shorthand", () => {
     render(
       <PatientsTable
         initialSearch=""
@@ -42,7 +42,7 @@ describe("patient list formats", () => {
         ]}
       />
     );
-    expect(screen.getByText("3 weeks 5 days")).toBeTruthy();
+    expect(screen.getByText("3 weeks")).toBeTruthy();
   });
 
   it("shows monitoring time from the seconds, to the unit the backend lacks", () => {

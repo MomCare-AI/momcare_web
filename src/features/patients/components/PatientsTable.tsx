@@ -15,7 +15,7 @@ import {
   type FilterRule,
 } from "./PatientAdvanceFilterModal";
 import { type PatientListItem, type PregnancyStatus } from "../types";
-import { formatGestationalAge } from "@/shared/lib/gestation";
+import { formatGestationalAgeBrief } from "@/shared/lib/gestation";
 import { PatientStatusPills } from "./PatientStatusPills";
 import { formatDuration } from "@/shared/lib/duration";
 
@@ -246,9 +246,8 @@ export function PatientsTable({
                       {patient.statuses.length === 0 && "—"}
                     </td>
                     <td>
-                      {formatGestationalAge(
-                        patient.gestational_age_display,
-                        patient.gestational_age_long_display
+                      {formatGestationalAgeBrief(
+                        patient.gestational_age_display
                       )}
                     </td>
                     <td className="mc-dtable-sub">

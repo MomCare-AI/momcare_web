@@ -44,3 +44,20 @@ export function formatGestationalAge(
   // Nothing parseable ("—", empty, already long): show it untouched.
   return long || short || "—";
 }
+
+/** The single largest unit only: days under a week, weeks under a month,
+ *  whole months beyond — for dense lists where the full breakdown is noise. */
+export function briefFromDays(totalDays: number): string {
+  const days = Math.max(0, Math.floor(totalDays));
+  if (days < 7) return plural(days, "day");
+  if (days < 28) return plural(Math.floor(days / 7), "week");
+  return plural(Math.floor(days / 28), "month");
+}
+
+export function formatGestationalAgeBrief(
+  short: string | null | undefined
+): string {
+  const match = short ? SHORT.exec(short) : null;
+  if (match) return briefFromDays(Number(match[1]) * 7 + Number(match[2] ?? 0));
+  return short || "—";
+}

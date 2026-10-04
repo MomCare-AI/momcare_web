@@ -41,3 +41,22 @@ describe("formatGestationalAge", () => {
     expect(longFromDays(28)).toBe("1 month");
   });
 });
+
+import { briefFromDays, formatGestationalAgeBrief } from "./gestation";
+
+describe("brief gestational age", () => {
+  it("shows days under a week, weeks under a month, months beyond", () => {
+    expect(briefFromDays(4)).toBe("4 days");
+    expect(briefFromDays(1)).toBe("1 day");
+    expect(briefFromDays(7)).toBe("1 week");
+    expect(briefFromDays(27)).toBe("3 weeks");
+    expect(briefFromDays(28)).toBe("1 month");
+    expect(briefFromDays(9 * 28 + 24)).toBe("9 months");
+  });
+
+  it("reads the short form and leaves unparseable text alone", () => {
+    expect(formatGestationalAgeBrief("30w 2d")).toBe("7 months");
+    expect(formatGestationalAgeBrief("3w 5d")).toBe("3 weeks");
+    expect(formatGestationalAgeBrief(null)).toBe("—");
+  });
+});
