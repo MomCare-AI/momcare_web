@@ -747,7 +747,7 @@ body::-webkit-scrollbar-thumb:hover {
  * this are all `auto-fit`/100%-width already, so they stretch cleanly with
  * it: more columns and wider cards on a big screen, never empty space. */
 .mc-page {
-  padding: 28px 40px 64px;
+  padding: 24px 18px 64px;
   width: 100%;
 }
 
