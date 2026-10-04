@@ -21,6 +21,7 @@ import { VitalsChart } from "@/features/monitoring/components/VitalsChart";
 import { usePatient } from "../hooks/usePatients";
 import { AddReadingModal } from "./AddReadingModal";
 import { AISummaryPanel } from "./AISummaryPanel";
+import { AverageVitalSummary } from "./AverageVitalSummary";
 import { PatientQuickLogPanel } from "./PatientQuickLogPanel";
 import {
   VITAL_METRICS,
@@ -506,6 +507,13 @@ export function PatientReadingsPanel({
                   reading.
                 </p>
               </div>
+            )}
+            {!allVitals && !isPending && filteredReadings.length > 0 && (
+              <AverageVitalSummary
+                pregnancyId={pregnancyId}
+                metric={metric}
+                period={period}
+              />
             )}
           </Card>
 
