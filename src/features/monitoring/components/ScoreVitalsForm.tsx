@@ -15,10 +15,16 @@ import {
 } from "../types";
 import { RiskBadge } from "./RiskBadge";
 import { Pair } from "@/shared/ui/Pair";
+import { MODEL_AGE_RANGE, ageFromDob } from "@/shared/lib/age";
 
 interface Props {
   pregnancyId: string;
   patientName: string;
+  /** The patient's registered date of birth. Her age goes to the model with
+   *  every reading, so it is taken from here instead of being retyped (and
+   *  possibly mistyped) each time; the Age box only appears if there is no
+   *  usable date on file. */
+  dateOfBirth?: string | null;
   onRecorded?: () => void;
 }
 
@@ -34,8 +40,14 @@ interface Props {
 export function ScoreVitalsForm({
   pregnancyId,
   patientName,
+  dateOfBirth,
   onRecorded,
 }: Props) {
+  const registeredAge = ageFromDob(dateOfBirth);
+  const useRegisteredAge =
+    registeredAge !== null &&
+    registeredAge >= MODEL_AGE_RANGE.min &&
+    registeredAge <= MODEL_AGE_RANGE.max;
   const [values, setValues] = useState<Partial<Record<NumericVital, string>>>(
     {}
   );
@@ -59,6 +71,7 @@ export function ScoreVitalsForm({
       const parsed = Number(raw);
       if (Number.isFinite(parsed)) payload[field] = parsed;
     }
+    if (useRegisteredAge) payload.age = registeredAge;
 
     try {
       await record.mutateAsync(payload);
@@ -91,7 +104,9 @@ export function ScoreVitalsForm({
 
       <form onSubmit={handleSubmit}>
         <div className="mc-formgrid">
-          {VITAL_FIELDS.map(({ field, label, unit, step }) => (
+          {VITAL_FIELDS.filter(
+            ({ field }) => !(field === "age" && useRegisteredAge)
+          ).map(({ field, label, unit, step }) => (
             <div key={field}>
               <label className="mc-label" htmlFor={`riskinput-${field}`}>
                 {label} <span className="mc-unit">({unit})</span>

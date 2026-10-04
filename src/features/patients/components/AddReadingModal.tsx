@@ -8,6 +8,8 @@ import { Modal } from "@/shared/ui/Modal";
 interface Props {
   pregnancyId: string;
   patientName: string;
+  /** Registered date of birth — her age is sent with the reading from it. */
+  dateOfBirth?: string | null;
   open: boolean;
   onClose: () => void;
   onRecorded?: () => void;
@@ -24,6 +26,7 @@ interface Props {
 export function AddReadingModal({
   pregnancyId,
   patientName,
+  dateOfBirth,
   open,
   onClose,
   onRecorded,
@@ -40,6 +43,7 @@ export function AddReadingModal({
       <ScoreVitalsForm
         pregnancyId={pregnancyId}
         patientName={patientName}
+        dateOfBirth={dateOfBirth}
         onRecorded={onRecorded}
       />
     </Modal>
