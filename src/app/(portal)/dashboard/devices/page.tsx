@@ -49,20 +49,14 @@ export default function DevicesPage() {
 
   return (
     <>
-      <div className="mc-actions" style={{ justifyContent: "flex-end" }}>
-        <button
-          type="button"
-          className="mc-btn mc-btn-sm"
-          onClick={() => setShowForm((v) => !v)}
-        >
-          <Plus size={14} strokeWidth={2.2} aria-hidden />
-          Register device
-        </button>
-      </div>
-
       {showForm && <RegisterForm onDone={() => setShowForm(false)} />}
 
-      <div className="mc-tabs" role="tablist" aria-label="Filter by status">
+      <div
+        className="mc-tabs"
+        role="tablist"
+        aria-label="Filter by status"
+        style={{ alignItems: "center" }}
+      >
         {GROUPS.map((g) => {
           const active = g.key === tab;
           return (
@@ -80,6 +74,15 @@ export default function DevicesPage() {
             </button>
           );
         })}
+        <button
+          type="button"
+          className="mc-btn mc-btn-sm"
+          style={{ marginLeft: "auto", marginBottom: 8, flexShrink: 0 }}
+          onClick={() => setShowForm((v) => !v)}
+        >
+          <Plus size={14} strokeWidth={2.2} aria-hidden />
+          Register device
+        </button>
       </div>
 
       {devices.isPending && (
