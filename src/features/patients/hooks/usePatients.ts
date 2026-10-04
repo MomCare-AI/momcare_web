@@ -76,8 +76,10 @@ export function usePatientList(
   assignedToMe = false,
   pageSize?: number,
   workflow?: PatientWorkflowFilter,
-  careActivity?: PatientCareActivityFilter
+  careActivity?: PatientCareActivityFilter,
+  options: { keepPreviousData?: boolean } = {}
 ) {
+  const { keepPreviousData = true } = options;
   return useQuery({
     queryKey: [
       ...patientKeys.list(search, page, assignedToMe, workflow, careActivity),
@@ -94,8 +96,11 @@ export function usePatientList(
       }),
     retry: retryUnlessSessionExpired,
     // Keeps the previous page on screen while the next one loads, so paging
-    // and searching don't blank the table on every keystroke.
-    placeholderData: (previous) => previous,
+    // and searching don't blank the table on every keystroke. A caller whose
+    // key change means "a different list" (the dashboard's workflow tiles)
+    // turns this off: the old tile's patients must not stand in for the new
+    // tile's while it loads, so that screen shows its skeleton instead.
+    placeholderData: keepPreviousData ? (previous) => previous : undefined,
   });
 }
 

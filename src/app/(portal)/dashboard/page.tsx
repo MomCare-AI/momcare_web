@@ -17,6 +17,7 @@ import { SessionExpiredError } from "@/core/api/authFetch";
 import { useJoinRequests } from "@/features/join-requests/hooks/useJoinRequests";
 import { JoinRequestsPanel } from "@/features/patients/components/JoinRequestsPanel";
 import { PatientsTable } from "@/features/patients/components/PatientsTable";
+import { PatientsTableSkeleton } from "@/features/patients/components/PatientsTableSkeleton";
 import { WorkflowActivityBanner } from "@/features/patients/components/WorkflowActivityBanner";
 import type {
   PatientCareActivityFilter,
@@ -28,7 +29,6 @@ import {
 } from "@/features/patients/hooks/usePatients";
 import { Card, CardBody } from "@/shared/ui/Card";
 import { EmptyState } from "@/shared/ui/EmptyState";
-import { RowSkeleton } from "@/shared/ui/RowSkeleton";
 import { usePortal } from "./layout";
 import { usePageTitle } from "@/hooks/usePageTitle";
 
@@ -105,7 +105,10 @@ export default function OverviewPage() {
     assignedToMe,
     100,
     workflowFilter,
-    careActivityFilter
+    careActivityFilter,
+    // Each KPI tile is a different list, so switching tiles shows the
+    // skeleton rather than the previous tile's patients.
+    { keepPreviousData: false }
   );
 
   // The sidebar's location switcher — "All Locations" (null) uses the
@@ -208,9 +211,7 @@ export default function OverviewPage() {
         </Card>
       ) : activeResult.isPending ? (
         <Card style={{ marginBottom: 18 }}>
-          <div className="mc-rows">
-            <RowSkeleton count={4} variant="plain" />
-          </div>
+          <PatientsTableSkeleton />
         </Card>
       ) : (
         <>
