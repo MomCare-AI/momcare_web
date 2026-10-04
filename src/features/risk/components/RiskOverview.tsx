@@ -30,6 +30,15 @@ import {
 
 type View = "all" | PatientWorkflowFilter;
 
+/** The same hues the risk badges use, as a small marker on each level tile. */
+const LEVEL_DOT: Record<RiskBucket, string> = {
+  high: "var(--c-high)",
+  medium: "var(--c-moderate)",
+  low: "var(--c-stable)",
+  // Never assessed is not low risk, so it gets no risk colour at all.
+  none: "var(--c-faint)",
+};
+
 const fmtDate = (iso: string | null) =>
   iso
     ? new Date(iso).toLocaleDateString(undefined, {
@@ -158,18 +167,43 @@ export function RiskOverview({ assignedToMe }: { assignedToMe: boolean }) {
               onClick={() => setBucket(active ? "all" : b)}
               className={`mc-kpi-tile${active ? " mc-kpi-tile-selected" : ""}`}
             >
+              <span
+                aria-hidden
+                style={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: "50%",
+                  flexShrink: 0,
+                  // The level's own colour; white on the selected (blue) tile.
+                  background: active ? "#ffffff" : LEVEL_DOT[b],
+                }}
+              />
               <span>
-                <span className="mc-kpi-value" style={{ fontSize: 20 }}>
+                <span
+                  className="mc-kpi-value"
+                  style={{
+                    fontSize: 20,
+                    color: active ? "#ffffff" : undefined,
+                  }}
+                >
                   {list.isPending ? (
                     <Skeleton
                       aria-hidden
-                      className="inline-block h-5 w-6 align-middle"
+                      className={`inline-block h-5 w-6 align-middle ${
+                        active ? "bg-white/30" : ""
+                      }`}
                     />
                   ) : (
                     counts[b]
                   )}
                 </span>
-                <span className="mc-kpi-label" style={{ display: "block" }}>
+                <span
+                  className="mc-kpi-label"
+                  style={{
+                    display: "block",
+                    color: active ? "rgba(255, 255, 255, 0.82)" : undefined,
+                  }}
+                >
                   {BUCKET_LABEL[b]}
                 </span>
               </span>

@@ -91,6 +91,11 @@ describe("Risk page", () => {
     fireEvent.click(high);
     expect(names()).toEqual(["Hina"]);
     expect(high.getAttribute("aria-pressed")).toBe("true");
+    // On the selected (blue) tile the text must be light, not the dark ink.
+    const value = high.querySelector(".mc-kpi-value") as HTMLElement;
+    const label = high.querySelector(".mc-kpi-label") as HTMLElement;
+    expect(value.style.color).toBe("rgb(255, 255, 255)");
+    expect(label.style.color).toContain("255, 255, 255");
 
     fireEvent.click(high); // pressing again clears it
     expect(names()).toHaveLength(4);
