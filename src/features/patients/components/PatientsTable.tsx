@@ -21,6 +21,7 @@ import {
   type PregnancyStatus,
 } from "../types";
 import { formatGestationalAge } from "@/shared/lib/gestation";
+import { PatientStatusPills } from "./PatientStatusPills";
 import { formatDuration } from "@/shared/lib/duration";
 
 const PREGNANCY_STATUS_LABELS: Record<PregnancyStatus, string> = {
@@ -202,6 +203,7 @@ export function PatientsTable({
               <tr>
                 <th>Patient</th>
                 <th>Status</th>
+                <th>Statuses</th>
                 <th>Gestational age</th>
                 <th>Care Manager</th>
                 <th>Provider</th>
@@ -284,6 +286,10 @@ export function PatientsTable({
                           </span>
                         ))}
                       </div>
+                    </td>
+                    <td>
+                      <PatientStatusPills statuses={patient.statuses} max={2} />
+                      {patient.statuses.length === 0 && "—"}
                     </td>
                     <td>
                       {formatGestationalAge(

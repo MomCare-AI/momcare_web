@@ -61,4 +61,33 @@ describe("patient list formats", () => {
     expect(screen.getByText("1w 1d 3h 5m 9s")).toBeTruthy();
     expect(screen.queryByText("8d 3h 5m 9s")).toBeNull();
   });
+
+  it("shows each patient's statuses as pills, with +N past two", () => {
+    render(
+      <PatientsTable
+        initialSearch=""
+        patients={[
+          makePatient({
+            id: "a",
+            full_name: "Has Statuses",
+            statuses: [
+              { name: "Stable", description: "Doing well", color: "#2f8a72" },
+              { name: "Follow up", description: "", color: "#d65f58" },
+              { name: "Awaiting labs", description: "", color: "#c98a2e" },
+            ],
+          }),
+          makePatient({ id: "b", full_name: "None", statuses: [] }),
+        ]}
+      />
+    );
+    expect(screen.getByRole("columnheader", { name: "Statuses" })).toBeTruthy();
+    // Two shown, the third collapses into +1 whose tooltip names it.
+    const pills = screen.getAllByRole("listitem");
+    expect(pills.map((p) => p.textContent)).toEqual([
+      "Stable",
+      "Follow up",
+      "+1",
+    ]);
+    expect(pills[2].getAttribute("title")).toBe("Awaiting labs");
+  });
 });

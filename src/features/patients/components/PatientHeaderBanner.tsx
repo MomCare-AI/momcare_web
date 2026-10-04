@@ -6,6 +6,7 @@ import {
   Calendar,
   MapPin,
   Pause,
+  Pencil,
   Phone,
   Play,
   RotateCcw,
@@ -16,7 +17,10 @@ import {
 
 import { InitialsAvatar } from "@/shared/ui/InitialsAvatar";
 import { pregnancyTone, type PatientDetail, type Pregnancy } from "../types";
+import { usePatientStatuses } from "../hooks/usePatients";
+import { EditStatusesModal } from "./EditStatusesModal";
 import { LogSessionModal } from "./LogSessionModal";
+import { PatientStatusPills } from "./PatientStatusPills";
 import { formatGestationalAge } from "@/shared/lib/gestation";
 
 function ageFromDob(dob: string | null): string | null {
@@ -53,6 +57,10 @@ interface Props {
   setSeconds: React.Dispatch<React.SetStateAction<number>>;
   running: boolean;
   setRunning: React.Dispatch<React.SetStateAction<boolean>>;
+  /** Shows the Edit button that opens the statuses popup. Any hospital staff
+   *  member may assign statuses; what they may remove is limited inside the
+   *  popup itself. */
+  canEditStatuses?: boolean;
 }
 
 /**
@@ -74,8 +82,11 @@ export function PatientHeaderBanner({
   setSeconds,
   running,
   setRunning,
+  canEditStatuses = false,
 }: Props) {
   const [showLogModal, setShowLogModal] = useState(false);
+  const [editingStatuses, setEditingStatuses] = useState(false);
+  const statusesQuery = usePatientStatuses(patient.id);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
@@ -138,7 +149,14 @@ export function PatientHeaderBanner({
         <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
           <InitialsAvatar name={patient.full_name} size={38} />
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: 8,
+              }}
+            >
               <h1 className="mc-h1" style={{ marginBottom: 0, fontSize: 16 }}>
                 {patient.full_name}
               </h1>
@@ -153,6 +171,22 @@ export function PatientHeaderBanner({
                     {current.status_display}
                   </span>
                 </>
+              )}
+              <PatientStatusPills
+                statuses={statusesQuery.data ?? []}
+                max={3}
+                size="md"
+              />
+              {canEditStatuses && (
+                <button
+                  type="button"
+                  className="mc-btn-ghost mc-btn-sm"
+                  onClick={() => setEditingStatuses(true)}
+                  aria-label="Edit statuses"
+                >
+                  <Pencil size={12} strokeWidth={2} aria-hidden />
+                  Edit
+                </button>
               )}
             </div>
 
@@ -332,6 +366,13 @@ export function PatientHeaderBanner({
           </button>
         </div>
       </div>
+
+      <EditStatusesModal
+        open={editingStatuses}
+        onClose={() => setEditingStatuses(false)}
+        patientId={patient.id}
+        patientName={patient.full_name}
+      />
 
       <LogSessionModal
         patientId={patient.id}

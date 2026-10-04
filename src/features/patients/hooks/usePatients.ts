@@ -154,16 +154,27 @@ export function usePatientStatuses(patientId: string) {
   });
 }
 
+/**
+ * A patient's statuses appear in three places: her own status list, her
+ * detail record, and the Statuses column of every patient list. All three
+ * are refreshed after a change, or the list would show the old statuses for
+ * up to a minute.
+ */
+function refreshPatientStatuses(
+  queryClient: ReturnType<typeof useQueryClient>,
+  patientId: string
+) {
+  queryClient.invalidateQueries({ queryKey: patientKeys.statuses(patientId) });
+  queryClient.invalidateQueries({ queryKey: patientKeys.detail(patientId) });
+  queryClient.invalidateQueries({ queryKey: [...patientKeys.all, "list"] });
+}
+
 export function useAddPatientStatus(patientId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: PatientStatusInput) =>
       addPatientStatus(patientId, input),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: patientKeys.statuses(patientId),
-      });
-    },
+    onSuccess: () => refreshPatientStatuses(queryClient, patientId),
   });
 }
 
@@ -171,11 +182,7 @@ export function useRemovePatientStatus(patientId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (statusId: string) => removePatientStatus(statusId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: patientKeys.statuses(patientId),
-      });
-    },
+    onSuccess: () => refreshPatientStatuses(queryClient, patientId),
   });
 }
 

@@ -30,7 +30,6 @@ import { ExitNoteModal } from "@/features/patients/components/ExitNoteModal";
 import { PatientDetailSkeleton } from "@/features/patients/components/PatientDetailSkeleton";
 import { PatientHeaderBanner } from "@/features/patients/components/PatientHeaderBanner";
 import { PatientOverviewSnapshot } from "@/features/patients/components/PatientOverviewSnapshot";
-import { PatientStatusesPanel } from "@/features/patients/components/PatientStatusesPanel";
 import { RecentActivityCards } from "@/features/patients/components/RecentActivityCards";
 import { BackButton } from "@/shared/ui/BackButton";
 import { EmptyState } from "@/shared/ui/EmptyState";
@@ -189,6 +188,7 @@ export default function PatientProfilePage({
           setSeconds={setTimerSeconds}
           running={timerRunning}
           setRunning={setTimerRunning}
+          canEditStatuses={canManageCareTeam}
         />
 
         <div className="mc-subnav">
