@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { Search, SlidersHorizontal, Users } from "lucide-react";
 
 import { useDevices } from "@/features/monitoring/hooks/useMonitoring";
-import { RiskBadge } from "@/features/monitoring/components/RiskBadge";
 import { riskLabel } from "@/features/monitoring/types";
 import type { Device } from "@/features/monitoring/types";
 import { EmptyState } from "@/shared/ui/EmptyState";
@@ -15,11 +14,7 @@ import {
   PatientAdvanceFilterModal,
   type FilterRule,
 } from "./PatientAdvanceFilterModal";
-import {
-  pregnancyTone,
-  type PatientListItem,
-  type PregnancyStatus,
-} from "../types";
+import { type PatientListItem, type PregnancyStatus } from "../types";
 import { formatGestationalAge } from "@/shared/lib/gestation";
 import { PatientStatusPills } from "./PatientStatusPills";
 import { formatDuration } from "@/shared/lib/duration";
@@ -202,7 +197,6 @@ export function PatientsTable({
             <thead>
               <tr>
                 <th>Patient</th>
-                <th>Status</th>
                 <th>Statuses</th>
                 <th>Gestational age</th>
                 <th>Care Manager</th>
@@ -245,50 +239,10 @@ export function PatientsTable({
                       </Link>
                     </td>
                     <td>
-                      <div
-                        style={{
-                          display: "flex",
-                          flexWrap: "wrap",
-                          gap: 6,
-                          alignItems: "center",
-                        }}
-                      >
-                        {patient.pregnancy_status === "active" ? (
-                          <RiskBadge level={patient.risk_level} />
-                        ) : patient.pregnancy_status ? (
-                          <span
-                            className={`mc-badge mc-badge-${pregnancyTone(patient.pregnancy_status)}`}
-                          >
-                            No active pregnancy
-                          </span>
-                        ) : (
-                          <span className="mc-badge mc-badge-neutral">
-                            No pregnancy recorded
-                          </span>
-                        )}
-                        {patient.statuses.map((s) => (
-                          <span
-                            key={s.name}
-                            title={s.description || undefined}
-                            style={{
-                              display: "inline-flex",
-                              alignItems: "center",
-                              padding: "2px 9px",
-                              borderRadius: 999,
-                              fontSize: 12,
-                              fontWeight: 600,
-                              color: s.color,
-                              background: `${s.color}1a`,
-                              border: `1px solid ${s.color}55`,
-                            }}
-                          >
-                            {s.name}
-                          </span>
-                        ))}
-                      </div>
-                    </td>
-                    <td>
-                      <PatientStatusPills statuses={patient.statuses} max={2} />
+                      <PatientStatusPills
+                        statuses={patient.statuses}
+                        layout="stack"
+                      />
                       {patient.statuses.length === 0 && "—"}
                     </td>
                     <td>

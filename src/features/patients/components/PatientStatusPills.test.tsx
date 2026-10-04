@@ -43,4 +43,26 @@ describe("PatientStatusPills", () => {
     render(<PatientStatusPills statuses={[s("Odd", "", "not-a-colour")]} />);
     expect(screen.getByText("Odd").style.color).toBe("rgb(67, 97, 238)");
   });
+
+  it("stack layout shows them all in a column, however many", () => {
+    render(
+      <PatientStatusPills
+        layout="stack"
+        statuses={[s("A"), s("B"), s("C"), s("D"), s("E")]}
+      />
+    );
+    const items = screen.getAllByRole("listitem");
+    expect(items.map((i) => i.textContent)).toEqual(["A", "B", "C", "D", "E"]);
+    expect(screen.getByRole("list").style.flexDirection).toBe("column");
+  });
+
+  it("stack layout can still be limited when a caller asks", () => {
+    render(
+      <PatientStatusPills layout="stack" max={1} statuses={[s("A"), s("B")]} />
+    );
+    expect(screen.getAllByRole("listitem").map((i) => i.textContent)).toEqual([
+      "A",
+      "+1",
+    ]);
+  });
 });
