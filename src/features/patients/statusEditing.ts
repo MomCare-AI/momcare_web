@@ -32,6 +32,8 @@ export interface StatusChoice {
   /** False when someone else added it and the user is not a hospital admin. */
   removable: boolean;
   inCatalogue: boolean;
+  /** Typed into the popup and not saved yet; ticked until it is unticked. */
+  isNew?: boolean;
 }
 
 export const keyOf = (name: string) => name.trim().toLowerCase();
