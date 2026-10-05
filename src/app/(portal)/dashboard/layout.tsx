@@ -26,6 +26,8 @@ import {
   useRefreshPortal,
 } from "@/features/portal/hooks/usePortalData";
 import { AppHeader } from "./components/AppHeader";
+import { useIdleTimeout } from "@/shared/hooks/useIdleTimeout";
+import { IdleWarning } from "./components/IdleWarning";
 import { DashboardSkeleton } from "./components/DashboardSkeleton";
 import { MobileSidebarDrawer } from "./components/MobileSidebarDrawer";
 import { Sidebar } from "./components/Sidebar";
@@ -37,6 +39,11 @@ import {
   roleLabelFor,
   type PortalValue,
 } from "./portal";
+
+/** Inactivity before the hospital portal signs itself out, and how long
+ *  before that the "still there?" warning appears. */
+const IDLE_SIGN_OUT_MS = 30 * 60 * 1000;
+const IDLE_WARNING_MS = 60 * 1000;
 
 const CLINICAL_ROLES = new Set(["provider", "nurse", "care_manager"]);
 
@@ -188,7 +195,7 @@ export default function DashboardLayout({
     setMenuOpen(false);
   }, [pathname]);
 
-  const signOut = () => {
+  const endSession = (destination: string) => {
     // Fire the server-side blacklist, but never wait on it: the refresh
     // cookie being revoked is the server's problem, and a slow network must
     // not keep someone signed in on a shared machine while it resolves.
@@ -197,8 +204,18 @@ export default function DashboardLayout({
     // The token alone is not the session. Everything fetched for this person is
     // still in the query cache, and it must not outlive them.
     clearQueryCache();
-    router.replace("/login");
+    router.replace(destination);
   };
+  const signOut = () => endSession("/login");
+
+  // Patient data stays on screen only while someone is there. Thirty quiet
+  // minutes ends the session, with a one-minute warning first.
+  const idle = useIdleTimeout({
+    enabled: Boolean(org && user),
+    idleMs: IDLE_SIGN_OUT_MS,
+    warnMs: IDLE_WARNING_MS,
+    onTimeout: () => endSession("/login?idle=1"),
+  });
 
   if (error) {
     return (
@@ -281,6 +298,11 @@ export default function DashboardLayout({
               onToggleMenu={() => setMenuOpen((v) => !v)}
             />
             <div className="mc-page">{children}</div>
+            <IdleWarning
+              secondsLeft={idle.secondsLeft}
+              onStay={idle.stay}
+              onSignOut={signOut}
+            />
           </div>
         </div>
       </LocationScopeProvider>

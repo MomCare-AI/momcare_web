@@ -58,7 +58,11 @@ export function LoginPageClient() {
   // silent teleport, especially losing whatever was mid-way through being
   // filled in on the page that bounced here.
   useEffect(() => {
-    if (searchParams.get("expired") === "1") {
+    if (searchParams.get("idle") === "1") {
+      setNotice(
+        "You were signed out after a period of inactivity, to protect patient data. Please sign in again."
+      );
+    } else if (searchParams.get("expired") === "1") {
       setNotice(
         "Your session expired. Please sign in again — anything you were filling in on the previous page was not saved."
       );
