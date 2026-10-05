@@ -99,7 +99,7 @@ export function NgoSidebar({
     <div className="flex h-full flex-col bg-teal-700 text-white">
       <div className="border-b border-white/15 px-3 py-4">
         <div
-          className={`relative overflow-hidden rounded-xl bg-white transition-[width,height] duration-300 ease-in-out motion-reduce:transition-none ${
+          className={`relative transition-[width,height] duration-300 ease-in-out motion-reduce:transition-none ${
             collapsed ? "h-10 w-10" : "h-[91px] w-32"
           }`}
         >
@@ -108,13 +108,19 @@ export function NgoSidebar({
             alt="MomCare"
             width={256}
             height={171}
-            className={`absolute left-2 top-1/2 h-auto w-28 -translate-y-1/2 transition-opacity duration-300 motion-reduce:transition-none ${
+            // No box behind it: a soft white halo keeps the pink and purple
+            // readable on the teal without a white card.
+            style={{
+              filter:
+                "drop-shadow(0 0 1px rgba(255,255,255,0.9)) drop-shadow(0 0 6px rgba(255,255,255,0.45))",
+            }}
+            className={`absolute left-0 top-1/2 h-auto w-28 -translate-y-1/2 transition-opacity duration-300 motion-reduce:transition-none ${
               collapsed ? "opacity-0" : "opacity-100"
             }`}
           />
           <span
             aria-hidden
-            className={`absolute inset-0 flex items-center justify-center text-base font-bold text-teal-700 transition-opacity duration-300 motion-reduce:transition-none ${
+            className={`absolute inset-0 flex items-center justify-center text-base font-bold text-white transition-opacity duration-300 motion-reduce:transition-none ${
               collapsed ? "opacity-100" : "opacity-0"
             }`}
           >

@@ -73,7 +73,9 @@ function AuthedPlatformLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="mc-portal">
       <PlatformShell
-        userLabel={`${user.first_name} ${user.last_name} · ${user.email}`}
+        userLabel={[`${user.first_name} ${user.last_name}`.trim(), user.email]
+          .filter(Boolean)
+          .join(" · ")}
         onSignOut={signOut}
       >
         {children}

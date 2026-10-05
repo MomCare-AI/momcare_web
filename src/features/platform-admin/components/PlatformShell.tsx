@@ -169,6 +169,7 @@ function Sidebar({
       <div className="border-t border-white/10 px-3 py-4">
         <p
           aria-hidden={collapsed}
+          title={userLabel}
           className={`overflow-hidden truncate text-xs text-slate-400 transition-[max-height,opacity,margin] ${EASE} ${
             collapsed ? "mb-0 max-h-0 opacity-0" : "mb-2 max-h-6 opacity-100"
           }`}
