@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { cloneElement, isValidElement, useId, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -926,13 +926,33 @@ function Field({
   required?: boolean;
   children: React.ReactNode;
 }) {
+  // Tie the label to its control so a screen reader announces it and a click
+  // on the label focuses the field.
+  const generated = useId();
+  const control = isValidElement<{ id?: string; "aria-describedby"?: string }>(
+    children
+  )
+    ? children
+    : null;
+  const id = control?.props.id ?? generated;
+  const hintId = hint ? `${id}-hint` : undefined;
+
   return (
     <div>
-      <label className="mc-label">
+      <label className="mc-label" htmlFor={id}>
         {label} {required && <span className="mc-req">*</span>}
       </label>
-      {children}
-      {hint && <span className="mc-hint">{hint}</span>}
+      {control
+        ? cloneElement(control, {
+            id,
+            "aria-describedby": control.props["aria-describedby"] ?? hintId,
+          })
+        : children}
+      {hint && (
+        <span className="mc-hint" id={hintId}>
+          {hint}
+        </span>
+      )}
     </div>
   );
 }
