@@ -31,6 +31,13 @@ export interface EnrolmentInput {
   emergency_contact_phone?: string;
   emergency_contact_relation?: string;
   emergency_contact_email?: string;
+  /** All six are required by the backend when a patient is first enrolled. */
+  address_line1?: string;
+  address_line2?: string;
+  city?: string;
+  state?: string;
+  postal_code?: string;
+  country?: string;
   /** Optional now — consent is no longer mandatory at onboarding. */
   consent_date?: string | null;
   pregnancy?: Partial<RiskFactors> & {

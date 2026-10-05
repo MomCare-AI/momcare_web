@@ -72,7 +72,23 @@ type FormState = {
   emergency_contact_phone: string;
   emergency_contact_relation: string;
   emergency_contact_email: string;
+  address_line1: string;
+  address_line2: string;
+  city: string;
+  state: string;
+  postal_code: string;
+  country: string;
 };
+
+/** The backend requires all six when a patient is first enrolled. */
+const ADDRESS_FIELDS = [
+  "address_line1",
+  "address_line2",
+  "city",
+  "state",
+  "postal_code",
+  "country",
+] as const satisfies readonly (keyof FormState)[];
 
 type PregnancyState = {
   lmp: string;
@@ -98,10 +114,11 @@ const STEPS = [
  * live preview beside the form, restyled from the reference platform's own
  * enrollment wizard. Only fields `PatientCreateSerializer` actually accepts
  * appear here: no document-scan autofill (no OCR endpoint exists), no
- * username/password (enrollment never creates an app account), no address
- * fields or RPM/CCM program tags (neither exists on `Patient`) — building
- * any of those would mean a control that looks functional but silently
- * does nothing, which is its own kind of fabrication.
+ * username/password (enrollment never creates an app account), no RPM/CCM
+ * program tags (doesn't exist on `Patient`) — building any of those would
+ * mean a control that looks functional but silently does nothing, which is
+ * its own kind of fabrication. The six address fields are real and required
+ * by the backend, stored on the Patient row itself.
  */
 export default function EnrolPatientPage() {
   usePageTitle("Enrol Patient");
@@ -121,6 +138,12 @@ export default function EnrolPatientPage() {
     emergency_contact_phone: "",
     emergency_contact_relation: "",
     emergency_contact_email: "",
+    address_line1: "",
+    address_line2: "",
+    city: "",
+    state: "",
+    postal_code: "",
+    country: "",
   });
   const [recordPregnancy, setRecordPregnancy] = useState(true);
   const [pregnancy, setPregnancy] = useState<PregnancyState>({
@@ -181,6 +204,14 @@ export default function EnrolPatientPage() {
 
     if (!form.first_name.trim()) {
       setError("First name is required.");
+      setStep(0);
+      return;
+    }
+
+    if (ADDRESS_FIELDS.some((f) => !form[f].trim())) {
+      setError(
+        "Fill in every address field — the record needs her full address."
+      );
       setStep(0);
       return;
     }
@@ -430,6 +461,59 @@ export default function EnrolPatientPage() {
                         onChange={(e) =>
                           set("emergency_contact_email", e.target.value)
                         }
+                      />
+                    </Field>
+                  </div>
+
+                  <div
+                    className="mc-card-title"
+                    style={{ fontSize: 14, margin: "20px 0 10px" }}
+                  >
+                    Address
+                  </div>
+                  <div className="mc-formgrid" style={{ marginBottom: 0 }}>
+                    <Field label="Address line 1" required>
+                      <input
+                        className="mc-input"
+                        value={form.address_line1}
+                        onChange={(e) => set("address_line1", e.target.value)}
+                        placeholder="House 12, Street 4"
+                      />
+                    </Field>
+                    <Field label="Address line 2" required>
+                      <input
+                        className="mc-input"
+                        value={form.address_line2}
+                        onChange={(e) => set("address_line2", e.target.value)}
+                        placeholder="Area, e.g. F-7"
+                      />
+                    </Field>
+                    <Field label="City" required>
+                      <input
+                        className="mc-input"
+                        value={form.city}
+                        onChange={(e) => set("city", e.target.value)}
+                      />
+                    </Field>
+                    <Field label="State / province" required>
+                      <input
+                        className="mc-input"
+                        value={form.state}
+                        onChange={(e) => set("state", e.target.value)}
+                      />
+                    </Field>
+                    <Field label="Postal code" required>
+                      <input
+                        className="mc-input"
+                        value={form.postal_code}
+                        onChange={(e) => set("postal_code", e.target.value)}
+                      />
+                    </Field>
+                    <Field label="Country" required>
+                      <input
+                        className="mc-input"
+                        value={form.country}
+                        onChange={(e) => set("country", e.target.value)}
                       />
                     </Field>
                   </div>
@@ -953,6 +1037,16 @@ function LivePreview({
             />
             <PreviewField label="Phone" value={form.emergency_contact_phone} />
             <PreviewField label="Email" value={form.emergency_contact_email} />
+          </div>
+
+          <div className="mc-preview-section-title">Address</div>
+          <div className="mc-preview-grid">
+            <PreviewField label="Line 1" value={form.address_line1} />
+            <PreviewField label="Line 2" value={form.address_line2} />
+            <PreviewField label="City" value={form.city} />
+            <PreviewField label="State" value={form.state} />
+            <PreviewField label="Postal code" value={form.postal_code} />
+            <PreviewField label="Country" value={form.country} />
           </div>
 
           <div className="mc-preview-section-title">Pregnancy</div>

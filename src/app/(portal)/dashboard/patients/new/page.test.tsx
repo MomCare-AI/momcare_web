@@ -87,10 +87,37 @@ function fieldInput(labelPattern: RegExp): HTMLElement {
   return control as HTMLElement;
 }
 
+const ADDRESS = {
+  address_line1: "House 12, Street 4",
+  address_line2: "F-7",
+  city: "Islamabad",
+  state: "ICT",
+  postal_code: "44000",
+  country: "Pakistan",
+};
+
+function fillAddress() {
+  fireEvent.change(fieldInput(/^Address line 1/), {
+    target: { value: ADDRESS.address_line1 },
+  });
+  fireEvent.change(fieldInput(/^Address line 2/), {
+    target: { value: ADDRESS.address_line2 },
+  });
+  fireEvent.change(fieldInput(/^City/), { target: { value: ADDRESS.city } });
+  fireEvent.change(fieldInput(/^State/), { target: { value: ADDRESS.state } });
+  fireEvent.change(fieldInput(/^Postal code/), {
+    target: { value: ADDRESS.postal_code },
+  });
+  fireEvent.change(fieldInput(/^Country/), {
+    target: { value: ADDRESS.country },
+  });
+}
+
 function fillRequired() {
   fireEvent.change(fieldInput(/^First name/), {
     target: { value: "Ayesha" },
   });
+  fillAddress();
 }
 
 function checkConsent() {
@@ -150,6 +177,35 @@ describe("EnrolPatientPage", () => {
     await vi.waitFor(() => expect(mutateAsync).toHaveBeenCalled());
     const today = new Date().toISOString().slice(0, 10);
     expect(mutateAsync.mock.calls[0][0].consent_date).toBe(today);
+  });
+
+  it("sends the six address fields with the patient", async () => {
+    const { mutateAsync } = setup();
+    render(<EnrolPatientPage />);
+
+    fillRequired();
+    clickContinue();
+    fireEvent.click(screen.getByLabelText("Record a pregnancy now")); // off
+    clickContinue();
+    fireEvent.click(screen.getByRole("button", { name: /Enrol patient/ }));
+
+    await vi.waitFor(() => expect(mutateAsync).toHaveBeenCalled());
+    expect(mutateAsync.mock.calls[0][0]).toMatchObject(ADDRESS);
+  });
+
+  it("refuses to submit with any address field empty, and goes back to that step", async () => {
+    const { mutateAsync } = setup();
+    render(<EnrolPatientPage />);
+
+    fillRequired();
+    fireEvent.change(fieldInput(/^City/), { target: { value: "" } });
+    clickContinue();
+    fireEvent.click(screen.getByLabelText("Record a pregnancy now")); // off
+    clickContinue();
+    fireEvent.click(screen.getByRole("button", { name: /Enrol patient/ }));
+
+    await screen.findByText(/Fill in every address field/);
+    expect(mutateAsync).not.toHaveBeenCalled();
   });
 
   it("refuses to submit without a dating source when recording a pregnancy", async () => {
