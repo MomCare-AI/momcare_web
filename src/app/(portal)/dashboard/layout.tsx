@@ -19,7 +19,6 @@ import {
 import { clearQueryCache } from "@/core/query/queryClient";
 import { useAlerts } from "@/features/alerts/hooks/useAlerts";
 import { LocationScopeProvider } from "@/features/locations/LocationScopeContext";
-import { useAllPatients } from "@/features/reports/hooks/useReports";
 import {
   useAuditLog,
   useCurrentUser,
@@ -121,7 +120,6 @@ function readStoredCollapsed(): boolean {
  */
 function OverviewPrefetch() {
   useAlerts("live", false);
-  useAllPatients();
   useAuditLog();
   return null;
 }

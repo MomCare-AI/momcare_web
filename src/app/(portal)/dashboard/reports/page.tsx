@@ -27,6 +27,7 @@ import { RowSkeleton } from "@/shared/ui/RowSkeleton";
 import { RecentAlertsList } from "@/features/reports/components/AlertMetricsPanel";
 import { CareTeamRoster } from "@/features/reports/components/CareTeamRoster";
 import { EnrollmentTrendChart } from "@/features/reports/components/EnrollmentTrendChart";
+import { useDashboardKpis } from "@/features/patients/hooks/usePatients";
 import { useAllPatients } from "@/features/reports/hooks/useReports";
 import {
   aggregateAlertMetrics,
@@ -143,10 +144,16 @@ export default function ReportsPage() {
 }
 
 function ClinicalOverviewTab() {
+  // The headline counts come from the dashboard KPI endpoint — one small
+  // request, right even for a hospital with thousands of patients — so the
+  // tiles show at once. Only the pieces that need a row per patient (new this
+  // month, the trend, the status donut, the export) wait for the full list.
+  const kpisQuery = useDashboardKpis(null);
   const patientsQuery = useAllPatients();
   const devicesQuery = useDevices();
 
   const patients = patientsQuery.data ?? [];
+  const rowsReady = patientsQuery.isSuccess;
   const now = new Date();
   const newThisMonth = patients.filter((p) => {
     const d = new Date(p.created_at);
@@ -154,8 +161,14 @@ function ClinicalOverviewTab() {
       d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()
     );
   }).length;
-  const active = patients.filter((p) => p.is_active).length;
-  const inactive = patients.length - active;
+  const kpis = kpisQuery.data;
+  const total = kpis?.total_patients ?? (rowsReady ? patients.length : null);
+  const active =
+    kpis?.active_patients ??
+    (rowsReady ? patients.filter((p) => p.is_active).length : null);
+  const inactive =
+    kpis?.inactive_patients ??
+    (rowsReady && active !== null ? patients.length - active : null);
   const devices = devicesQuery.data ?? [];
   const connectedDevices = devices.filter((d) => d.is_assigned).length;
 
@@ -165,33 +178,6 @@ function ClinicalOverviewTab() {
     [patients]
   );
   const deviceSlices = useMemo(() => aggregateDeviceStatus(devices), [devices]);
-  if (patientsQuery.isPending) {
-    return (
-      <Card>
-        <div className="mc-rows">
-          <RowSkeleton count={4} variant="plain" />
-        </div>
-      </Card>
-    );
-  }
-
-  if (patientsQuery.isError) {
-    return (
-      <Card>
-        <EmptyState
-          icon={<Users size={20} strokeWidth={1.9} aria-hidden />}
-          title="Couldn't load patients"
-          text="This is a problem reaching the server, not an empty hospital."
-          actions={
-            <button className="mc-btn" onClick={() => patientsQuery.refetch()}>
-              Try again
-            </button>
-          }
-        />
-      </Card>
-    );
-  }
-
   return (
     <>
       <div className="mc-actions" style={{ justifyContent: "flex-end" }}>
@@ -228,7 +214,7 @@ function ClinicalOverviewTab() {
                   <Users size={17} strokeWidth={1.9} aria-hidden />
                 </span>
               </div>
-              <span className="mc-kpi-value">{patients.length}</span>
+              <span className="mc-kpi-value">{total ?? "—"}</span>
             </div>
             <div
               className="mc-kpi"
@@ -240,7 +226,7 @@ function ClinicalOverviewTab() {
                   <Users size={17} strokeWidth={1.9} aria-hidden />
                 </span>
               </div>
-              <span className="mc-kpi-value">{active}</span>
+              <span className="mc-kpi-value">{active ?? "—"}</span>
             </div>
             <div
               className="mc-kpi"
@@ -252,7 +238,7 @@ function ClinicalOverviewTab() {
                   <UserX size={17} strokeWidth={1.9} aria-hidden />
                 </span>
               </div>
-              <span className="mc-kpi-value">{inactive}</span>
+              <span className="mc-kpi-value">{inactive ?? "—"}</span>
             </div>
             <div
               className="mc-kpi"
@@ -264,7 +250,9 @@ function ClinicalOverviewTab() {
                   <UserPlus size={17} strokeWidth={1.9} aria-hidden />
                 </span>
               </div>
-              <span className="mc-kpi-value">{newThisMonth}</span>
+              <span className="mc-kpi-value">
+                {rowsReady ? newThisMonth : "—"}
+              </span>
             </div>
             <div
               className="mc-kpi"
@@ -280,37 +268,57 @@ function ClinicalOverviewTab() {
             </div>
           </section>
 
-          <div className="mc-grid-even">
-            <Card>
-              <CardHeader>
-                <div className="mc-card-title">Enrollment trend</div>
-                <div className="mc-card-sub">Last 6 months</div>
-              </CardHeader>
-              <CardBody>
-                {patients.length === 0 ? (
-                  <p className="mc-hint">No patients enrolled yet.</p>
-                ) : (
-                  <EnrollmentTrendChart data={trend} />
-                )}
-              </CardBody>
-            </Card>
+          {patientsQuery.isPending ? (
+            <div className="mc-rows">
+              <RowSkeleton count={4} variant="plain" />
+            </div>
+          ) : patientsQuery.isError ? (
+            <EmptyState
+              icon={<Users size={20} strokeWidth={1.9} aria-hidden />}
+              title="Couldn't load the patient breakdown"
+              text="This is a problem reaching the server, not an empty hospital."
+              actions={
+                <button
+                  className="mc-btn"
+                  onClick={() => patientsQuery.refetch()}
+                >
+                  Try again
+                </button>
+              }
+            />
+          ) : (
+            <div className="mc-grid-even">
+              <Card>
+                <CardHeader>
+                  <div className="mc-card-title">Enrollment trend</div>
+                  <div className="mc-card-sub">Last 6 months</div>
+                </CardHeader>
+                <CardBody>
+                  {patients.length === 0 ? (
+                    <p className="mc-hint">No patients enrolled yet.</p>
+                  ) : (
+                    <EnrollmentTrendChart data={trend} />
+                  )}
+                </CardBody>
+              </Card>
 
-            <Card>
-              <CardHeader>
-                <div className="mc-card-title">Pregnancy status</div>
-                <div className="mc-card-sub">
-                  Every enrolled patient, by outcome
-                </div>
-              </CardHeader>
-              <CardBody>
-                <StatusDonut
-                  slices={statusSlices}
-                  centerLabel="patients"
-                  emptyText="No patients enrolled yet."
-                />
-              </CardBody>
-            </Card>
-          </div>
+              <Card>
+                <CardHeader>
+                  <div className="mc-card-title">Pregnancy status</div>
+                  <div className="mc-card-sub">
+                    Every enrolled patient, by outcome
+                  </div>
+                </CardHeader>
+                <CardBody>
+                  <StatusDonut
+                    slices={statusSlices}
+                    centerLabel="patients"
+                    emptyText="No patients enrolled yet."
+                  />
+                </CardBody>
+              </Card>
+            </div>
+          )}
         </CardBody>
       </Card>
 
