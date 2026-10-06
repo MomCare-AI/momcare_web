@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Search, SlidersHorizontal, Users } from "lucide-react";
+import { Search, SlidersHorizontal, UserPlus, Users } from "lucide-react";
 
 import { relativeTime } from "@/shared/lib/relativeTime";
 import { RiskBadge } from "@/features/monitoring/components/RiskBadge";
@@ -146,9 +146,13 @@ function matchesRule(patient: PatientListItem, rule: FilterRule): boolean {
 export function PatientsTable({
   patients,
   initialSearch = "",
+  canEnrol = false,
 }: {
   patients: PatientListItem[];
   initialSearch?: string;
+  /** Shows "Enrol patient" beside Advance Filters. Passed only for roles
+   *  that may enrol; the server still decides on submit. */
+  canEnrol?: boolean;
 }) {
   const router = useRouter();
   const [search, setSearch] = useState(initialSearch);
@@ -195,17 +199,25 @@ export function PatientsTable({
             aria-label="Search patients"
           />
         </div>
-        <button
-          type="button"
-          className="mc-btn-ghost mc-btn-sm"
-          onClick={() => setShowFilterModal(true)}
-        >
-          <SlidersHorizontal size={13} strokeWidth={2} aria-hidden />
-          Advance Filters
-          {filters.length > 0 && (
-            <span className="mc-tab-count">{filters.length}</span>
+        <div className="mc-actions">
+          <button
+            type="button"
+            className="mc-btn-ghost mc-btn-sm"
+            onClick={() => setShowFilterModal(true)}
+          >
+            <SlidersHorizontal size={13} strokeWidth={2} aria-hidden />
+            Advance Filters
+            {filters.length > 0 && (
+              <span className="mc-tab-count">{filters.length}</span>
+            )}
+          </button>
+          {canEnrol && (
+            <Link href="/dashboard/patients/new" className="mc-btn mc-btn-sm">
+              <UserPlus size={13} strokeWidth={2} aria-hidden />
+              Enrol patient
+            </Link>
           )}
-        </button>
+        </div>
       </div>
 
       {rows.length === 0 ? (

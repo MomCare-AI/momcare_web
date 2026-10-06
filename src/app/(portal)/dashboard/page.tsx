@@ -157,10 +157,6 @@ export default function OverviewPage() {
 
       {isHospitalAdmin && (
         <div className="mc-actions">
-          <Link href="/dashboard/patients/new" className="mc-btn">
-            <UserPlus size={15} strokeWidth={2} aria-hidden />
-            Enrol patient
-          </Link>
           <span className="mc-badge mc-badge-neutral">
             <Info size={12} strokeWidth={2.2} aria-hidden />
             Vitals, risk scoring and alert escalation are all live
@@ -224,6 +220,7 @@ export default function OverviewPage() {
               <PatientsTable
                 patients={listPatients}
                 initialSearch={initialSearch}
+                canEnrol={isHospitalAdmin}
               />
             )}
           </Card>
