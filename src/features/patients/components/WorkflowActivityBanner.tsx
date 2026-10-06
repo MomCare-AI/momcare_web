@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
 import {
@@ -110,12 +110,56 @@ function SectionHeader({
   const scrollBy = (delta: number) =>
     rowRef.current?.scrollBy({ left: delta, behavior: "smooth" });
 
+  // The arrows exist to reach tiles that don't fit. While every tile is
+  // visible there is nothing to scroll, so they stay out of the way and only
+  // appear once the row overflows (a narrower window, or wider tiles).
+  const [scroll, setScroll] = useState({
+    overflows: false,
+    atStart: true,
+    atEnd: true,
+  });
+
+  useEffect(() => {
+    const row = rowRef.current;
+    if (!row || typeof ResizeObserver === "undefined") return;
+
+    const measure = () => {
+      const overflows = row.scrollWidth - row.clientWidth > 1;
+      const next = {
+        overflows,
+        atStart: row.scrollLeft <= 1,
+        atEnd: row.scrollLeft + row.clientWidth >= row.scrollWidth - 1,
+      };
+      setScroll((prev) =>
+        prev.overflows === next.overflows &&
+        prev.atStart === next.atStart &&
+        prev.atEnd === next.atEnd
+          ? prev
+          : next
+      );
+    };
+
+    // Watch the row and every tile in it: a tile's number loading in can
+    // widen it without the row itself changing size.
+    const observer = new ResizeObserver(measure);
+    observer.observe(row);
+    for (const child of Array.from(row.children)) observer.observe(child);
+    row.addEventListener("scroll", measure, { passive: true });
+    return () => {
+      observer.disconnect();
+      row.removeEventListener("scroll", measure);
+    };
+  }, [rowRef]);
+
   return (
     <div
       style={{
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
+        // Same height with or without the arrows, so the tiles below never
+        // jump when they appear.
+        minHeight: 22,
         marginBottom: 10,
       }}
     >
@@ -130,11 +174,17 @@ function SectionHeader({
       >
         {children}
       </div>
-      <div style={{ display: "flex", gap: 4 }}>
+      <div
+        style={{
+          display: scroll.overflows ? "flex" : "none",
+          gap: 4,
+        }}
+      >
         <button
           type="button"
           aria-label="Scroll left"
           className="mc-kpi-scroll-btn"
+          disabled={scroll.atStart}
           onClick={() => scrollBy(-SCROLL_STEP)}
         >
           <ChevronLeft size={13} strokeWidth={2.2} aria-hidden />
@@ -143,6 +193,7 @@ function SectionHeader({
           type="button"
           aria-label="Scroll right"
           className="mc-kpi-scroll-btn"
+          disabled={scroll.atEnd}
           onClick={() => scrollBy(SCROLL_STEP)}
         >
           <ChevronRight size={13} strokeWidth={2.2} aria-hidden />

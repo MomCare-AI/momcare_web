@@ -3269,7 +3269,11 @@ a.mc-kpi:hover,
   cursor: pointer;
   flex-shrink: 0;
 }
-.mc-kpi-scroll-btn:hover {
+.mc-kpi-scroll-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.mc-kpi-scroll-btn:hover:not(:disabled) {
   background: var(--c-teal-wash);
   color: var(--c-teal);
   border-color: var(--c-teal);
