@@ -1188,6 +1188,18 @@ a.mc-kpi:hover {
 .mc-badge svg {
   flex: none;
 }
+/* The two risk badges stacked in each patient-list row: compact, so the
+   column stays narrow and the rows short. */
+.mc-dtable .mc-risk-cell .mc-badge {
+  gap: 3px;
+  padding: 1px 7px;
+  font-size: 10.5px;
+  line-height: 1.5;
+}
+.mc-dtable .mc-risk-cell .mc-badge svg {
+  width: 10px;
+  height: 10px;
+}
 /* Smaller inside the dense table — matches the tightened row/font density
    already applied to .mc-dtable elsewhere, so a Status pill doesn't dwarf
    the 12.5px row text next to it. */

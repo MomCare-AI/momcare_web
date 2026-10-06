@@ -136,9 +136,9 @@ describe("patient list formats", () => {
     expect(headers).not.toContain("Device");
     expect(screen.getByText("High")).toBeTruthy();
     // Latest and this month are both shown, each tagged.
-    expect(screen.getByText("Medium")).toBeTruthy();
-    expect(screen.getAllByText("Latest").length).toBe(2);
-    expect(screen.getAllByText("Not assessed").length).toBeGreaterThan(0);
+    expect(screen.getByText(/Medium · This month/)).toBeTruthy();
+    expect(screen.getAllByText(/· This month/).length).toBe(2);
+    expect(screen.getAllByText(/Not assessed/).length).toBeGreaterThan(0);
     expect(screen.queryByText("No pregnancy recorded")).toBeNull();
     expect(screen.queryByText("No active pregnancy")).toBeNull();
     expect(screen.getByText("Motion")).toBeTruthy();

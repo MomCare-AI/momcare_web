@@ -25,6 +25,9 @@ interface Props {
   level: RiskLevel | null;
   /** Marks an assessment no clinician has looked at yet. */
   unacknowledged?: boolean;
+  /** Says what the level refers to, inside the badge after it:
+   *  "15 min ago", "This month". */
+  suffix?: string;
 }
 
 /**
@@ -35,7 +38,7 @@ interface Props {
  * cannot be mistaken for "Stable", which is the one confusion that would let a
  * screen imply safety it has no measurement to support.
  */
-export function RiskBadge({ level, unacknowledged = false }: Props) {
+export function RiskBadge({ level, unacknowledged = false, suffix }: Props) {
   // An unrecognised level must still render — a badge that throws would take
   // the whole alerts page down rather than showing one odd row.
   const canonical = canonicalLevel(level);
@@ -47,7 +50,7 @@ export function RiskBadge({ level, unacknowledged = false }: Props) {
       title={level ? undefined : "No vitals recorded yet"}
     >
       <Icon size={12} strokeWidth={2.3} aria-hidden />
-      {riskLabel(level)}
+      {suffix ? `${riskLabel(level)} · ${suffix}` : riskLabel(level)}
       {unacknowledged && (
         <span className="mc-badge-dot" aria-label="Not yet reviewed" />
       )}

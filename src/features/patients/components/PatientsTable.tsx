@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Search, SlidersHorizontal, Users } from "lucide-react";
 
+import { relativeTime } from "@/shared/lib/relativeTime";
 import { RiskBadge } from "@/features/monitoring/components/RiskBadge";
 import { riskLabel } from "@/features/monitoring/types";
 import { EmptyState } from "@/shared/ui/EmptyState";
@@ -35,23 +36,25 @@ const PREGNANCY_STATUS_LABELS: Record<PregnancyStatus, string> = {
 /** Latest and this-month risk, stacked, each tagged so the two can't be mixed
  *  up. The monthly line is left out when the backend does not send it. */
 function RiskCell({ patient }: { patient: PatientListItem }) {
+  const latest = latestRisk(patient);
   const month = monthRisk(patient);
-  const tag = {
-    fontSize: 10.5,
-    color: "var(--c-faint)",
-    width: 52,
-    flex: "none",
-  } as const;
+  // How long ago the latest level was assessed. Left off when she has never
+  // been assessed, since there is nothing to date.
+  const ago =
+    latest && patient.risk_assessed_at
+      ? relativeTime(patient.risk_assessed_at)
+      : undefined;
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        <span style={tag}>Latest</span>
-        <RiskBadge level={latestRisk(patient)} />
+    <div
+      className="mc-risk-cell"
+      style={{ display: "flex", flexDirection: "column", gap: 3 }}
+    >
+      <div>
+        <RiskBadge level={latest} suffix={ago} />
       </div>
       {month !== undefined && (
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={tag}>This month</span>
-          <RiskBadge level={month} />
+        <div>
+          <RiskBadge level={month} suffix="This month" />
         </div>
       )}
     </div>
