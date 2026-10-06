@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Search, SlidersHorizontal, UserPlus, Users } from "lucide-react";
 
+import { saveQueue } from "../patientQueue";
 import { relativeTime } from "@/shared/lib/relativeTime";
 import { RiskBadge } from "@/features/monitoring/components/RiskBadge";
 import { riskLabel } from "@/features/monitoring/types";
@@ -257,6 +258,7 @@ export function PatientsTable({
                       // other cell, which has nothing clickable of its own.
                       if ((e.target as HTMLElement).closest("a, button"))
                         return;
+                      saveQueue(rows.map((r) => r.id));
                       router.push(`/dashboard/patients/${patient.id}`);
                     }}
                   >
@@ -264,6 +266,7 @@ export function PatientsTable({
                       <Link
                         href={`/dashboard/patients/${patient.id}`}
                         className="mc-dtable-primary"
+                        onClick={() => saveQueue(rows.map((r) => r.id))}
                         style={{ color: "inherit", textDecoration: "none" }}
                       >
                         {patient.full_name}

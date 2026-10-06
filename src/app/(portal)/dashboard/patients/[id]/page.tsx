@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { use, useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -31,6 +31,13 @@ import { PatientDetailSkeleton } from "@/features/patients/components/PatientDet
 import { PatientHeaderBanner } from "@/features/patients/components/PatientHeaderBanner";
 import { PatientOverviewSnapshot } from "@/features/patients/components/PatientOverviewSnapshot";
 import { RecentActivityCards } from "@/features/patients/components/RecentActivityCards";
+import { PatientQueueNav } from "@/features/patients/components/PatientQueueNav";
+import {
+  parseQueue,
+  queuePosition,
+  readQueueRaw,
+  subscribeQueue,
+} from "@/features/patients/patientQueue";
 import { BackButton } from "@/shared/ui/BackButton";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { usePortal } from "../../portal";
@@ -98,6 +105,12 @@ export default function PatientProfilePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
+  // Keyed by patient, so stepping to the next one starts clean: the live
+  // timer, the open tab and every form are those of the new patient.
+  return <PatientProfile key={id} id={id} />;
+}
+
+function PatientProfile({ id }: { id: string }) {
   const router = useRouter();
   const justEnrolled = useSearchParams().get("enrolled") === "1";
   const { isClinician, isHospitalAdmin } = usePortal();
@@ -109,6 +122,25 @@ export default function PatientProfilePage({
   const [timerSeconds, setTimerSeconds] = useState(0);
   const [timerRunning, setTimerRunning] = useState(true);
   const [showExitModal, setShowExitModal] = useState(false);
+  // Where the exit prompt is heading once it is done. Null means plain Back.
+  const [pendingPatientId, setPendingPatientId] = useState<string | null>(null);
+
+  // The list this record was opened from (set by the patient list on click).
+  const queueRaw = useSyncExternalStore(
+    subscribeQueue,
+    readQueueRaw,
+    () => null
+  );
+  const queue = queuePosition(parseQueue(queueRaw), id);
+
+  const goToPatient = (patientId: string) => {
+    if (timerSeconds > 0) {
+      setPendingPatientId(patientId);
+      setShowExitModal(true);
+      return;
+    }
+    router.replace(`/dashboard/patients/${patientId}`);
+  };
 
   const patientQuery = usePatient(id);
   const pregnancyQuery = usePregnancies(id);
@@ -148,26 +180,46 @@ export default function PatientProfilePage({
 
   return (
     <>
-      <div className="mc-head" style={{ marginBottom: 14 }}>
+      <div
+        className="mc-head"
+        style={{
+          marginBottom: 14,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+        }}
+      >
         <BackButton
           onBeforeBack={() => {
             if (timerSeconds > 0) {
+              setPendingPatientId(null);
               setShowExitModal(true);
               return false;
             }
           }}
         />
+        {queue && queue.total > 1 && (
+          <PatientQueueNav position={queue} onGo={goToPatient} />
+        )}
       </div>
 
       <ExitNoteModal
         patientId={patient.id}
         open={showExitModal}
         seconds={timerSeconds}
-        onCancel={() => setShowExitModal(false)}
+        onCancel={() => {
+          setShowExitModal(false);
+          setPendingPatientId(null);
+        }}
         onDone={() => {
           setTimerSeconds(0);
           setShowExitModal(false);
-          router.back();
+          if (pendingPatientId) {
+            router.replace(`/dashboard/patients/${pendingPatientId}`);
+          } else {
+            router.back();
+          }
         }}
       />
 
