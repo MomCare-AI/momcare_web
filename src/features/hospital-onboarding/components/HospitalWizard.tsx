@@ -30,7 +30,6 @@ const STEPS = [
 export default function HospitalWizard() {
   const [step, setStep] = useState(0);
   const [data, setData] = useState<WizardData>({});
-  const [logoFile, setLogoFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -80,11 +79,7 @@ export default function HospitalWizard() {
       {step === 1 && (
         <HwOrgStep1Identity
           defaultValues={data}
-          initialLogo={logoFile}
-          onSubmit={(d, logo) => {
-            setLogoFile(logo);
-            advance(d);
-          }}
+          onSubmit={(d) => advance(d)}
           onBack={back}
         />
       )}
