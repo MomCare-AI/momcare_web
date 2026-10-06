@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { breadcrumbJsonLd } from "@/core/config/jsonLd";
+import { JsonLd } from "@/shared/ui/JsonLd";
 
 import NgoWizard from "@/features/ngo-onboarding/components/NgoWizard";
 
@@ -10,5 +12,16 @@ export const metadata: Metadata = {
 };
 
 export default function RegisterNgoPage() {
-  return <NgoWizard />;
+  return (
+    <>
+      <JsonLd
+        data={breadcrumbJsonLd([
+          { name: "Home", path: "/" },
+          { name: "Register", path: "/register" },
+          { name: "Register your NGO", path: "/register/ngo" },
+        ])}
+      />
+      <NgoWizard />
+    </>
+  );
 }
