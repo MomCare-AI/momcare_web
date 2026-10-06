@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { LandingPageClient } from "./components/LandingPageClient";
 import { SITE_URL } from "@/core/config/siteUrl";
+import { faqJsonLd } from "@/core/config/jsonLd";
+import { FAQS } from "./components/faqData";
 
 // The root page shares its route segment with the root layout, so
 // layout.tsx's title.template does NOT apply here (Next.js only templates
@@ -72,6 +74,10 @@ export default function Page() {
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(softwareApplicationJsonLd),
         }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd(FAQS)) }}
       />
       <LandingPageClient />
     </>
