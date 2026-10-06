@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Bell, Check, ChevronRight, Clock, UserX } from "lucide-react";
 
+import { PortalContext } from "@/app/(portal)/dashboard/portal";
 import { RiskBadge } from "@/features/monitoring/components/RiskBadge";
 import { useAcknowledgeAlert, useAlerts } from "../hooks/useAlerts";
 import { raisedAgo, timeToEscalation, type Alert } from "../types";
@@ -23,6 +24,11 @@ export function AlertBell() {
 
   const alerts = useAlerts("live");
   const acknowledge = useAcknowledgeAlert();
+  // Only a clinician may acknowledge (the server refuses everyone else), so
+  // the button is only offered to one. Without a portal around it, fall back
+  // to offering it and let the server decide.
+  const portal = useContext(PortalContext);
+  const canAcknowledge = portal ? portal.isClinician : true;
 
   const rows = alerts.data?.results ?? [];
   const unanswered = alerts.data?.unacknowledged ?? 0;
@@ -99,6 +105,12 @@ export function AlertBell() {
                   key={alert.id}
                   alert={alert}
                   onAcknowledge={() => acknowledge.mutate(alert.id)}
+                  canAcknowledge={canAcknowledge}
+                  error={
+                    acknowledge.isError && acknowledge.variables === alert.id
+                      ? acknowledge.error.message
+                      : null
+                  }
                   acknowledging={
                     acknowledge.isPending && acknowledge.variables === alert.id
                   }
@@ -116,11 +128,16 @@ export function AlertBell() {
 function AlertRow({
   alert,
   onAcknowledge,
+  canAcknowledge,
+  error,
   acknowledging,
   onNavigate,
 }: {
   alert: Alert;
   onAcknowledge: () => void;
+  canAcknowledge: boolean;
+  /** Why the last acknowledge for this alert failed, if it did. */
+  error: string | null;
   acknowledging: boolean;
   onNavigate: () => void;
 }) {
@@ -166,15 +183,24 @@ function AlertRow({
           </span>
         ) : (
           <>
-            <button
-              type="button"
-              className="mc-btn mc-btn-sm"
-              onClick={onAcknowledge}
-              disabled={acknowledging}
-            >
-              <Check size={13} strokeWidth={2.2} aria-hidden />
-              {acknowledging ? "Recording…" : "Acknowledge"}
-            </button>
+            {canAcknowledge ? (
+              <button
+                type="button"
+                className="mc-btn mc-btn-sm"
+                onClick={onAcknowledge}
+                disabled={acknowledging}
+              >
+                <Check size={13} strokeWidth={2.2} aria-hidden />
+                {acknowledging ? "Recording…" : "Acknowledge"}
+              </button>
+            ) : (
+              <span
+                className="mc-bell-unassigned"
+                title="Stopping an alert's escalation is a clinical act, so it is left to a clinician."
+              >
+                Awaiting a clinician
+              </span>
+            )}
             {escalation && (
               <span
                 className={`mc-bell-clock${escalation.imminent ? " is-imminent" : ""}`}
@@ -194,6 +220,19 @@ function AlertRow({
           <ChevronRight size={12} strokeWidth={2.2} aria-hidden />
         </Link>
       </div>
+
+      {error && (
+        <p
+          role="alert"
+          style={{
+            margin: "8px 0 0",
+            fontSize: 12,
+            color: "var(--c-critical, #b3261e)",
+          }}
+        >
+          {error}
+        </p>
+      )}
     </li>
   );
 }
