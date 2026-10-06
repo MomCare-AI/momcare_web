@@ -51,6 +51,9 @@ const nextConfig: NextConfig = {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
   images: {
+    // Photos are re-encoded on first request: AVIF where the browser can,
+    // WebP otherwise, instead of the original PNG/JPG.
+    formats: ["image/avif", "image/webp"],
     // Staff/organization photos are uploaded to the Django backend and
     // served from its own host - next/image refuses an unlisted remote
     // host outright, so both environments need to be named here.
