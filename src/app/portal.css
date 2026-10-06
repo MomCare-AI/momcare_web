@@ -168,7 +168,7 @@ body::-webkit-scrollbar-thumb:hover {
   align-self: flex-start;
   height: 100vh;
   flex: none;
-  width: 236px;
+  width: 208px;
   display: flex;
   flex-direction: column;
   background: var(--sb-bg);
