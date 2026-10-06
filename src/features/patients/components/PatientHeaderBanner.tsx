@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import {
   Calendar,
+  Home,
   MapPin,
   Pause,
   Pencil,
@@ -18,6 +19,7 @@ import {
 import { InitialsAvatar } from "@/shared/ui/InitialsAvatar";
 import { pregnancyTone, type PatientDetail, type Pregnancy } from "../types";
 import { usePatientStatuses } from "../hooks/usePatients";
+import { EditAddressModal, formatAddress } from "./EditAddressModal";
 import { EditStatusesModal } from "./EditStatusesModal";
 import { LogSessionModal } from "./LogSessionModal";
 import { PatientStatusPills } from "./PatientStatusPills";
@@ -61,6 +63,8 @@ interface Props {
    *  member may assign statuses; what they may remove is limited inside the
    *  popup itself. */
   canEditStatuses?: boolean;
+  /** Shows the pencil that opens the address editor. */
+  canEditAddress?: boolean;
 }
 
 /**
@@ -83,6 +87,7 @@ export function PatientHeaderBanner({
   running,
   setRunning,
   canEditStatuses = false,
+  canEditAddress = false,
 }: Props) {
   const [showLogModal, setShowLogModal] = useState(false);
   const [editingStatuses, setEditingStatuses] = useState(false);
@@ -120,6 +125,8 @@ export function PatientHeaderBanner({
   }, []);
 
   const age = ageFromDob(patient.date_of_birth);
+  const address = formatAddress(patient);
+  const [editingAddress, setEditingAddress] = useState(false);
   const careTeam = [
     current?.provider_name && `Provider: ${current.provider_name}`,
     current?.care_manager_name && `Care Manager: ${current.care_manager_name}`,
@@ -290,6 +297,38 @@ export function PatientHeaderBanner({
                         {patient.location_name}
                       </span>
                     )}
+                    {(address || canEditAddress) && (
+                      <span
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 4,
+                        }}
+                      >
+                        <Home size={11} strokeWidth={2} aria-hidden />
+                        {address ?? "No address on file"}
+                        {canEditAddress && (
+                          <button
+                            type="button"
+                            aria-label={
+                              address ? "Edit address" : "Add address"
+                            }
+                            title={address ? "Edit address" : "Add address"}
+                            onClick={() => setEditingAddress(true)}
+                            style={{
+                              display: "inline-flex",
+                              padding: 2,
+                              border: "none",
+                              background: "none",
+                              color: "var(--c-teal)",
+                              cursor: "pointer",
+                            }}
+                          >
+                            <Pencil size={11} strokeWidth={2} aria-hidden />
+                          </button>
+                        )}
+                      </span>
+                    )}
                     <span>
                       Enrolled{" "}
                       {new Date(patient.created_at).toLocaleDateString()}
@@ -366,6 +405,14 @@ export function PatientHeaderBanner({
           </button>
         </div>
       </div>
+
+      {canEditAddress && (
+        <EditAddressModal
+          open={editingAddress}
+          onClose={() => setEditingAddress(false)}
+          patient={patient}
+        />
+      )}
 
       <EditStatusesModal
         open={editingStatuses}

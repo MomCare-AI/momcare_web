@@ -252,6 +252,7 @@ function PatientProfile({ id }: { id: string }) {
           running={timerRunning}
           setRunning={setTimerRunning}
           canEditStatuses={canManageCareTeam}
+          canEditAddress={canManageCareTeam}
         />
 
         <div className="mc-subnav">

@@ -158,6 +158,14 @@ export interface PatientDetail {
   emergency_contact_phone: string;
   emergency_contact_relation: string;
   emergency_contact_email: string;
+  /** Postal address, required at enrolment. Optional here so the page still
+   *  works against a backend that predates it. */
+  address_line1?: string;
+  address_line2?: string;
+  city?: string;
+  state?: string;
+  postal_code?: string;
+  country?: string;
   has_app_account: boolean;
   location_name: string;
   current_pregnancy: Pregnancy | null;
@@ -175,6 +183,12 @@ export interface PatientDetail {
  *  patient-edit form is a separate, unscoped feature. */
 export interface PatientUpdateInput {
   secondary_provider?: string | null;
+  address_line1?: string;
+  address_line2?: string;
+  city?: string;
+  state?: string;
+  postal_code?: string;
+  country?: string;
 }
 
 export interface Paginated<T> {
