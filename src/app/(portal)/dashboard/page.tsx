@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AlertCircle, Info, Stethoscope, UserPlus, Users } from "lucide-react";
+import { AlertCircle, Stethoscope, UserPlus, Users } from "lucide-react";
 import { useLocationScope } from "@/features/locations/LocationScopeContext";
 import { SessionExpiredError } from "@/core/api/authFetch";
 import { useJoinRequests } from "@/features/join-requests/hooks/useJoinRequests";
@@ -154,15 +154,6 @@ export default function OverviewPage() {
         activeWorkflowFilter={workflowFilter}
         activeCareActivityFilter={careActivityFilter}
       />
-
-      {isHospitalAdmin && (
-        <div className="mc-actions">
-          <span className="mc-badge mc-badge-neutral">
-            <Info size={12} strokeWidth={2.2} aria-hidden />
-            Vitals, risk scoring and alert escalation are all live
-          </span>
-        </div>
-      )}
 
       {listTab === "requests" ? (
         <Card style={{ marginBottom: 18 }}>
