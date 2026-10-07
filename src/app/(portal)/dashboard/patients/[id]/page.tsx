@@ -76,6 +76,11 @@ const PatientDocumentsPanel = dynamic(() =>
   )
 );
 
+const CarePlanPanel = dynamic(() =>
+  import("@/features/care-plans/components/CarePlanPanel").then(
+    (m) => m.CarePlanPanel
+  )
+);
 const RiskPanel = dynamic(() =>
   import("@/features/monitoring/components/RiskPanel").then((m) => m.RiskPanel)
 );
@@ -84,6 +89,7 @@ type Tab =
   | "overview"
   | "readings"
   | "risk"
+  | "careplan"
   | "notes"
   | "devices"
   | "documents"
@@ -93,6 +99,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "overview", label: "Overview" },
   { id: "readings", label: "Readings" },
   { id: "risk", label: "Risk" },
+  { id: "careplan", label: "Care Plan" },
   { id: "notes", label: "Clinical Notes" },
   { id: "devices", label: "Devices" },
   { id: "documents", label: "Documents" },
@@ -315,6 +322,18 @@ function PatientProfile({ id }: { id: string }) {
             <EmptyState
               title="No active pregnancy"
               text="Risk is assessed from readings on an active pregnancy."
+            />
+          </div>
+        ))}
+
+      {tab === "careplan" &&
+        (current ? (
+          <CarePlanPanel pregnancyId={current.id} />
+        ) : (
+          <div className="mc-card">
+            <EmptyState
+              title="No active pregnancy"
+              text="A care plan is written for a pregnancy, from her readings."
             />
           </div>
         ))}

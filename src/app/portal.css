@@ -3551,3 +3551,67 @@ a.mc-kpi:hover,
 .mc-dtable-detail-inner {
   padding: 16px 20px 20px;
 }
+
+/* Tinted headers for the weekly care-plan cards. */
+.mc-card-head-nutrition,
+.mc-card-head-exercise,
+.mc-card-head-recap {
+  border-radius: var(--r-card) var(--r-card) 0 0;
+}
+.mc-card-head-nutrition {
+  background: linear-gradient(120deg, var(--c-stable-soft) 0%, #d3eee2 100%);
+  border-bottom-color: var(--c-stable-border);
+}
+.mc-card-head-nutrition .mc-card-title,
+.mc-card-head-nutrition .mc-card-sub {
+  color: var(--c-stable-text);
+}
+.mc-card-head-exercise {
+  background: linear-gradient(120deg, var(--c-teal-wash) 0%, #d2e9fb 100%);
+  border-bottom-color: #cdd8f7;
+}
+.mc-card-head-exercise .mc-card-title,
+.mc-card-head-exercise .mc-card-sub {
+  color: #2f48b5;
+}
+.mc-card-head-recap {
+  background: linear-gradient(120deg, var(--c-moderate-soft) 0%, #fde6d0 100%);
+  border-bottom-color: var(--c-moderate-border);
+}
+.mc-card-head-recap .mc-card-title,
+.mc-card-head-recap .mc-card-sub {
+  color: var(--c-moderate-text);
+}
+
+/* The care plan's month card and tabs stick under the patient header (its
+   `top` is set from script, as the patient header changes size). Same
+   fixed-height-wrapper trick as above so collapsing never moves the plan. */
+.mc-careplan-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  pointer-events: none;
+}
+.mc-careplan-sticky-inner {
+  pointer-events: auto;
+  background: var(--c-ground);
+  padding: 8px 0 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* A small spinning icon for "preparing" states. */
+@keyframes mc-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.mc-spin {
+  animation: mc-spin 1s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mc-spin {
+    animation: none;
+  }
+}
