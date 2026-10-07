@@ -86,9 +86,17 @@ export function CarePlanStickyHeader({
   useEffect(() => {
     const el = innerRef.current;
     if (!el || typeof ResizeObserver === "undefined") return;
+    // It only grows while the card is opening or closing; once it has been
+    // still for a moment the exact height is taken, so a card that has got
+    // shorter does not leave a blank strip behind.
+    let settle: ReturnType<typeof setTimeout> | undefined;
     const observer = new ResizeObserver(() => {
       if (collapsedRef.current) return;
       setFullHeight((prev) => Math.max(prev ?? 0, el.offsetHeight));
+      clearTimeout(settle);
+      settle = setTimeout(() => {
+        if (!collapsedRef.current) setFullHeight(el.offsetHeight);
+      }, 400);
     });
     observer.observe(el);
     const onResize = () => {
@@ -96,6 +104,7 @@ export function CarePlanStickyHeader({
     };
     window.addEventListener("resize", onResize);
     return () => {
+      clearTimeout(settle);
       observer.disconnect();
       window.removeEventListener("resize", onResize);
     };
