@@ -246,8 +246,8 @@ function SearchResultRow({
     <motion.div
       className="mc-card"
       style={{
-        padding: "8px 10px",
-        marginBottom: 6,
+        padding: "14px 16px",
+        marginBottom: 10,
         border: "1px solid var(--c-border-soft)",
       }}
       initial={{ opacity: 0, y: 6 }}
@@ -365,7 +365,12 @@ function TruncatedNoteText({ text }: { text: string }) {
   return (
     <p
       className="mc-pair-value"
-      style={{ marginTop: 4, fontSize: 13.5, whiteSpace: "pre-wrap" }}
+      style={{
+        marginTop: 2,
+        fontSize: 14,
+        lineHeight: 1.5,
+        whiteSpace: "pre-wrap",
+      }}
     >
       {expanded || !long ? text : `${text.slice(0, NOTE_TRUNCATE_LENGTH)}…`}
       {long && (
@@ -413,8 +418,8 @@ function TimelineRow({
     <motion.div
       className="mc-card"
       style={{
-        padding: "8px 10px",
-        marginBottom: 6,
+        padding: "14px 16px",
+        marginBottom: 10,
         border: "1px solid var(--c-border-soft)",
       }}
       initial={{ opacity: 0, y: 6 }}
@@ -431,9 +436,9 @@ function TimelineRow({
         <div
           style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}
         >
-          <InitialsAvatar name={person || "?"} size={26} />
+          <InitialsAvatar name={person || "?"} size={34} />
           <div style={{ minWidth: 0 }}>
-            <div className="mc-row-title" style={{ fontSize: 13.5 }}>
+            <div className="mc-row-title" style={{ fontSize: 14 }}>
               {person}
             </div>
             <div
@@ -480,44 +485,47 @@ function TimelineRow({
                 {formatDuration(session.duration_seconds)}
               </span>
             ))}
+          {rowCanEdit && (
+            <ActionMenu label="Entry actions">
+              {note && (
+                <ActionMenuItem
+                  icon={<Pencil size={13} strokeWidth={2} aria-hidden />}
+                  label="Edit"
+                  onClick={() => setShowNoteEdit(true)}
+                />
+              )}
+              <ActionMenuItem
+                icon={<Trash2 size={13} strokeWidth={2} aria-hidden />}
+                label="Delete"
+                danger
+                onClick={() => setShowDelete(true)}
+              />
+            </ActionMenu>
+          )}
         </div>
       </div>
 
-      {note && (
-        <>
-          <TruncatedNoteText text={note.note} />
-          {(note.left_voicemail || note.two_way_communication) && (
-            <span
-              className="mc-badge mc-badge-info"
-              style={{ marginTop: 4, display: "inline-flex" }}
-            >
-              {note.left_voicemail ? "Left voicemail" : "Reached her"}
-            </span>
-          )}
-        </>
-      )}
-
-      {rowCanEdit && (
-        <div
-          style={{ display: "flex", justifyContent: "flex-end", marginTop: 4 }}
-        >
-          <ActionMenu label="Entry actions">
-            {note && (
-              <ActionMenuItem
-                icon={<Pencil size={13} strokeWidth={2} aria-hidden />}
-                label="Edit"
-                onClick={() => setShowNoteEdit(true)}
-              />
+      {/* The body lines up under the name, not under the avatar. */}
+      <div style={{ marginLeft: 44 }}>
+        {!note && (
+          <p className="mc-hint" style={{ margin: "4px 0 0" }}>
+            Contact logged, no note written.
+          </p>
+        )}
+        {note && (
+          <>
+            <TruncatedNoteText text={note.note} />
+            {(note.left_voicemail || note.two_way_communication) && (
+              <span
+                className="mc-badge mc-badge-info"
+                style={{ marginTop: 4, display: "inline-flex" }}
+              >
+                {note.left_voicemail ? "Left voicemail" : "Reached her"}
+              </span>
             )}
-            <ActionMenuItem
-              icon={<Trash2 size={13} strokeWidth={2} aria-hidden />}
-              label="Delete"
-              danger
-              onClick={() => setShowDelete(true)}
-            />
-          </ActionMenu>
-        </div>
-      )}
+          </>
+        )}
+      </div>
 
       {session && (
         <SessionEditModal

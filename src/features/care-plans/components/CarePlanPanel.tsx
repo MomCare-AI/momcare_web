@@ -449,6 +449,7 @@ function CarePlanView({
           title="Medication (from your provider)"
           subtitle="Written only by doctors — the AI never writes medicines."
           emptyText="No medication has been added."
+          placeholder="Write the medicine, dose and how often…"
           entries={plan.medications}
           canWrite={canWriteMedications}
           editable={editable}
@@ -482,6 +483,7 @@ function CarePlanView({
         <CarePlanEntries
           title="Notes from your care team"
           emptyText="No notes yet."
+          placeholder="Write a note for the care team…"
           entries={plan.notes}
           canWrite
           editable={editable}
