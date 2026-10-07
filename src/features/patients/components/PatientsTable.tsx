@@ -148,13 +148,18 @@ export function PatientsTable({
   patients,
   initialSearch = "",
   canEnrol = false,
+  openTab,
 }: {
   patients: PatientListItem[];
   initialSearch?: string;
   /** Shows "Enrol patient" beside Advance Filters. Passed only for roles
    *  that may enrol; the server still decides on submit. */
   canEnrol?: boolean;
+  /** Opens each patient's page on this tab (e.g. "careplan"). */
+  openTab?: string;
 }) {
+  const patientHref = (id: string) =>
+    `/dashboard/patients/${id}${openTab ? `?tab=${openTab}` : ""}`;
   const router = useRouter();
   const [search, setSearch] = useState(initialSearch);
   const [filters, setFilters] = useState<FilterRule[]>([]);
@@ -259,12 +264,12 @@ export function PatientsTable({
                       if ((e.target as HTMLElement).closest("a, button"))
                         return;
                       saveQueue(rows.map((r) => r.id));
-                      router.push(`/dashboard/patients/${patient.id}`);
+                      router.push(patientHref(patient.id));
                     }}
                   >
                     <td>
                       <Link
-                        href={`/dashboard/patients/${patient.id}`}
+                        href={patientHref(patient.id)}
                         className="mc-dtable-primary"
                         onClick={() => saveQueue(rows.map((r) => r.id))}
                         style={{ color: "inherit", textDecoration: "none" }}

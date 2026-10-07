@@ -27,6 +27,13 @@ import { usePageTitle } from "@/hooks/usePageTitle";
 const WORKFLOW_FILTER_LABELS: Record<PatientWorkflowFilter, string> = {
   risk_review: "Risk Review",
   low_confidence: "Low Confidence",
+  care_plan_review: "Plans to review",
+  care_plan_missing: "Care plans missing",
+};
+/** The empty-list headline for a workflow, worded for what it means. */
+const WORKFLOW_EMPTY_TITLES: Partial<Record<PatientWorkflowFilter, string>> = {
+  care_plan_review: "No care plans are waiting for review",
+  care_plan_missing: "No patient is missing a care plan",
 };
 const CARE_ACTIVITY_FILTER_LABELS: Record<PatientCareActivityFilter, string> = {
   monitoring_follow_up: "Monitoring Follow-up",
@@ -37,7 +44,12 @@ const CARE_ACTIVITY_FILTER_LABELS: Record<PatientCareActivityFilter, string> = {
 function isWorkflowFilter(
   value: string | null
 ): value is PatientWorkflowFilter {
-  return value === "risk_review" || value === "low_confidence";
+  return (
+    value === "risk_review" ||
+    value === "low_confidence" ||
+    value === "care_plan_review" ||
+    value === "care_plan_missing"
+  );
 }
 function isCareActivityFilter(
   value: string | null
@@ -183,11 +195,13 @@ export default function OverviewPage() {
                 <EmptyState
                   icon={<Users size={20} strokeWidth={1.9} aria-hidden />}
                   title={
-                    activeFilterLabel
-                      ? `No patients need ${activeFilterLabel.toLowerCase()}`
-                      : scopedToLocation
-                        ? "No patients at this location"
-                        : "No patients enrolled yet"
+                    workflowFilter && WORKFLOW_EMPTY_TITLES[workflowFilter]
+                      ? WORKFLOW_EMPTY_TITLES[workflowFilter]
+                      : activeFilterLabel
+                        ? `No patients need ${activeFilterLabel.toLowerCase()}`
+                        : scopedToLocation
+                          ? "No patients at this location"
+                          : "No patients enrolled yet"
                   }
                   text={
                     activeFilterLabel
@@ -212,6 +226,13 @@ export default function OverviewPage() {
                 patients={listPatients}
                 initialSearch={initialSearch}
                 canEnrol={isHospitalAdmin}
+                // A row from a care-plan list opens on that patient's Care
+                // Plan, since that is why she is on the list.
+                openTab={
+                  workflowFilter?.startsWith("care_plan")
+                    ? "careplan"
+                    : undefined
+                }
               />
             )}
           </Card>

@@ -283,7 +283,8 @@ export interface AISummary {
  *  `?care_activity=` values on `GET /api/patients/` — the same filter the
  *  dashboard-kpis counts are computed with, so a number on a tile can
  *  never disagree with the list you get by following it. */
-export type PatientWorkflowFilter = "risk_review" | "low_confidence";
+export type PatientWorkflowFilter =
+  "risk_review" | "low_confidence" | "care_plan_review" | "care_plan_missing";
 export type PatientCareActivityFilter =
   "monitoring_follow_up" | "unseen_readings" | "reading_reminder";
 
@@ -295,6 +296,11 @@ export interface DashboardKpis {
   workflow: {
     risk_review: number;
     low_confidence: number;
+    /** Plans in progress at medium or high risk, waiting for a doctor. Absent
+     *  on a backend that predates care plans. */
+    care_plan_review?: number;
+    /** Active pregnancies with no plan for this week. */
+    care_plan_missing?: number;
   };
   care_activities: {
     monitoring_follow_up: number;

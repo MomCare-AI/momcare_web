@@ -8,6 +8,8 @@ import {
   Bell,
   ChevronLeft,
   ChevronRight,
+  ClipboardCheck,
+  ClipboardX,
   Eye,
   Gauge,
   Timer,
@@ -341,6 +343,36 @@ export function WorkflowActivityBanner({
                   value={workflow?.low_confidence}
                   icon={<Gauge size={16} strokeWidth={1.9} aria-hidden />}
                   selected={activeWorkflowFilter === "low_confidence"}
+                />
+              </Link>
+
+              <Link
+                href="/dashboard?workflow=care_plan_review"
+                className={tileClassName(
+                  activeWorkflowFilter === "care_plan_review"
+                )}
+              >
+                <TileContent
+                  label="Plans to review"
+                  value={workflow?.care_plan_review}
+                  icon={
+                    <ClipboardCheck size={16} strokeWidth={1.9} aria-hidden />
+                  }
+                  selected={activeWorkflowFilter === "care_plan_review"}
+                />
+              </Link>
+
+              <Link
+                href="/dashboard?workflow=care_plan_missing"
+                className={tileClassName(
+                  activeWorkflowFilter === "care_plan_missing"
+                )}
+              >
+                <TileContent
+                  label="Care plans missing"
+                  value={workflow?.care_plan_missing}
+                  icon={<ClipboardX size={16} strokeWidth={1.9} aria-hidden />}
+                  selected={activeWorkflowFilter === "care_plan_missing"}
                 />
               </Link>
 

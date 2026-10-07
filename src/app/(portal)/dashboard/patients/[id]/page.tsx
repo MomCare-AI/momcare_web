@@ -119,10 +119,15 @@ export default function PatientProfilePage({
 
 function PatientProfile({ id }: { id: string }) {
   const router = useRouter();
-  const justEnrolled = useSearchParams().get("enrolled") === "1";
+  const searchParams = useSearchParams();
+  const justEnrolled = searchParams.get("enrolled") === "1";
+  const requestedTab = searchParams.get("tab");
   const { isClinician, isHospitalAdmin } = usePortal();
 
-  const [tab, setTab] = useState<Tab>("overview");
+  // A link can open the page on a given tab (the care-plan lists do).
+  const [tab, setTab] = useState<Tab>(
+    TABS.some((t) => t.id === requestedTab) ? (requestedTab as Tab) : "overview"
+  );
   // The header's live "time on this patient" timer, lifted up here so the
   // Back button can prompt to log it before navigating away instead of
   // silently losing unsaved time.
