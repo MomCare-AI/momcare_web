@@ -29,6 +29,7 @@ import { formatDate } from "@/shared/lib/formatDateTime";
 import { ExitNoteModal } from "@/features/patients/components/ExitNoteModal";
 import { PatientDetailSkeleton } from "@/features/patients/components/PatientDetailSkeleton";
 import { PatientHeaderBanner } from "@/features/patients/components/PatientHeaderBanner";
+import { PatientStickyHeader } from "@/features/patients/components/PatientStickyHeader";
 import { PatientOverviewSnapshot } from "@/features/patients/components/PatientOverviewSnapshot";
 import { RecentActivityCards } from "@/features/patients/components/RecentActivityCards";
 import { PatientQueueNav } from "@/features/patients/components/PatientQueueNav";
@@ -255,35 +256,40 @@ function PatientProfile({ id }: { id: string }) {
         </p>
       )}
 
-      <div className="mc-patient-sticky-head">
-        <PatientHeaderBanner
-          patient={patient}
-          current={current}
-          seconds={timerSeconds}
-          setSeconds={setTimerSeconds}
-          running={timerRunning}
-          setRunning={setTimerRunning}
-          canEditStatuses={canManageCareTeam}
-          canEditAddress={canManageCareTeam}
-        />
+      <PatientStickyHeader>
+        {(collapsed) => (
+          <>
+            <PatientHeaderBanner
+              patient={patient}
+              current={current}
+              seconds={timerSeconds}
+              setSeconds={setTimerSeconds}
+              running={timerRunning}
+              setRunning={setTimerRunning}
+              canEditStatuses={canManageCareTeam}
+              canEditAddress={canManageCareTeam}
+              scrolled={collapsed}
+            />
 
-        <div className="mc-subnav">
-          <nav className="mc-subnav-tabs" aria-label="Patient sections">
-            {TABS.map((t) => (
-              <button
-                key={t.id}
-                className="mc-subnav-tab"
-                aria-current={tab === t.id ? "page" : undefined}
-                onClick={() => setTab(t.id)}
-              >
-                {t.label}
-              </button>
-            ))}
-          </nav>
+            <div className="mc-subnav">
+              <nav className="mc-subnav-tabs" aria-label="Patient sections">
+                {TABS.map((t) => (
+                  <button
+                    key={t.id}
+                    className="mc-subnav-tab"
+                    aria-current={tab === t.id ? "page" : undefined}
+                    onClick={() => setTab(t.id)}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </nav>
 
-          <div className="mc-subnav-aside" />
-        </div>
-      </div>
+              <div className="mc-subnav-aside" />
+            </div>
+          </>
+        )}
+      </PatientStickyHeader>
 
       {tab === "overview" && (
         <>

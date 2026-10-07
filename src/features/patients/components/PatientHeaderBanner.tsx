@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { AnimatePresence, motion } from "motion/react";
 import {
   Calendar,
   Home,
@@ -65,6 +64,8 @@ interface Props {
   canEditStatuses?: boolean;
   /** Shows the pencil that opens the address editor. */
   canEditAddress?: boolean;
+  /** True once the page is scrolled well down: the detail rows fold away. */
+  scrolled?: boolean;
 }
 
 /**
@@ -88,6 +89,7 @@ export function PatientHeaderBanner({
   setRunning,
   canEditStatuses = false,
   canEditAddress = false,
+  scrolled = false,
 }: Props) {
   const [showLogModal, setShowLogModal] = useState(false);
   const [editingStatuses, setEditingStatuses] = useState(false);
@@ -101,28 +103,6 @@ export function PatientHeaderBanner({
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, [running, setSeconds]);
-
-  // Matches the reference platform's own scrolled-header behaviour: the
-  // secondary detail row (everything but name/phone/DOB) collapses away
-  // once this sticky banner has scrolled under the main nav, so the stuck
-  // header reads as a compact strip rather than its full resting height.
-  // rAF-throttled so the scroll handler never runs more than once per
-  // frame.
-  const [scrolled, setScrolled] = useState(false);
-  useEffect(() => {
-    let ticking = false;
-    const onScroll = () => {
-      if (ticking) return;
-      ticking = true;
-      requestAnimationFrame(() => {
-        setScrolled(window.scrollY > 28);
-        ticking = false;
-      });
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    onScroll();
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
 
   const age = ageFromDob(patient.date_of_birth);
   const address = formatAddress(patient);
@@ -139,7 +119,7 @@ export function PatientHeaderBanner({
       style={{
         marginBottom: 18,
         padding: scrolled ? "8px 18px" : "12px 18px",
-        transition: "padding 0.2s ease",
+        transition: "padding 0.28s cubic-bezier(0.4, 0, 0.2, 1)",
       }}
     >
       <div
@@ -242,113 +222,97 @@ export function PatientHeaderBanner({
                 matches the reference platform's own scrolled-header
                 behaviour, so the stuck strip reads as a compact summary
                 rather than its full resting height. */}
-            <AnimatePresence initial={false}>
-              {!scrolled && (
-                <motion.div
-                  key="header-secondary"
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.2, ease: "easeInOut" }}
-                  style={{ overflow: "hidden" }}
+            <div className="mc-hdr-collapse" data-collapsed={scrolled}>
+              <div className="mc-hdr-collapse-inner">
+                <div
+                  className="mc-sub"
+                  style={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    alignItems: "center",
+                    rowGap: 3,
+                    columnGap: 14,
+                    marginTop: 3,
+                    fontSize: 12,
+                  }}
                 >
-                  <div
-                    className="mc-sub"
-                    style={{
-                      display: "flex",
-                      flexWrap: "wrap",
-                      alignItems: "center",
-                      rowGap: 3,
-                      columnGap: 14,
-                      marginTop: 3,
-                      fontSize: 12,
-                    }}
-                  >
-                    {[age, patient.gender].filter(Boolean).join(" · ") && (
-                      <span
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 4,
-                        }}
-                      >
-                        <User size={11} strokeWidth={2} aria-hidden />
-                        {[age, patient.gender].filter(Boolean).join(" · ")}
-                      </span>
-                    )}
-                    {[patient.mrn, patient.cnic]
-                      .filter(Boolean)
-                      .join(" · ") && (
-                      <span>
-                        {[patient.mrn, patient.cnic]
-                          .filter(Boolean)
-                          .join(" · ")}
-                      </span>
-                    )}
-                    {patient.location_name && (
-                      <span
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 4,
-                        }}
-                      >
-                        <MapPin size={11} strokeWidth={2} aria-hidden />
-                        {patient.location_name}
-                      </span>
-                    )}
-                    {(address || canEditAddress) && (
-                      <span
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 4,
-                        }}
-                      >
-                        <Home size={11} strokeWidth={2} aria-hidden />
-                        {address ?? "No address on file"}
-                        {canEditAddress && (
-                          <button
-                            type="button"
-                            aria-label={
-                              address ? "Edit address" : "Add address"
-                            }
-                            title={address ? "Edit address" : "Add address"}
-                            onClick={() => setEditingAddress(true)}
-                            style={{
-                              display: "inline-flex",
-                              padding: 2,
-                              border: "none",
-                              background: "none",
-                              color: "var(--c-teal)",
-                              cursor: "pointer",
-                            }}
-                          >
-                            <Pencil size={11} strokeWidth={2} aria-hidden />
-                          </button>
-                        )}
-                      </span>
-                    )}
-                    <span>
-                      Enrolled{" "}
-                      {new Date(patient.created_at).toLocaleDateString()}
+                  {[age, patient.gender].filter(Boolean).join(" · ") && (
+                    <span
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 4,
+                      }}
+                    >
+                      <User size={11} strokeWidth={2} aria-hidden />
+                      {[age, patient.gender].filter(Boolean).join(" · ")}
                     </span>
-                    {careTeam.length > 0 && (
-                      <span
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 4,
-                        }}
-                      >
-                        <Stethoscope size={11} strokeWidth={2} aria-hidden />
-                        {careTeam.join(" · ")}
-                      </span>
-                    )}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                  )}
+                  {[patient.mrn, patient.cnic].filter(Boolean).join(" · ") && (
+                    <span>
+                      {[patient.mrn, patient.cnic].filter(Boolean).join(" · ")}
+                    </span>
+                  )}
+                  {patient.location_name && (
+                    <span
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 4,
+                      }}
+                    >
+                      <MapPin size={11} strokeWidth={2} aria-hidden />
+                      {patient.location_name}
+                    </span>
+                  )}
+                  {(address || canEditAddress) && (
+                    <span
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 4,
+                      }}
+                    >
+                      <Home size={11} strokeWidth={2} aria-hidden />
+                      {address ?? "No address on file"}
+                      {canEditAddress && (
+                        <button
+                          type="button"
+                          aria-label={address ? "Edit address" : "Add address"}
+                          title={address ? "Edit address" : "Add address"}
+                          onClick={() => setEditingAddress(true)}
+                          style={{
+                            display: "inline-flex",
+                            padding: 2,
+                            border: "none",
+                            background: "none",
+                            color: "var(--c-teal)",
+                            cursor: "pointer",
+                          }}
+                        >
+                          <Pencil size={11} strokeWidth={2} aria-hidden />
+                        </button>
+                      )}
+                    </span>
+                  )}
+                  <span>
+                    Enrolled {new Date(patient.created_at).toLocaleDateString()}
+                  </span>
+                  {careTeam.length > 0 && (
+                    <span
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 4,
+                      }}
+                    >
+                      <Stethoscope size={11} strokeWidth={2} aria-hidden />
+                      {careTeam.join(" · ")}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 

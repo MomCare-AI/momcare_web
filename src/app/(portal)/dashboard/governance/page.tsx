@@ -5,6 +5,8 @@ import { useSearchParams } from "next/navigation";
 
 import { usePortal } from "../portal";
 import { GovernanceStatsHeader } from "@/features/governance/components/GovernanceStatsHeader";
+import { ConfidenceThresholdTab } from "@/features/governance/components/ConfidenceThresholdTab";
+import { CarePlanPreferencesTab } from "@/features/governance/components/CarePlanPreferencesTab";
 import { LocationsTab } from "@/features/governance/components/LocationsTab";
 import { NoteTemplatesTab } from "@/features/governance/components/NoteTemplatesTab";
 import { SecondaryProvidersTab } from "@/features/governance/components/SecondaryProvidersTab";
@@ -13,7 +15,14 @@ import { StatusLabelsTab } from "@/features/governance/components/StatusLabelsTa
 import { useSecondaryProviders } from "@/features/secondary-providers/hooks/useSecondaryProviders";
 import { usePageTitle } from "@/hooks/usePageTitle";
 
-type Tab = "staff" | "locations" | "providers" | "statuses" | "notes";
+type Tab =
+  | "staff"
+  | "locations"
+  | "providers"
+  | "statuses"
+  | "notes"
+  | "careplans"
+  | "confidence";
 
 const VALID_TABS: Tab[] = [
   "staff",
@@ -21,6 +30,8 @@ const VALID_TABS: Tab[] = [
   "providers",
   "statuses",
   "notes",
+  "careplans",
+  "confidence",
 ];
 
 export default function GovernancePage() {
@@ -56,7 +67,11 @@ export default function GovernancePage() {
   // admin-curation role, and ad-hoc tag creation while logging a note still
   // works unchanged (`ClinicalTag`'s own inline get-or-create, untouched).
   const activeTab =
-    !isHospitalAdmin && (tab === "statuses" || tab === "notes")
+    !isHospitalAdmin &&
+    (tab === "statuses" ||
+      tab === "notes" ||
+      tab === "careplans" ||
+      tab === "confidence")
       ? "locations"
       : tab;
 
@@ -124,6 +139,30 @@ export default function GovernancePage() {
             Notes
           </button>
         )}
+        {isHospitalAdmin && (
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "careplans"}
+            aria-current={activeTab === "careplans" ? "page" : undefined}
+            className="mc-tab"
+            onClick={() => setTab("careplans")}
+          >
+            Care plan preferences
+          </button>
+        )}
+        {isHospitalAdmin && (
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "confidence"}
+            aria-current={activeTab === "confidence" ? "page" : undefined}
+            className="mc-tab"
+            onClick={() => setTab("confidence")}
+          >
+            Confidence threshold
+          </button>
+        )}
       </div>
 
       {activeTab === "staff" && (
@@ -133,6 +172,8 @@ export default function GovernancePage() {
       {activeTab === "providers" && <SecondaryProvidersTab />}
       {activeTab === "statuses" && <StatusLabelsTab />}
       {activeTab === "notes" && <NoteTemplatesTab />}
+      {activeTab === "careplans" && <CarePlanPreferencesTab />}
+      {activeTab === "confidence" && <ConfidenceThresholdTab />}
     </>
   );
 }

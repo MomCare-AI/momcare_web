@@ -1035,6 +1035,36 @@ body::-webkit-scrollbar-thumb:hover {
   padding: 17px 20px;
   border-bottom: 1px solid var(--c-border-soft);
 }
+/* Tinted headers for the weekly care-plan cards. */
+.mc-card-head-nutrition,
+.mc-card-head-exercise,
+.mc-card-head-recap {
+  border-radius: var(--r-card) var(--r-card) 0 0;
+}
+.mc-card-head-nutrition {
+  background: linear-gradient(120deg, var(--c-stable-soft) 0%, #d3eee2 100%);
+  border-bottom-color: var(--c-stable-border);
+}
+.mc-card-head-nutrition .mc-card-title,
+.mc-card-head-nutrition .mc-card-sub {
+  color: var(--c-stable-text);
+}
+.mc-card-head-exercise {
+  background: linear-gradient(120deg, var(--c-teal-wash) 0%, #d2e9fb 100%);
+  border-bottom-color: #cdd8f7;
+}
+.mc-card-head-exercise .mc-card-title,
+.mc-card-head-exercise .mc-card-sub {
+  color: #2f48b5;
+}
+.mc-card-head-recap {
+  background: linear-gradient(120deg, var(--c-moderate-soft) 0%, #fde6d0 100%);
+  border-bottom-color: var(--c-moderate-border);
+}
+.mc-card-head-recap .mc-card-title,
+.mc-card-head-recap .mc-card-sub {
+  color: var(--c-moderate-text);
+}
 .mc-card-title {
   font-size: 15px;
   font-weight: 600;
@@ -1682,11 +1712,18 @@ select.mc-input {
      down, leaving the record visibly scrolling above it. */
   top: 0;
   z-index: 30;
-  background: var(--c-ground);
-  /* A little room above the banner once it is stuck, without moving it at
-     rest: the padding is cancelled by the negative margin. */
-  padding-top: 10px;
+  /* Cancels the inner padding below, so the banner does not move at rest. */
   margin-top: -10px;
+  /* The wrapper keeps the header's expanded height (set from the component),
+     so collapsing never moves the page. It is see-through and lets clicks
+     pass, so the strip left under a collapsed header shows the page. */
+  pointer-events: none;
+}
+.mc-patient-sticky-inner {
+  pointer-events: auto;
+  background: var(--c-ground);
+  /* A little room above the banner once it is stuck. */
+  padding-top: 10px;
 }
 
 /* Below 860px the sidebar becomes a drawer and a 56px top bar appears (see
@@ -1695,6 +1732,24 @@ select.mc-input {
   .mc-patient-sticky-head {
     top: 56px;
   }
+}
+
+/* The care plan's month card and tabs stick under the patient header (its
+   `top` is set from script, as the patient header changes size). Same
+   fixed-height-wrapper trick as above so collapsing never moves the plan. */
+.mc-careplan-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  pointer-events: none;
+}
+.mc-careplan-sticky-inner {
+  pointer-events: auto;
+  background: var(--c-ground);
+  padding: 8px 0 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 /* ── Sub-navigation ──────────────────────────────────────────────────── */
@@ -3552,55 +3607,6 @@ a.mc-kpi:hover,
   padding: 16px 20px 20px;
 }
 
-/* Tinted headers for the weekly care-plan cards. */
-.mc-card-head-nutrition,
-.mc-card-head-exercise,
-.mc-card-head-recap {
-  border-radius: var(--r-card) var(--r-card) 0 0;
-}
-.mc-card-head-nutrition {
-  background: linear-gradient(120deg, var(--c-stable-soft) 0%, #d3eee2 100%);
-  border-bottom-color: var(--c-stable-border);
-}
-.mc-card-head-nutrition .mc-card-title,
-.mc-card-head-nutrition .mc-card-sub {
-  color: var(--c-stable-text);
-}
-.mc-card-head-exercise {
-  background: linear-gradient(120deg, var(--c-teal-wash) 0%, #d2e9fb 100%);
-  border-bottom-color: #cdd8f7;
-}
-.mc-card-head-exercise .mc-card-title,
-.mc-card-head-exercise .mc-card-sub {
-  color: #2f48b5;
-}
-.mc-card-head-recap {
-  background: linear-gradient(120deg, var(--c-moderate-soft) 0%, #fde6d0 100%);
-  border-bottom-color: var(--c-moderate-border);
-}
-.mc-card-head-recap .mc-card-title,
-.mc-card-head-recap .mc-card-sub {
-  color: var(--c-moderate-text);
-}
-
-/* The care plan's month card and tabs stick under the patient header (its
-   `top` is set from script, as the patient header changes size). Same
-   fixed-height-wrapper trick as above so collapsing never moves the plan. */
-.mc-careplan-sticky {
-  position: sticky;
-  top: 0;
-  z-index: 20;
-  pointer-events: none;
-}
-.mc-careplan-sticky-inner {
-  pointer-events: auto;
-  background: var(--c-ground);
-  padding: 8px 0 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
 /* A small spinning icon for "preparing" states. */
 @keyframes mc-spin {
   to {
@@ -3613,5 +3619,39 @@ a.mc-kpi:hover,
 @media (prefers-reduced-motion: reduce) {
   .mc-spin {
     animation: none;
+  }
+}
+
+/* The patient header's detail rows. Always mounted, collapsed by sliding a
+   grid row from 1fr to 0fr (which animates smoothly, unlike height:auto),
+   with opacity and visibility following so hidden text is neither seen nor
+   read out. */
+.mc-hdr-collapse {
+  display: grid;
+  grid-template-rows: 1fr;
+  opacity: 1;
+  visibility: visible;
+  transition:
+    grid-template-rows 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.2s ease,
+    visibility 0s linear 0s;
+}
+.mc-hdr-collapse[data-collapsed="true"] {
+  grid-template-rows: 0fr;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    grid-template-rows 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.16s ease,
+    visibility 0s linear 0.28s;
+}
+.mc-hdr-collapse-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mc-hdr-collapse,
+  .mc-hdr-collapse[data-collapsed="true"] {
+    transition: none;
   }
 }
