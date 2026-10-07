@@ -1,6 +1,11 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type QueryClient,
+} from "@tanstack/react-query";
 
 import {
   createClinicalTag,
@@ -50,7 +55,9 @@ export function useClinicalTags() {
   return useQuery({
     queryKey: monitoringNotesKeys.tags,
     queryFn: listClinicalTags,
-    staleTime: 5 * 60 * 1000,
+    // Anyone can add a tag from any note, so the list is re-read each time a
+    // picker or filter opens rather than trusted for minutes.
+    staleTime: 0,
   });
 }
 
@@ -63,9 +70,9 @@ export function useCreateClinicalTag() {
       organization?: string;
       location?: string;
     }) => createClinicalTag(input),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: monitoringNotesKeys.tags });
-    },
+    // A tag is shared by every note that carries it, so the catalogue and
+    // every patient's notes are re-read, not just the open one.
+    onSuccess: () => refreshAllNotesAndTags(queryClient),
   });
 }
 
@@ -90,6 +97,12 @@ export function useSearchPatientNotes(
       }),
     enabled: Boolean(params.search.trim() || params.tagId),
   });
+}
+
+/** Tags belong to the hospital, not to one note: when they change, every
+ *  note list (any patient, timeline or search) and the tag pickers refresh. */
+function refreshAllNotesAndTags(queryClient: QueryClient) {
+  queryClient.invalidateQueries({ queryKey: ["monitoring-notes"] });
 }
 
 function useInvalidateTimeline(patientId: string) {
@@ -122,7 +135,7 @@ export function useLogContact(patientId: string) {
     onSuccess: () => {
       invalidate();
       // A newly typed tag needs to show up in the picker next time too.
-      queryClient.invalidateQueries({ queryKey: monitoringNotesKeys.tags });
+      refreshAllNotesAndTags(queryClient);
     },
   });
 }
@@ -151,6 +164,7 @@ export function useDeleteSession(patientId: string) {
 
 export function useUpdateNote(patientId: string) {
   const invalidate = useInvalidateTimeline(patientId);
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({
       noteId,
@@ -159,7 +173,11 @@ export function useUpdateNote(patientId: string) {
       noteId: string;
       input: MonitoringNoteUpdateInput;
     }) => updateNote(noteId, input),
-    onSuccess: invalidate,
+    onSuccess: () => {
+      invalidate();
+      // A tag typed while editing is new to every other picker too.
+      refreshAllNotesAndTags(queryClient);
+    },
   });
 }
 
