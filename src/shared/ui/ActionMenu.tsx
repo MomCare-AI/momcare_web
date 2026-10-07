@@ -7,6 +7,9 @@ import { MoreVertical } from "lucide-react";
 interface Props {
   label: string;
   children: ReactNode;
+  /** Replaces the 3-dot icon, e.g. a status badge with an arrow. */
+  trigger?: ReactNode;
+  triggerClassName?: string;
 }
 
 /**
@@ -19,7 +22,12 @@ interface Props {
  * the menu opened in the DOM, just wasn't visible). Fixed positioning
  * inside a portal is immune to any ancestor's overflow.
  */
-export function ActionMenu({ label, children }: Props) {
+export function ActionMenu({
+  label,
+  children,
+  trigger,
+  triggerClassName,
+}: Props) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
@@ -73,7 +81,7 @@ export function ActionMenu({ label, children }: Props) {
       <button
         ref={btnRef}
         type="button"
-        className="mc-btn-ghost mc-btn-sm"
+        className={triggerClassName ?? "mc-btn-ghost mc-btn-sm"}
         aria-label={label}
         aria-haspopup="menu"
         aria-expanded={open}
@@ -82,7 +90,7 @@ export function ActionMenu({ label, children }: Props) {
           setOpen((v) => !v);
         }}
       >
-        <MoreVertical size={15} strokeWidth={2} aria-hidden />
+        {trigger ?? <MoreVertical size={15} strokeWidth={2} aria-hidden />}
       </button>
 
       {open &&

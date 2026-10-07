@@ -4,6 +4,7 @@ import { useState } from "react";
 import {
   AlertCircle,
   CheckCircle2,
+  ChevronDown,
   Loader2,
   Lock,
   Pencil,
@@ -13,9 +14,9 @@ import {
 
 import { usePortal } from "@/app/(portal)/dashboard/portal";
 import { Card, CardBody, CardHeader } from "@/shared/ui/Card";
+import { ActionMenu, ActionMenuItem } from "@/shared/ui/ActionMenu";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { RowSkeleton } from "@/shared/ui/RowSkeleton";
-import { formatDateTime } from "@/shared/lib/formatDateTime";
 import {
   STATUS_TEXT,
   TREND_TEXT,
@@ -136,15 +137,6 @@ function CarePlanView({
   const stateError = messageOf(stateChange.find((a) => a.isError)?.error);
 
   const week = plan.week;
-  const reviewFacts = [
-    plan.reviewed_by &&
-      `Reviewed by ${plan.reviewed_by}${plan.reviewed_at ? ` · ${formatDateTime(plan.reviewed_at)}` : ""}`,
-    plan.finalized_by &&
-      `Finalized by ${plan.finalized_by}${plan.finalized_at ? ` · ${formatDateTime(plan.finalized_at)}` : ""}`,
-    plan.last_evaluated_at &&
-      `Last checked against her readings ${formatDateTime(plan.last_evaluated_at)}`,
-  ].filter(Boolean) as string[];
-
   const entriesError = (...ms: { error: unknown }[]) =>
     messageOf(ms.find((m) => m.error)?.error);
 
@@ -156,7 +148,7 @@ function CarePlanView({
           and the tabs stay on screen under the patient header, and the card
           shrinks to its title line once you scroll. */}
       <CarePlanStickyHeader>
-        {(collapsed) => (
+        {() => (
           <>
             <Card>
               <CardHeader
@@ -174,18 +166,6 @@ function CarePlanView({
                     {week &&
                       ` · This week: week ${week.week_number} (${weekRangeLabel(week.week_start, week.week_end)})`}
                   </div>
-                  <div className="mc-hdr-collapse" data-collapsed={collapsed}>
-                    <div className="mc-hdr-collapse-inner">
-                      {plan.message && (
-                        <div className="mc-card-sub">{plan.message}</div>
-                      )}
-                      {reviewFacts.map((f) => (
-                        <div key={f} className="mc-card-sub">
-                          {f}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
                 </div>
 
                 {/* Where the plan stands and what can be done about it, on the
@@ -198,100 +178,93 @@ function CarePlanView({
                     flexWrap: "wrap",
                   }}
                 >
-                  <span
-                    className={`mc-badge ${plan.status === "finalized" ? "mc-badge-stable" : plan.status === "reviewed" ? "mc-badge-info" : "mc-badge-neutral"}`}
-                  >
-                    {plan.status === "finalized" ? (
-                      <Lock size={12} strokeWidth={2.2} aria-hidden />
-                    ) : (
-                      <CheckCircle2 size={12} strokeWidth={2.2} aria-hidden />
-                    )}
-                    {STATUS_TEXT[plan.status]}
-                  </span>
-                  {plan.status === "in_progress" && (
-                    <button
-                      type="button"
-                      className="mc-btn mc-btn-sm"
-                      disabled={stateBusy}
-                      onClick={() => {
-                        stateChange.forEach((a) => a.reset());
-                        actions.review.mutate();
-                      }}
-                    >
-                      <CheckCircle2 size={13} strokeWidth={2} aria-hidden />
-                      {actions.review.isPending ? "Saving…" : "Mark reviewed"}
-                    </button>
-                  )}
-                  {canFinalize && plan.status === "reviewed" && (
-                    <button
-                      type="button"
-                      className="mc-btn-dark mc-btn-sm"
-                      disabled={stateBusy}
-                      onClick={() => {
-                        stateChange.forEach((a) => a.reset());
-                        actions.finalize.mutate();
-                      }}
-                    >
-                      <Lock size={13} strokeWidth={2} aria-hidden />
-                      {actions.finalize.isPending ? "Saving…" : "Finalize"}
-                    </button>
-                  )}
-                  {canFinalize && plan.status === "finalized" && (
-                    <button
-                      type="button"
-                      className="mc-btn-ghost mc-btn-sm"
-                      disabled={stateBusy}
-                      onClick={() => {
-                        stateChange.forEach((a) => a.reset());
-                        actions.reopen.mutate();
-                      }}
-                    >
-                      <RotateCcw size={13} strokeWidth={2} aria-hidden />
-                      {actions.reopen.isPending ? "Saving…" : "Reopen to edit"}
-                    </button>
-                  )}
+                  {(() => {
+                    const badge = (
+                      <>
+                        {plan.status === "finalized" ? (
+                          <Lock size={12} strokeWidth={2.2} aria-hidden />
+                        ) : (
+                          <CheckCircle2
+                            size={12}
+                            strokeWidth={2.2}
+                            aria-hidden
+                          />
+                        )}
+                        {stateBusy ? "Saving…" : STATUS_TEXT[plan.status]}
+                      </>
+                    );
+                    const badgeClass = `mc-badge ${plan.status === "finalized" ? "mc-badge-stable" : plan.status === "reviewed" ? "mc-badge-info" : "mc-badge-neutral"}`;
+                    const run = (go: () => void) => {
+                      stateChange.forEach((x) => x.reset());
+                      go();
+                    };
+                    const canChange =
+                      plan.status === "in_progress" ||
+                      (canFinalize &&
+                        (plan.status === "reviewed" ||
+                          plan.status === "finalized"));
+                    if (!canChange)
+                      return <span className={badgeClass}>{badge}</span>;
+                    return (
+                      <ActionMenu
+                        label="Change plan status"
+                        triggerClassName={`${badgeClass} mc-badge-button`}
+                        trigger={
+                          <>
+                            {badge}
+                            <ChevronDown
+                              size={13}
+                              strokeWidth={2.4}
+                              aria-hidden
+                            />
+                          </>
+                        }
+                      >
+                        {plan.status === "in_progress" && (
+                          <ActionMenuItem
+                            icon={<CheckCircle2 size={14} strokeWidth={2} />}
+                            label="Mark reviewed"
+                            disabled={stateBusy}
+                            onClick={() => run(() => actions.review.mutate())}
+                          />
+                        )}
+                        {canFinalize && plan.status === "reviewed" && (
+                          <ActionMenuItem
+                            icon={<Lock size={14} strokeWidth={2} />}
+                            label="Finalize"
+                            disabled={stateBusy}
+                            onClick={() => run(() => actions.finalize.mutate())}
+                          />
+                        )}
+                        {canFinalize && plan.status === "finalized" && (
+                          <ActionMenuItem
+                            icon={<RotateCcw size={14} strokeWidth={2} />}
+                            label="Reopen to edit"
+                            disabled={stateBusy}
+                            onClick={() => run(() => actions.reopen.mutate())}
+                          />
+                        )}
+                      </ActionMenu>
+                    );
+                  })()}
                 </div>
               </CardHeader>
 
-              {(plan.status === "finalized" || stateError) && (
-                <div
-                  className="mc-hdr-collapse"
-                  data-collapsed={collapsed && !stateError}
-                >
-                  <div className="mc-hdr-collapse-inner">
-                    <CardBody>
-                      {plan.status === "finalized" && (
-                        <p className="mc-hint" style={{ margin: 0 }}>
-                          This plan is finalized and cannot be edited.
-                          {canFinalize
-                            ? " Reopen it to make changes."
-                            : " A provider or the hospital admin can reopen it."}
-                        </p>
-                      )}
-                      {stateError && (
-                        <p
-                          className="mc-alert mc-alert-error"
-                          role="alert"
-                          style={{
-                            marginTop: plan.status === "finalized" ? 10 : 0,
-                          }}
-                        >
-                          <AlertCircle size={14} strokeWidth={2} aria-hidden />
-                          {stateError}
-                        </p>
-                      )}
-                    </CardBody>
-                  </div>
-                </div>
+              {stateError && (
+                <CardBody>
+                  <p className="mc-alert mc-alert-error" role="alert">
+                    <AlertCircle size={14} strokeWidth={2} aria-hidden />
+                    {stateError}
+                  </p>
+                </CardBody>
               )}
             </Card>
 
             {/* Three sections of the plan, as a child nav under the header. */}
             <div
-              className="mc-tabs"
+              className="mc-subtabs"
               role="tablist"
               aria-label="Care plan section"
-              style={{ marginBottom: 0 }}
             >
               {(
                 [
@@ -306,7 +279,7 @@ function CarePlanView({
                   role="tab"
                   aria-selected={sub === id}
                   aria-current={sub === id ? "page" : undefined}
-                  className="mc-tab"
+                  className="mc-subtab"
                   onClick={() => setSub(id)}
                 >
                   {label}
@@ -376,6 +349,68 @@ function CarePlanView({
                 actions={actions}
                 editable={editable}
               />
+              <Card>
+                <CardHeader>
+                  <div>
+                    <div className="mc-card-title">
+                      This plan was built around…
+                    </div>
+                    <div className="mc-card-sub">
+                      Food allergies, diet and conditions on her record
+                    </div>
+                  </div>
+                  {editable && (
+                    <button
+                      type="button"
+                      className="mc-btn-ghost mc-btn-sm"
+                      onClick={() => {
+                        actions.saveAllergies.reset();
+                        setEditingAllergies(true);
+                      }}
+                    >
+                      <Pencil size={12} strokeWidth={2} aria-hidden />
+                      Edit
+                    </button>
+                  )}
+                </CardHeader>
+                <CardBody>
+                  <dl
+                    style={{
+                      margin: 0,
+                      display: "grid",
+                      gap: 6,
+                      fontSize: 13.5,
+                    }}
+                  >
+                    <div>
+                      <dt className="mc-hint">Food allergies</dt>
+                      <dd style={{ margin: 0 }}>
+                        {plan.allergies_and_conditions.food_allergies.length
+                          ? plan.allergies_and_conditions.food_allergies.join(
+                              ", "
+                            )
+                          : "None recorded"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="mc-hint">Dietary preference</dt>
+                      <dd style={{ margin: 0 }}>
+                        {plan.allergies_and_conditions.dietary_preference}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="mc-hint">Conditions</dt>
+                      <dd style={{ margin: 0 }}>
+                        {plan.allergies_and_conditions.conditions.length
+                          ? plan.allergies_and_conditions.conditions
+                              .map((c) => c.label)
+                              .join(", ")
+                          : "None recorded"}
+                      </dd>
+                    </div>
+                  </dl>
+                </CardBody>
+              </Card>
             </div>
           </div>
           <div className="mc-grid-even">
@@ -405,63 +440,6 @@ function CarePlanView({
                 </CardBody>
               </Card>
             )}
-            <Card>
-              <CardHeader>
-                <div>
-                  <div className="mc-card-title">
-                    This plan was built around…
-                  </div>
-                  <div className="mc-card-sub">
-                    Food allergies, diet and conditions on her record
-                  </div>
-                </div>
-                {editable && (
-                  <button
-                    type="button"
-                    className="mc-btn-ghost mc-btn-sm"
-                    onClick={() => {
-                      actions.saveAllergies.reset();
-                      setEditingAllergies(true);
-                    }}
-                  >
-                    <Pencil size={12} strokeWidth={2} aria-hidden />
-                    Edit
-                  </button>
-                )}
-              </CardHeader>
-              <CardBody>
-                <dl
-                  style={{ margin: 0, display: "grid", gap: 6, fontSize: 13.5 }}
-                >
-                  <div>
-                    <dt className="mc-hint">Food allergies</dt>
-                    <dd style={{ margin: 0 }}>
-                      {plan.allergies_and_conditions.food_allergies.length
-                        ? plan.allergies_and_conditions.food_allergies.join(
-                            ", "
-                          )
-                        : "None recorded"}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="mc-hint">Dietary preference</dt>
-                    <dd style={{ margin: 0 }}>
-                      {plan.allergies_and_conditions.dietary_preference}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="mc-hint">Conditions</dt>
-                    <dd style={{ margin: 0 }}>
-                      {plan.allergies_and_conditions.conditions.length
-                        ? plan.allergies_and_conditions.conditions
-                            .map((c) => c.label)
-                            .join(", ")
-                        : "None recorded"}
-                    </dd>
-                  </div>
-                </dl>
-              </CardBody>
-            </Card>
           </div>
         </>
       )}
