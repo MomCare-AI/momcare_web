@@ -29,6 +29,7 @@ import { AllergiesEditor } from "./AllergiesEditor";
 import { CarePlanEntries } from "./CarePlanEntries";
 import { CarePlanSection } from "./CarePlanSection";
 import { CarePlanStickyHeader } from "./CarePlanStickyHeader";
+import { RecapText } from "./RecapText";
 import { SourcesBlock } from "./SourcesBlock";
 
 const messageOf = (error: unknown) =>
@@ -224,7 +225,7 @@ function CarePlanView({
                   {canFinalize && plan.status === "reviewed" && (
                     <button
                       type="button"
-                      className="mc-btn mc-btn-sm"
+                      className="mc-btn-dark mc-btn-sm"
                       disabled={stateBusy}
                       onClick={() => {
                         stateChange.forEach((a) => a.reset());
@@ -364,7 +365,7 @@ function CarePlanView({
                   </CardHeader>
                   <CardBody>
                     <p style={{ margin: 0, fontSize: 13.5 }}>
-                      {plan.progress.text}
+                      <RecapText text={plan.progress.text} />
                     </p>
                   </CardBody>
                 </Card>
