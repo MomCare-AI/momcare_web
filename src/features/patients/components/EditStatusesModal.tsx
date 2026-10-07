@@ -167,6 +167,10 @@ export function EditStatusesModal({
     resetForm();
   };
 
+  // The server's own reason, when it gave one.
+  const reasonOf = (err: unknown) =>
+    err instanceof Error && err.message ? ` (${err.message})` : "";
+
   const save = async () => {
     setSaving(true);
     setError(null);
@@ -176,18 +180,20 @@ export function EditStatusesModal({
       try {
         await addStatus.mutateAsync({
           name: c.name,
-          description: c.description,
+          // The server rejects a blank description; catalogue statuses can have
+          // none, so fall back to the name.
+          description: c.description?.trim() || c.name,
           color: c.color,
         });
-      } catch {
-        failed.push(`add "${c.name}"`);
+      } catch (err) {
+        failed.push(`add "${c.name}"${reasonOf(err)}`);
       }
     }
     for (const e of plan.toRemove) {
       try {
         await removeStatus.mutateAsync(e.id);
-      } catch {
-        failed.push(`remove "${e.name}"`);
+      } catch (err) {
+        failed.push(`remove "${e.name}"${reasonOf(err)}`);
       }
     }
 
