@@ -143,7 +143,7 @@ export function AverageVitalSummary({ pregnancyId, metric, period }: Props) {
     <div
       style={{
         borderTop: "1px solid var(--c-border-soft)",
-        padding: "18px 22px 20px",
+        padding: "14px 22px 16px",
       }}
     >
       <div
@@ -171,8 +171,8 @@ export function AverageVitalSummary({ pregnancyId, metric, period }: Props) {
           </div>
           <div
             style={{
-              marginTop: 14,
-              fontSize: 34,
+              marginTop: 10,
+              fontSize: 24,
               fontWeight: 700,
               lineHeight: 1.1,
               color: "var(--c-ink)",
@@ -181,7 +181,7 @@ export function AverageVitalSummary({ pregnancyId, metric, period }: Props) {
           >
             {secondary !== undefined ? `${average}/${secondary}` : average}
           </div>
-          <div style={{ fontSize: 14, color: "var(--c-faint)" }}>
+          <div style={{ fontSize: 12, color: "var(--c-faint)" }}>
             {spec.unit}
           </div>
         </div>

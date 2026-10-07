@@ -314,7 +314,6 @@ function PatientProfile({ id }: { id: string }) {
             patientLocationName={patient.location_name}
             pregnancyId={current.id}
             patientName={patient.full_name}
-            canVerifyRisk={isClinician}
           />
         ) : (
           <div className="mc-card">

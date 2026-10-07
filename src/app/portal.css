@@ -3524,7 +3524,7 @@ a.mc-kpi:hover,
    is simply invisible rather than padded out to look occupied. */
 .mc-catbar-track {
   display: flex;
-  height: 18px;
+  height: 8px;
   border-radius: 999px;
   background: var(--c-border-soft);
   overflow: hidden;
@@ -3705,4 +3705,31 @@ a.mc-kpi:hover,
   .mc-hdr-collapse[data-collapsed="true"] {
     transition: none;
   }
+}
+
+/* One small chart per vital. */
+.mc-trend-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+}
+.mc-trend-cell {
+  min-width: 0;
+  border: 1px solid var(--c-border-soft);
+  border-radius: var(--r-control);
+  padding: 10px 12px 6px;
+}
+.mc-trend-title {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 4px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--c-ink);
+}
+.mc-trend-unit {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--c-faint);
 }

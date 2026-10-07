@@ -229,7 +229,7 @@ export function VitalsChart({
     <ResponsiveContainer width="100%" height={height}>
       <ComposedChart
         data={data}
-        margin={{ top: 8, right: 12, bottom: 4, left: -12 }}
+        margin={{ top: 8, right: 30, bottom: 4, left: -12 }}
       >
         <defs>
           <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
@@ -255,6 +255,7 @@ export function VitalsChart({
           type="number"
           domain={["dataMin", "dataMax"]}
           scale="time"
+          padding={{ left: 8, right: 8 }}
           tickFormatter={(t) =>
             new Date(t).toLocaleDateString([], {
               day: "numeric",
@@ -314,7 +315,7 @@ export function VitalsChart({
 
         {(!isBloodPressure || showSystolic) && (
           <Area
-            type="natural"
+            type="monotone"
             dataKey="value"
             stroke="none"
             fill={`url(#${gradientId})`}
@@ -326,7 +327,7 @@ export function VitalsChart({
         )}
         {(!isBloodPressure || showSystolic) && (
           <Line
-            type="natural"
+            type="monotone"
             dataKey="value"
             name={isBloodPressure ? "Systolic" : spec.label}
             stroke={CHART_COLOURS.primary}
@@ -340,7 +341,7 @@ export function VitalsChart({
         )}
         {isBloodPressure && showDiastolic && (
           <Line
-            type="natural"
+            type="monotone"
             dataKey="secondary"
             name="Diastolic"
             stroke={CHART_COLOURS.secondary}
@@ -354,7 +355,7 @@ export function VitalsChart({
         )}
         {combineHeartRate && showHeartRateLine && (
           <Line
-            type="natural"
+            type="monotone"
             dataKey="heartRate"
             name="Heart Rate"
             stroke={CHART_COLOURS.heartRate}

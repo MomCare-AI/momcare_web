@@ -15,9 +15,9 @@ import {
   useRiskHistory,
 } from "@/features/monitoring/hooks/useMonitoring";
 import type { ReadingPeriod } from "@/features/monitoring/api";
-import { RiskPanel } from "@/features/monitoring/components/RiskPanel";
 import { ScoreResult } from "@/features/monitoring/components/ScoreVitalsForm";
 import { VitalsChart } from "@/features/monitoring/components/VitalsChart";
+import { VitalTrendGrid } from "./VitalTrendGrid";
 import { usePatient } from "../hooks/usePatients";
 import { AddReadingModal } from "./AddReadingModal";
 import { AISummaryPanel } from "./AISummaryPanel";
@@ -63,19 +63,6 @@ const PERIOD_BY_RANGE: Record<Range, ReadingPeriod> = {
   "6m": "6_months",
 };
 
-/** A fixed, distinct hue per vital — identifies *which vital* a segment is,
- *  not its clinical severity, so this deliberately stays off the portal's
- *  stable/moderate/high/critical palette (CLAUDE.md reserves that one for
- *  real alert state; reusing it here would make an idle vital look like a
- *  clinical warning). */
-const VITAL_COLORS: Partial<Record<VitalMetric, string>> = {
-  blood_pressure: "#4662e8",
-  heart_rate: "#8a5fd1",
-  body_temp_f: "#0891b2",
-  blood_glucose: "#c2478d",
-  hemoglobin: "#64748b",
-};
-
 /**
  * Largest-remainder rounding: whole-number percentages that sum to exactly
  * 100 (or 0 if every count is 0), rather than naive per-item rounding, which
@@ -87,7 +74,7 @@ function allocatePercentages(counts: number[]): number[] {
   if (total === 0) return counts.map(() => 0);
   const raw = counts.map((c) => (c / total) * 100);
   const floors = raw.map(Math.floor);
-  let remainder = 100 - floors.reduce((sum, f) => sum + f, 0);
+  const remainder = 100 - floors.reduce((sum, f) => sum + f, 0);
   const byFraction = raw
     .map((v, i) => ({ i, frac: v - Math.floor(v) }))
     .sort((a, b) => b.frac - a.frac);
@@ -167,11 +154,6 @@ interface Props {
   patientLocationName?: string;
   pregnancyId: string;
   patientName: string;
-  /** Only a clinician may review an assessment — the server enforces it
-   *  too. Threaded through to the `RiskPanel` rendered below the chart,
-   *  now that the AI Risk Assessment tab is gone and this is its only
-   *  home. */
-  canVerifyRisk?: boolean;
 }
 
 /**
@@ -190,7 +172,6 @@ export function PatientReadingsPanel({
   patientLocationName,
   pregnancyId,
   patientName,
-  canVerifyRisk = true,
 }: Props) {
   const [range, setRange] = useState<Range>("1m");
   const [metric, setMetric] = useState<VitalMetric>("blood_pressure");
@@ -313,7 +294,11 @@ export function PatientReadingsPanel({
                     }}
                     placeholder="Vital"
                     options={[
-                      { value: "all", label: "All vitals" },
+                      // The graph draws one vital at a time, so only the list
+                      // offers "All vitals".
+                      ...(view === "table"
+                        ? [{ value: "all", label: "All vitals" }]
+                        : []),
                       ...VITAL_METRICS.map((m) => ({
                         value: m.metric,
                         label: m.label,
@@ -520,51 +505,19 @@ export function PatientReadingsPanel({
           {readingShare.length > 0 && (
             <Card>
               <CardHeader>
-                <div className="mc-card-title">Reading mix</div>
+                <div className="mc-card-title">Each vital</div>
                 <div className="mc-card-sub">
-                  Share of readings by vital, for{" "}
+                  One line per vital, for{" "}
                   {RANGE_OPTIONS.find(
                     (r) => r.value === range
                   )?.label.toLowerCase()}
                 </div>
               </CardHeader>
               <CardBody>
-                <div className="mc-catbar-track">
-                  {readingShare.map((entry) => (
-                    <div
-                      key={entry.metric}
-                      className="mc-catbar-segment"
-                      title={`${
-                        VITAL_METRICS.find((m) => m.metric === entry.metric)!
-                          .label
-                      }: ${entry.pct}%`}
-                      style={{
-                        flex: `${entry.pct} 0 0%`,
-                        background: VITAL_COLORS[entry.metric],
-                      }}
-                    />
-                  ))}
-                </div>
-                <div className="mc-catbar-legend">
-                  {readingShare.map((entry) => (
-                    <span key={entry.metric} className="mc-catbar-item">
-                      <span
-                        className="mc-catbar-dot"
-                        style={{ background: VITAL_COLORS[entry.metric] }}
-                        aria-hidden
-                      />
-                      {
-                        VITAL_METRICS.find((m) => m.metric === entry.metric)!
-                          .label
-                      }{" "}
-                      <strong>{entry.pct}%</strong>
-                    </span>
-                  ))}
-                </div>
-                <p className="mc-hint" style={{ marginTop: 10 }}>
-                  How much of the monitoring in this range was each vital — not
-                  a measure of risk.
-                </p>
+                <VitalTrendGrid
+                  readings={filteredReadings}
+                  metrics={readingShare.map((e) => e.metric)}
+                />
               </CardBody>
             </Card>
           )}
@@ -584,8 +537,6 @@ export function PatientReadingsPanel({
               </CardBody>
             </Card>
           )}
-
-          <RiskPanel pregnancyId={pregnancyId} canVerify={canVerifyRisk} />
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
@@ -627,44 +578,12 @@ export function PatientReadingsPanel({
             {readingShare.length > 0 && (
               <div style={{ marginTop: 20 }}>
                 <div className="mc-card-title" style={{ marginBottom: 10 }}>
-                  Reading mix
+                  Each vital
                 </div>
-                <div className="mc-catbar-track">
-                  {readingShare.map((entry) => (
-                    <div
-                      key={entry.metric}
-                      className="mc-catbar-segment"
-                      title={`${
-                        VITAL_METRICS.find((m) => m.metric === entry.metric)!
-                          .label
-                      }: ${entry.pct}%`}
-                      style={{
-                        flex: `${entry.pct} 0 0%`,
-                        background: VITAL_COLORS[entry.metric],
-                      }}
-                    />
-                  ))}
-                </div>
-                <div className="mc-catbar-legend">
-                  {readingShare.map((entry) => (
-                    <span key={entry.metric} className="mc-catbar-item">
-                      <span
-                        className="mc-catbar-dot"
-                        style={{ background: VITAL_COLORS[entry.metric] }}
-                        aria-hidden
-                      />
-                      {
-                        VITAL_METRICS.find((m) => m.metric === entry.metric)!
-                          .label
-                      }{" "}
-                      <strong>{entry.pct}%</strong>
-                    </span>
-                  ))}
-                </div>
-                <p className="mc-hint" style={{ marginTop: 10 }}>
-                  How much of the monitoring in this range was each vital — not
-                  a measure of risk.
-                </p>
+                <VitalTrendGrid
+                  readings={filteredReadings}
+                  metrics={readingShare.map((e) => e.metric)}
+                />
               </div>
             )}
           </>
