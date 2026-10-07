@@ -107,8 +107,8 @@ export function LocationsTable({
           />
         </div>
 
-        <div className="mc-actions">
-          <div style={{ width: "100%", maxWidth: 150 }}>
+        <div className="mc-actions mc-actions-compact">
+          <div style={{ width: 120, flex: "none" }}>
             <Select
               value={statusFilter}
               onChange={setStatusFilter}
@@ -118,7 +118,7 @@ export function LocationsTable({
             />
           </div>
           {canAddLocation && (
-            <button className="mc-btn" onClick={onAddLocation}>
+            <button className="mc-btn mc-btn-sm" onClick={onAddLocation}>
               <Plus size={15} strokeWidth={2} aria-hidden />
               Add location
             </button>

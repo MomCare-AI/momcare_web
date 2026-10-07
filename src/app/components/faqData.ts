@@ -5,7 +5,7 @@ export const FAQS = [
     id: "faq-1",
     question: "How is patient data kept scoped to one hospital?",
     answer:
-      "Every request is scoped to your hospital in application code before it ever reaches a query. A database-level second layer — Postgres row-level security — is built and tested, but not yet live in production. We don't claim HIPAA or ISO 27001 certification; neither has been audited.",
+      "Every request is scoped to your hospital in application code before it ever reaches a query. A database-level second layer — Postgres row-level security — is enforced in production, so even a missed check in application code returns no other hospital's rows. We don't claim HIPAA or ISO 27001 certification; neither has been audited.",
   },
   {
     id: "faq-2",

@@ -186,13 +186,12 @@ export function HowItsBuilt() {
             Built honestly
           </span>
           <p className="text-lg md:text-xl font-bold leading-snug text-white mb-4">
-            Not yet signed off by an obstetrician. Not yet live with row-level
-            security. We say so.
+            Not yet signed off by an obstetrician. We say so.
           </p>
           <p className="text-xs text-slate-400 leading-relaxed">
             Clinical thresholds are documented but under clinical review. Tenant
-            isolation runs in application code today, with a database-level
-            second layer built, tested, and not yet in production.
+            isolation is enforced twice: in application code, and again in the
+            database itself with row-level security, live in production.
           </p>
         </motion.div>
       </div>
