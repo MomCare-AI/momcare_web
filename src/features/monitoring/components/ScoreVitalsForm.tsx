@@ -16,6 +16,7 @@ import {
 import { RiskBadge } from "./RiskBadge";
 import { Pair } from "@/shared/ui/Pair";
 import { MODEL_AGE_RANGE, ageFromDob } from "@/shared/lib/age";
+import { VITAL_LIMITS, checkVitalValues } from "../vitalLimits";
 
 interface Props {
   pregnancyId: string;
@@ -63,6 +64,14 @@ export function ScoreVitalsForm({
     e.preventDefault();
     setError(null);
     setResult(null);
+
+    const problem = checkVitalValues(
+      useRegisteredAge ? { ...values, age: undefined } : values
+    );
+    if (problem) {
+      setError(problem);
+      return;
+    }
 
     const payload: Partial<Record<NumericVital, number>> = {};
     for (const { field } of VITAL_FIELDS) {
@@ -116,6 +125,13 @@ export function ScoreVitalsForm({
                 className="mc-input"
                 type="number"
                 step={step}
+                min={VITAL_LIMITS[field].min}
+                max={VITAL_LIMITS[field].max}
+                onKeyDown={(e) => {
+                  // Only digits and a decimal point belong in a vital: no
+                  // minus sign, no exponent.
+                  if (["e", "E", "+", "-"].includes(e.key)) e.preventDefault();
+                }}
                 value={values[field] ?? ""}
                 onChange={(e) => set(field, e.target.value)}
                 // A number input changes its value on scroll/trackpad

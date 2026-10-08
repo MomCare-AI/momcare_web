@@ -16,6 +16,7 @@ import {
   type NumericVital,
   type VitalMetric,
 } from "../types";
+import { VITAL_LIMITS, checkVitalValues } from "../vitalLimits";
 import { VitalsChart } from "./VitalsChart";
 import { EmptyState } from "@/shared/ui/EmptyState";
 
@@ -213,8 +214,17 @@ export function ManualReadingForm({
   const set = (field: NumericVital, value: string) =>
     setValues((prev) => ({ ...prev, [field]: value }));
 
+  const [formError, setFormError] = useState<string | null>(null);
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError(null);
+
+    const problem = checkVitalValues(values);
+    if (problem) {
+      setFormError(problem);
+      return;
+    }
 
     const payload: Partial<Record<NumericVital, number>> = {};
     for (const { field } of VITAL_FIELDS) {
@@ -251,6 +261,13 @@ export function ManualReadingForm({
               className="mc-input"
               type="number"
               step={step}
+              min={VITAL_LIMITS[field].min}
+              max={VITAL_LIMITS[field].max}
+              onKeyDown={(e) => {
+                // Only digits and a decimal point belong in a vital: no
+                // minus sign, no exponent.
+                if (["e", "E", "+", "-"].includes(e.key)) e.preventDefault();
+              }}
               value={values[field] ?? ""}
               onChange={(e) => set(field, e.target.value)}
               // A number input changes its value on scroll/trackpad wheel
@@ -262,7 +279,13 @@ export function ManualReadingForm({
         ))}
       </div>
 
-      {record.isError && (
+      {formError && (
+        <p className="mc-alert mc-alert-error" role="alert">
+          <AlertTriangle size={14} strokeWidth={2} aria-hidden />
+          {formError}
+        </p>
+      )}
+      {!formError && record.isError && (
         <p className="mc-alert mc-alert-error">
           <AlertTriangle size={14} strokeWidth={2} aria-hidden />
           {record.error instanceof Error
