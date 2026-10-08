@@ -60,11 +60,13 @@ const NAV: NavItem[] = [
     href: "/dashboard/reports",
     label: "Executive Dashboard",
     Icon: BarChart3,
+    adminOnly: true,
   },
   {
     href: "/dashboard/governance",
     label: "System Governance",
     Icon: ShieldCheck,
+    adminOnly: true,
   },
 ];
 
