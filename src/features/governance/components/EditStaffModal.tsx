@@ -1,6 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import {
+  checkPersonName,
+  checkPhone,
+  keepName,
+  keepPhone,
+  useFieldChecks,
+} from "@/shared/lib/validation";
 import Image from "next/image";
 import { AlertTriangle } from "lucide-react";
 
@@ -55,6 +62,12 @@ export function EditStaffModal({ open, onClose, member }: Props) {
   const [locations, setLocations] = useState<string[]>(member.location_ids);
   const [error, setError] = useState<string | null>(null);
 
+  const checks = useFieldChecks(() => ({
+    first: checkPersonName(firstName, "First name"),
+    last: checkPersonName(lastName, "Last name", { required: false }),
+    phone: checkPhone(phone),
+  }));
+
   const [wasOpen, setWasOpen] = useState(open);
   if (open !== wasOpen) {
     setWasOpen(open);
@@ -66,6 +79,7 @@ export function EditStaffModal({ open, onClose, member }: Props) {
       setRoleCode(member.role_code);
       setLocations(member.location_ids);
       setError(null);
+      checks.reset();
     }
   }
 
@@ -83,6 +97,12 @@ export function EditStaffModal({ open, onClose, member }: Props) {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    const problem = checks.validateAll();
+    if (problem) {
+      setError(problem);
+      return;
+    }
 
     const input: StaffUpdateInput = {
       first_name: firstName.trim() || undefined,
@@ -144,8 +164,14 @@ export function EditStaffModal({ open, onClose, member }: Props) {
               className="mc-input"
               required
               value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
+              onChange={(e) => setFirstName(keepName(e.target.value))}
+              onBlur={() => checks.touch("first")}
             />
+            {checks.error("first") && (
+              <span className="mc-field-error" role="alert">
+                {checks.error("first")}
+              </span>
+            )}
           </div>
           <div>
             <label className="mc-label" htmlFor="edit-staff-last">
@@ -155,8 +181,14 @@ export function EditStaffModal({ open, onClose, member }: Props) {
               id="edit-staff-last"
               className="mc-input"
               value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
+              onChange={(e) => setLastName(keepName(e.target.value))}
+              onBlur={() => checks.touch("last")}
             />
+            {checks.error("last") && (
+              <span className="mc-field-error" role="alert">
+                {checks.error("last")}
+              </span>
+            )}
           </div>
           <div>
             <label className="mc-label" htmlFor="edit-staff-phone">
@@ -166,9 +198,15 @@ export function EditStaffModal({ open, onClose, member }: Props) {
               id="edit-staff-phone"
               className="mc-input"
               value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+              onChange={(e) => setPhone(keepPhone(e.target.value))}
               placeholder="Optional"
+              onBlur={() => checks.touch("phone")}
             />
+            {checks.error("phone") && (
+              <span className="mc-field-error" role="alert">
+                {checks.error("phone")}
+              </span>
+            )}
           </div>
           <div>
             <label className="mc-label" htmlFor="edit-staff-email">

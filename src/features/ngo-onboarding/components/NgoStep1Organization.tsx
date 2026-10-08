@@ -1,6 +1,7 @@
 "use client";
 
 import { useForm } from "react-hook-form";
+import { filtered, keepPhone } from "@/shared/lib/validation";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { DISTRICTS, PROVINCES, type Province } from "../data/pakistan";
@@ -23,6 +24,9 @@ export default function NgoStep1Organization({
     formState: { errors },
   } = useForm<OrgInfoData>({
     resolver: zodResolver(orgInfoSchema),
+    // Flag a mistake as soon as the user leaves the field, then keep
+    // re-checking as they correct it.
+    mode: "onTouched",
     defaultValues: { areasOfOperation: [], website: "", ...defaultValues },
   });
 
@@ -89,7 +93,7 @@ export default function NgoStep1Organization({
               Official phone <span className="hw-req">*</span>
             </label>
             <input
-              {...register("orgPhone")}
+              {...filtered(register("orgPhone"), keepPhone)}
               id="orgPhone"
               type="tel"
               autoComplete="tel"

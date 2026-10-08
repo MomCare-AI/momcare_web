@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { checkLabel, checkText, firstProblem } from "@/shared/lib/validation";
 import {
   AlertCircle,
   Check,
@@ -245,6 +246,14 @@ function StatusFormModal({
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    const problem = firstProblem(
+      checkLabel(form.name, "Status name", { max: 30 }),
+      checkText(form.description ?? "", "Description", { max: 200 })
+    );
+    if (problem) {
+      setError(problem);
+      return;
+    }
     try {
       if (isEdit) {
         await updateLabel.mutateAsync({

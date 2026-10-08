@@ -78,7 +78,7 @@ describe("NgoWizard", () => {
     render(<NgoWizard />);
     next();
     expect(
-      await screen.findByText("Organization name is required")
+      await screen.findByText("Organization name is required.")
     ).toBeTruthy();
     expect(screen.getByText("Step 1 of 4")).toBeTruthy();
   });

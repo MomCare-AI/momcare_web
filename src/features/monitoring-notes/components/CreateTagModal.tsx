@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { checkLabel } from "@/shared/lib/validation";
 import { AlertCircle, Check, Tag as TagIcon } from "lucide-react";
 
 import { usePortal } from "@/app/(portal)/dashboard/portal";
@@ -62,7 +63,11 @@ export function CreateTagModal({
     e.preventDefault();
     setError(null);
     const trimmed = name.trim();
-    if (!trimmed) return;
+    const problem = checkLabel(trimmed, "Tag name", { max: 30 });
+    if (problem) {
+      setError(problem);
+      return;
+    }
 
     if (!isHospitalAdmin) {
       onCreated({ name: trimmed, color });

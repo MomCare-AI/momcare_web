@@ -1,6 +1,7 @@
 "use client";
 
 import { useForm } from "react-hook-form";
+import { filtered, keepPhone } from "@/shared/lib/validation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { orgStep2Schema, type OrgStep2Data } from "./hwSchemas";
 
@@ -21,6 +22,9 @@ export default function HwOrgStep2Contact({
     formState: { errors },
   } = useForm<OrgStep2Data>({
     resolver: zodResolver(orgStep2Schema),
+    // Flag a mistake as soon as the user leaves the field, then keep
+    // re-checking as they correct it.
+    mode: "onTouched",
     defaultValues,
   });
 
@@ -97,7 +101,7 @@ export default function HwOrgStep2Contact({
               />
             </svg>
             <input
-              {...register("contactPhone")}
+              {...filtered(register("contactPhone"), keepPhone)}
               type="tel"
               placeholder="+1 555 000 0000"
               className={`hw-input hw-input-icon-pad${errors.contactPhone ? " hw-input-err" : ""}`}

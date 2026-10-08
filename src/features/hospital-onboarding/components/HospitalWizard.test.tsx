@@ -40,7 +40,21 @@ describe("HospitalWizard shell", () => {
     render(<HospitalWizard />);
     fireEvent.click(screen.getByRole("button", { name: /continue/i }));
 
-    expect(await screen.findByText("First name is required")).toBeTruthy();
+    expect(await screen.findByText("First name is required.")).toBeTruthy();
+    expect(screen.getByText("Step 1 of 4")).toBeTruthy();
+  });
+
+  it("does not accept digits in a name", async () => {
+    render(<HospitalWizard />);
+    type("John", "123");
+    type("Smith", "Ali");
+    type("owner@yourhospital.com", "sara@hospital.pk");
+    type("Min. 8 characters", "Passw0rdOK");
+    type("Repeat password", "Passw0rdOK");
+    fireEvent.click(screen.getByRole("button", { name: /continue/i }));
+
+    // The digits never reach the field, so the name is empty and is refused.
+    expect(await screen.findByText("First name is required.")).toBeTruthy();
     expect(screen.getByText("Step 1 of 4")).toBeTruthy();
   });
 

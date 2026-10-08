@@ -1,6 +1,14 @@
 "use client";
 
 import { Fragment, useEffect, useMemo, useState } from "react";
+import {
+  checkEmail,
+  checkPersonName,
+  checkPhone,
+  keepName,
+  keepPhone,
+  useFieldChecks,
+} from "@/shared/lib/validation";
 import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { AlertCircle, Search, Stethoscope, UserPlus } from "lucide-react";
@@ -153,15 +161,32 @@ export function StaffTab({ initialHighlightId = null }: Props) {
     }));
   };
 
+  const checks = useFieldChecks(() => ({
+    email: checkEmail(form.email, "Email address"),
+    first_name: checkPersonName(form.first_name ?? "", "First name", {
+      required: false,
+    }),
+    last_name: checkPersonName(form.last_name ?? "", "Last name", {
+      required: false,
+    }),
+    phone: checkPhone(form.phone ?? ""),
+  }));
+
   const submitCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
+    const problem = checks.validateAll();
+    if (problem) {
+      setFormError(problem);
+      return;
+    }
     try {
       await createStaff.mutateAsync({
         ...form,
         locations: needsLocations ? form.locations : [],
       });
       setForm(EMPTY_FORM);
+      checks.reset();
       setShowForm(false);
     } catch (err) {
       if (err instanceof SessionExpiredError) {
@@ -213,9 +238,20 @@ export function StaffTab({ initialHighlightId = null }: Props) {
                   type="email"
                   required
                   value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      email: e.target.value.replace(/\s/g, ""),
+                    })
+                  }
                   placeholder="doctor@yourhospital.pk"
+                  onBlur={() => checks.touch("email")}
                 />
+                {checks.error("email") && (
+                  <span className="mc-field-error" role="alert">
+                    {checks.error("email")}
+                  </span>
+                )}
               </div>
               <div>
                 <label className="mc-label" htmlFor="staff-role">
@@ -245,10 +281,16 @@ export function StaffTab({ initialHighlightId = null }: Props) {
                   className="mc-input"
                   value={form.first_name}
                   onChange={(e) =>
-                    setForm({ ...form, first_name: e.target.value })
+                    setForm({ ...form, first_name: keepName(e.target.value) })
                   }
                   placeholder="Optional"
+                  onBlur={() => checks.touch("first_name")}
                 />
+                {checks.error("first_name") && (
+                  <span className="mc-field-error" role="alert">
+                    {checks.error("first_name")}
+                  </span>
+                )}
               </div>
               <div>
                 <label className="mc-label" htmlFor="staff-last">
@@ -259,10 +301,16 @@ export function StaffTab({ initialHighlightId = null }: Props) {
                   className="mc-input"
                   value={form.last_name}
                   onChange={(e) =>
-                    setForm({ ...form, last_name: e.target.value })
+                    setForm({ ...form, last_name: keepName(e.target.value) })
                   }
                   placeholder="Optional"
+                  onBlur={() => checks.touch("last_name")}
                 />
+                {checks.error("last_name") && (
+                  <span className="mc-field-error" role="alert">
+                    {checks.error("last_name")}
+                  </span>
+                )}
               </div>
               <div>
                 <label className="mc-label" htmlFor="staff-phone">
@@ -272,9 +320,17 @@ export function StaffTab({ initialHighlightId = null }: Props) {
                   id="staff-phone"
                   className="mc-input"
                   value={form.phone}
-                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, phone: keepPhone(e.target.value) })
+                  }
                   placeholder="Optional"
+                  onBlur={() => checks.touch("phone")}
                 />
+                {checks.error("phone") && (
+                  <span className="mc-field-error" role="alert">
+                    {checks.error("phone")}
+                  </span>
+                )}
               </div>
             </div>
 

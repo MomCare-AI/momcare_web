@@ -22,6 +22,9 @@ export default function HwOrgStep1Identity({
     formState: { errors },
   } = useForm<OrgStep1Data>({
     resolver: zodResolver(orgStep1Schema),
+    // Flag a mistake as soon as the user leaves the field, then keep
+    // re-checking as they correct it.
+    mode: "onTouched",
     defaultValues,
   });
 

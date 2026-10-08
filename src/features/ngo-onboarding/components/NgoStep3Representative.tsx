@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { filtered, keepName, keepPhone } from "@/shared/lib/validation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -47,6 +48,9 @@ export default function NgoStep3Representative({
     formState: { errors },
   } = useForm<RepresentativeData>({
     resolver: zodResolver(representativeSchema),
+    // Flag a mistake as soon as the user leaves the field, then keep
+    // re-checking as they correct it.
+    mode: "onTouched",
     defaultValues,
   });
   const [docError, setDocError] = useState<NgoDocumentType[]>([]);
@@ -105,7 +109,7 @@ export default function NgoStep3Representative({
               Full name <span className="hw-req">*</span>
             </label>
             <input
-              {...register("repName")}
+              {...filtered(register("repName"), keepName)}
               id="repName"
               type="text"
               autoComplete="name"
@@ -180,7 +184,7 @@ export default function NgoStep3Representative({
               Phone number <span className="hw-req">*</span>
             </label>
             <input
-              {...register("repPhone")}
+              {...filtered(register("repPhone"), keepPhone)}
               id="repPhone"
               type="tel"
               autoComplete="tel"

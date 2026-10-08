@@ -1,23 +1,28 @@
 import { z } from "zod";
 
+import {
+  zAddressLine,
+  zEmail,
+  zOrgName,
+  zPersonName,
+  zPhone,
+  zPlace,
+  zPostalCode,
+  zRegistrationNumber,
+} from "@/shared/lib/validation";
+
 export const step1Schema = z
   .object({
-    firstName: z
-      .string()
-      .min(1, "First name is required")
-      .max(50, "Max 50 characters"),
-    lastName: z
-      .string()
-      .min(1, "Last name is required")
-      .max(50, "Max 50 characters"),
-    email: z.string().email("Enter a valid email address"),
+    firstName: zPersonName("First name"),
+    lastName: zPersonName("Last name"),
+    email: zEmail("Email address"),
     password: z
       .string()
       .min(8, "At least 8 characters")
       .regex(/[A-Z]/, "Include at least one uppercase letter")
       .regex(/[0-9]/, "Include at least one number"),
     confirmPassword: z.string(),
-    phoneNumber: z.string().optional(),
+    phoneNumber: zPhone("Phone number", false).optional(),
     // The <select>'s own default option submits "" (not undefined) — accept
     // it directly rather than rejecting the field's own unset state.
     gender: z
@@ -30,25 +35,22 @@ export const step1Schema = z
   });
 
 export const orgStep1Schema = z.object({
-  orgName: z
-    .string()
-    .min(2, "Organization name is required")
-    .max(200, "Max 200 characters"),
+  orgName: zOrgName("Organization name"),
 });
 
 export const orgStep2Schema = z.object({
-  contactEmail: z.string().email("Enter a valid email address"),
-  contactPhone: z.string().min(6, "Enter a valid phone number"),
+  contactEmail: zEmail("Email address"),
+  contactPhone: zPhone("Phone number", true),
 });
 
 export const orgStep3Schema = z.object({
-  addressLine1: z.string().min(3, "Address is required"),
-  addressLine2: z.string().optional(),
-  city: z.string().min(2, "City is required"),
-  stateProvince: z.string().min(1, "State / province is required"),
-  postalCode: z.string().min(2, "Postal code is required"),
-  country: z.string().min(1, "Country is required"),
-  licenseNo: z.string().min(2, "License / registration number is required"),
+  addressLine1: zAddressLine("Address"),
+  addressLine2: zAddressLine("Address line 2", false).optional(),
+  city: zPlace("City"),
+  stateProvince: zPlace("State / province"),
+  postalCode: zPostalCode(),
+  country: zPlace("Country"),
+  licenseNo: zRegistrationNumber("License / registration number"),
 });
 
 export type Step1Data = z.infer<typeof step1Schema>;

@@ -1,6 +1,15 @@
 import { z } from "zod";
 
 import {
+  zAddressLine,
+  zEmail,
+  zOrgName,
+  zPersonName,
+  zPhone,
+  zRegistrationNumber,
+} from "@/shared/lib/validation";
+
+import {
   DESIGNATIONS,
   REGISTRATION_AUTHORITIES,
   REGISTRATION_TYPES,
@@ -10,19 +19,9 @@ import { PROVINCES } from "./data/pakistan";
 const required = (msg: string) => z.string().trim().min(1, msg);
 
 export const orgInfoSchema = z.object({
-  orgName: z
-    .string()
-    .trim()
-    .min(2, "Organization name is required")
-    .max(200, "Max 200 characters"),
-  orgEmail: z.string().trim().email("Enter a valid email address"),
-  orgPhone: z
-    .string()
-    .trim()
-    .refine(
-      (v) => v.replace(/\D/g, "").length >= 7,
-      "Enter a valid phone number"
-    ),
+  orgName: zOrgName("Organization name"),
+  orgEmail: zEmail("Email address"),
+  orgPhone: zPhone("Phone number", true),
   website: z
     .string()
     .trim()
@@ -32,7 +31,7 @@ export const orgInfoSchema = z.object({
     ),
   province: z.enum(PROVINCES, { message: "Select a province" }),
   district: required("Select a district"),
-  address: z.string().trim().min(5, "Enter the official address"),
+  address: zAddressLine("Official address"),
   areasOfOperation: z
     .array(z.string())
     .min(1, "Choose at least one area of operation"),
@@ -52,11 +51,7 @@ export const legalSchema = z
     registrationType: z.enum(REGISTRATION_TYPES, {
       message: "Select the registration type",
     }),
-    registrationNumber: z
-      .string()
-      .trim()
-      .min(2, "Registration number is required")
-      .max(100, "Max 100 characters"),
+    registrationNumber: zRegistrationNumber("Registration number"),
     registrationDate: isoDate("Registration date is required").refine(
       (v) => Date.parse(v) <= Date.now(),
       "Registration date cannot be in the future"
@@ -85,17 +80,11 @@ export function formatCnic(raw: string): string {
 }
 
 export const representativeSchema = z.object({
-  repName: z.string().trim().min(2, "Full name is required"),
+  repName: zPersonName("Full name"),
   cnic: z.string().trim().regex(CNIC_PATTERN, "Use the format XXXXX-XXXXXXX-X"),
   designation: z.enum(DESIGNATIONS, { message: "Select a designation" }),
-  repEmail: z.string().trim().email("Enter a valid email address"),
-  repPhone: z
-    .string()
-    .trim()
-    .refine(
-      (v) => v.replace(/\D/g, "").length >= 7,
-      "Enter a valid phone number"
-    ),
+  repEmail: zEmail("Email address"),
+  repPhone: zPhone("Phone number", true),
 });
 
 export type OrgInfoData = z.infer<typeof orgInfoSchema>;

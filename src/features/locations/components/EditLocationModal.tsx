@@ -1,6 +1,17 @@
 "use client";
 
 import { useState } from "react";
+import {
+  checkAddressLine,
+  checkEmail,
+  checkOrgName,
+  checkPhone,
+  checkPlace,
+  checkPostalCode,
+  keepPhone,
+  keepPlace,
+  useFieldChecks,
+} from "@/shared/lib/validation";
 import { AlertCircle, MapPin, Save } from "lucide-react";
 
 import { useStaffList } from "@/features/staff/hooks/useStaff";
@@ -59,9 +70,32 @@ export function EditLocationModal({ open, onClose, location }: Props) {
     }
   }
 
+  const checks = useFieldChecks(() => ({
+    name: checkOrgName(form.name ?? "", "Location name"),
+    addr1: checkAddressLine(form.address_line1 ?? "", "Address line 1", {
+      required: false,
+    }),
+    addr2: checkAddressLine(form.address_line2 ?? "", "Address line 2", {
+      required: false,
+    }),
+    phone: checkPhone(form.phone ?? ""),
+    email: checkEmail(form.email ?? "", "Email", { required: false }),
+    country: checkPlace(form.country ?? "", "Country", { required: false }),
+    state: checkPlace(form.state ?? "", "State / province", {
+      required: false,
+    }),
+    city: checkPlace(form.city ?? "", "City", { required: false }),
+    postal: form.postal_code ? checkPostalCode(form.postal_code) : null,
+  }));
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    const problem = checks.validateAll();
+    if (problem) {
+      setError(problem);
+      return;
+    }
     // location_manager rejects "" outright ("This field may not be null.")
     // — it must be omitted to leave the existing manager alone, never sent
     // as an empty string. Only include it when an actual person is selected.
@@ -98,7 +132,13 @@ export function EditLocationModal({ open, onClose, location }: Props) {
               required
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
+              onBlur={() => checks.touch("name")}
             />
+            {checks.error("name") && (
+              <span className="mc-field-error" role="alert">
+                {checks.error("name")}
+              </span>
+            )}
           </div>
           <div>
             <label className="mc-label" htmlFor="edit-loc-manager">
@@ -131,7 +171,13 @@ export function EditLocationModal({ open, onClose, location }: Props) {
               onChange={(e) =>
                 setForm({ ...form, address_line1: e.target.value })
               }
+              onBlur={() => checks.touch("addr1")}
             />
+            {checks.error("addr1") && (
+              <span className="mc-field-error" role="alert">
+                {checks.error("addr1")}
+              </span>
+            )}
           </div>
           <div>
             <label className="mc-label" htmlFor="edit-loc-addr2">
@@ -144,7 +190,13 @@ export function EditLocationModal({ open, onClose, location }: Props) {
               onChange={(e) =>
                 setForm({ ...form, address_line2: e.target.value })
               }
+              onBlur={() => checks.touch("addr2")}
             />
+            {checks.error("addr2") && (
+              <span className="mc-field-error" role="alert">
+                {checks.error("addr2")}
+              </span>
+            )}
           </div>
           <div>
             <label className="mc-label" htmlFor="edit-loc-phone">
@@ -154,8 +206,16 @@ export function EditLocationModal({ open, onClose, location }: Props) {
               id="edit-loc-phone"
               className="mc-input"
               value={form.phone}
-              onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              onChange={(e) =>
+                setForm({ ...form, phone: keepPhone(e.target.value) })
+              }
+              onBlur={() => checks.touch("phone")}
             />
+            {checks.error("phone") && (
+              <span className="mc-field-error" role="alert">
+                {checks.error("phone")}
+              </span>
+            )}
           </div>
           <div>
             <label className="mc-label" htmlFor="edit-loc-email">
@@ -167,7 +227,13 @@ export function EditLocationModal({ open, onClose, location }: Props) {
               type="email"
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
+              onBlur={() => checks.touch("email")}
             />
+            {checks.error("email") && (
+              <span className="mc-field-error" role="alert">
+                {checks.error("email")}
+              </span>
+            )}
           </div>
           <div>
             <label className="mc-label" htmlFor="edit-loc-country">
@@ -177,8 +243,16 @@ export function EditLocationModal({ open, onClose, location }: Props) {
               id="edit-loc-country"
               className="mc-input"
               value={form.country}
-              onChange={(e) => setForm({ ...form, country: e.target.value })}
+              onChange={(e) =>
+                setForm({ ...form, country: keepPlace(e.target.value) })
+              }
+              onBlur={() => checks.touch("country")}
             />
+            {checks.error("country") && (
+              <span className="mc-field-error" role="alert">
+                {checks.error("country")}
+              </span>
+            )}
           </div>
           <div>
             <label className="mc-label" htmlFor="edit-loc-state">
@@ -188,8 +262,16 @@ export function EditLocationModal({ open, onClose, location }: Props) {
               id="edit-loc-state"
               className="mc-input"
               value={form.state}
-              onChange={(e) => setForm({ ...form, state: e.target.value })}
+              onChange={(e) =>
+                setForm({ ...form, state: keepPlace(e.target.value) })
+              }
+              onBlur={() => checks.touch("state")}
             />
+            {checks.error("state") && (
+              <span className="mc-field-error" role="alert">
+                {checks.error("state")}
+              </span>
+            )}
           </div>
           <div>
             <label className="mc-label" htmlFor="edit-loc-city">
@@ -199,8 +281,16 @@ export function EditLocationModal({ open, onClose, location }: Props) {
               id="edit-loc-city"
               className="mc-input"
               value={form.city}
-              onChange={(e) => setForm({ ...form, city: e.target.value })}
+              onChange={(e) =>
+                setForm({ ...form, city: keepPlace(e.target.value) })
+              }
+              onBlur={() => checks.touch("city")}
             />
+            {checks.error("city") && (
+              <span className="mc-field-error" role="alert">
+                {checks.error("city")}
+              </span>
+            )}
           </div>
           <div>
             <label className="mc-label" htmlFor="edit-loc-postal">
@@ -213,7 +303,13 @@ export function EditLocationModal({ open, onClose, location }: Props) {
               onChange={(e) =>
                 setForm({ ...form, postal_code: e.target.value })
               }
+              onBlur={() => checks.touch("postal")}
             />
+            {checks.error("postal") && (
+              <span className="mc-field-error" role="alert">
+                {checks.error("postal")}
+              </span>
+            )}
           </div>
           <div>
             <label className="mc-label" htmlFor="edit-loc-timezone">

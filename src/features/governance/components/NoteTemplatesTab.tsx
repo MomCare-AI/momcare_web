@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { checkLabel, checkText, firstProblem } from "@/shared/lib/validation";
 import {
   AlertCircle,
   FileText,
@@ -270,6 +271,17 @@ function TemplateFormModal({
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    const problem = firstProblem(
+      checkLabel(form.title, "Template title", { max: 100 }),
+      checkText(form.content ?? "", "Template text", {
+        required: true,
+        max: 5000,
+      })
+    );
+    if (problem) {
+      setError(problem);
+      return;
+    }
     try {
       if (isEdit) {
         await updateTemplate.mutateAsync({

@@ -1,6 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import {
+  checkEmail,
+  checkPersonName,
+  checkPhone,
+  keepName,
+  keepPhone,
+  useFieldChecks,
+} from "@/shared/lib/validation";
 import { AlertCircle, Contact, Plus, Search } from "lucide-react";
 
 import { usePortal } from "@/app/(portal)/dashboard/portal";
@@ -56,12 +64,24 @@ export function SecondaryProvidersTab() {
     return [...filtered].sort((a, b) => a.name.localeCompare(b.name) * dir);
   }, [providers, search, sort]);
 
+  const checks = useFieldChecks(() => ({
+    name: checkPersonName(form.name, "Name"),
+    phone: checkPhone(form.phone ?? ""),
+    email: checkEmail(form.email ?? "", "Email", { required: false }),
+  }));
+
   const submitCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
+    const problem = checks.validateAll();
+    if (problem) {
+      setFormError(problem);
+      return;
+    }
     try {
       await createProvider.mutateAsync(form);
       setForm(EMPTY_FORM);
+      checks.reset();
       setShowForm(false);
     } catch (err) {
       setFormError(
@@ -205,9 +225,17 @@ export function SecondaryProvidersTab() {
                   className="mc-input"
                   required
                   value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, name: keepName(e.target.value) })
+                  }
                   placeholder="Dr. Amina Yousaf"
+                  onBlur={() => checks.touch("name")}
                 />
+                {checks.error("name") && (
+                  <span className="mc-field-error" role="alert">
+                    {checks.error("name")}
+                  </span>
+                )}
               </div>
               <div>
                 <label className="mc-label" htmlFor="new-sp-affiliation">
@@ -231,9 +259,17 @@ export function SecondaryProvidersTab() {
                   id="new-sp-phone"
                   className="mc-input"
                   value={form.phone}
-                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, phone: keepPhone(e.target.value) })
+                  }
                   placeholder="Optional"
+                  onBlur={() => checks.touch("phone")}
                 />
+                {checks.error("phone") && (
+                  <span className="mc-field-error" role="alert">
+                    {checks.error("phone")}
+                  </span>
+                )}
               </div>
               <div>
                 <label className="mc-label" htmlFor="new-sp-email">
@@ -246,7 +282,13 @@ export function SecondaryProvidersTab() {
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
                   placeholder="Optional"
+                  onBlur={() => checks.touch("email")}
                 />
+                {checks.error("email") && (
+                  <span className="mc-field-error" role="alert">
+                    {checks.error("email")}
+                  </span>
+                )}
               </div>
             </div>
 

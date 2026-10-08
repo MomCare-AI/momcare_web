@@ -3733,3 +3733,15 @@ a.mc-kpi:hover,
   font-weight: 500;
   color: var(--c-faint);
 }
+
+/* A field validation message, under the field. */
+.mc-field-error {
+  display: block;
+  margin-top: 5px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--c-high, #b94343);
+}
+.mc-input[aria-invalid="true"] {
+  border-color: var(--c-high, #b94343);
+}

@@ -1,6 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import {
+  checkAddressLine,
+  checkEmail,
+  checkOrgName,
+  checkPhone,
+  checkPlace,
+  checkPostalCode,
+  checkRegistrationNumber,
+  keepPhone,
+  keepPlace,
+  keepText,
+  useFieldChecks,
+} from "@/shared/lib/validation";
 import { Building2, MapPin, ShieldCheck } from "lucide-react";
 
 import { usePortal } from "@/app/(portal)/dashboard/portal";
@@ -67,26 +80,75 @@ export function EditOrganizationModal({ open, onClose }: Props) {
   );
   const [saved, setSaved] = useState(false);
 
+  const [formError, setFormError] = useState<string | null>(null);
+
   // Re-sync from the live org record every time the modal opens, so a
-  // cancelled edit never lingers into the next open.
-  useEffect(() => {
+  // cancelled edit never lingers into the next open. Done while rendering
+  // (not in an effect) when `open` flips, the way the other edit modals do.
+  const [wasOpen, setWasOpen] = useState(open);
+  if (open !== wasOpen) {
+    setWasOpen(open);
     if (open) {
       setForm(toFormState(org));
       setSaved(false);
+      setFormError(null);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+  }
+
+  // What may be typed into each field; anything else is dropped as typed.
+  const FILTERS: Partial<
+    Record<keyof OrganizationUpdateInput, (v: string) => string>
+  > = {
+    phone: keepPhone,
+    city: keepPlace,
+    state: keepPlace,
+    country: keepPlace,
+    address_line1: (v) => keepText(v, 200),
+    address_line2: (v) => keepText(v, 200),
+    name: (v) => keepText(v, 200),
+    email: (v) => v.replace(/\s/g, ""),
+    postal_code: (v) => v.replace(/[^A-Za-z0-9 -]/g, "").slice(0, 10),
+  };
 
   const set = <K extends keyof OrganizationUpdateInput>(
     key: K,
     value: OrganizationUpdateInput[K]
   ) => {
     setSaved(false);
-    setForm((f) => ({ ...f, [key]: value }));
+    setFormError(null);
+    const filter = FILTERS[key];
+    const next =
+      filter && typeof value === "string"
+        ? (filter(value) as OrganizationUpdateInput[K])
+        : value;
+    setForm((f) => ({ ...f, [key]: next }));
   };
+
+  const checks = useFieldChecks(() => ({
+    name: checkOrgName(form.name ?? "", "Hospital name"),
+    license: checkRegistrationNumber(
+      form.license_number ?? "",
+      "License number"
+    ),
+    email: checkEmail(form.email ?? "", "Email"),
+    phone: checkPhone(form.phone ?? "", "Phone", { required: true }),
+    addr1: checkAddressLine(form.address_line1 ?? "", "Address line 1"),
+    addr2: checkAddressLine(form.address_line2 ?? "", "Address line 2", {
+      required: false,
+    }),
+    city: checkPlace(form.city ?? "", "City"),
+    state: checkPlace(form.state ?? "", "State / province"),
+    postal: checkPostalCode(form.postal_code ?? ""),
+    country: checkPlace(form.country ?? "", "Country"),
+  }));
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
+    const problem = checks.validateAll();
+    if (problem) {
+      setFormError(problem);
+      return;
+    }
     updateOrg.mutate(form, { onSuccess: () => setSaved(true) });
   };
 
@@ -114,7 +176,13 @@ export function EditOrganizationModal({ open, onClose }: Props) {
                 className="mc-input"
                 value={form.name}
                 onChange={(e) => set("name", e.target.value)}
+                onBlur={() => checks.touch("name")}
               />
+              {checks.error("name") && (
+                <span className="mc-field-error" role="alert">
+                  {checks.error("name")}
+                </span>
+              )}
             </div>
             <div>
               <label className="mc-label" htmlFor="org-license">
@@ -125,7 +193,13 @@ export function EditOrganizationModal({ open, onClose }: Props) {
                 className="mc-input"
                 value={form.license_number}
                 onChange={(e) => set("license_number", e.target.value)}
+                onBlur={() => checks.touch("license")}
               />
+              {checks.error("license") && (
+                <span className="mc-field-error" role="alert">
+                  {checks.error("license")}
+                </span>
+              )}
             </div>
             <div>
               <label className="mc-label" htmlFor="org-email">
@@ -137,7 +211,13 @@ export function EditOrganizationModal({ open, onClose }: Props) {
                 className="mc-input"
                 value={form.email}
                 onChange={(e) => set("email", e.target.value)}
+                onBlur={() => checks.touch("email")}
               />
+              {checks.error("email") && (
+                <span className="mc-field-error" role="alert">
+                  {checks.error("email")}
+                </span>
+              )}
             </div>
             <div>
               <label className="mc-label" htmlFor="org-phone">
@@ -148,7 +228,13 @@ export function EditOrganizationModal({ open, onClose }: Props) {
                 className="mc-input"
                 value={form.phone}
                 onChange={(e) => set("phone", e.target.value)}
+                onBlur={() => checks.touch("phone")}
               />
+              {checks.error("phone") && (
+                <span className="mc-field-error" role="alert">
+                  {checks.error("phone")}
+                </span>
+              )}
             </div>
           </div>
           <div className="mc-pairs">
@@ -180,7 +266,13 @@ export function EditOrganizationModal({ open, onClose }: Props) {
                 className="mc-input"
                 value={form.address_line1}
                 onChange={(e) => set("address_line1", e.target.value)}
+                onBlur={() => checks.touch("addr1")}
               />
+              {checks.error("addr1") && (
+                <span className="mc-field-error" role="alert">
+                  {checks.error("addr1")}
+                </span>
+              )}
             </div>
             <div>
               <label className="mc-label" htmlFor="org-address2">
@@ -191,7 +283,13 @@ export function EditOrganizationModal({ open, onClose }: Props) {
                 className="mc-input"
                 value={form.address_line2}
                 onChange={(e) => set("address_line2", e.target.value)}
+                onBlur={() => checks.touch("addr2")}
               />
+              {checks.error("addr2") && (
+                <span className="mc-field-error" role="alert">
+                  {checks.error("addr2")}
+                </span>
+              )}
             </div>
             <div>
               <label className="mc-label" htmlFor="org-city">
@@ -202,7 +300,13 @@ export function EditOrganizationModal({ open, onClose }: Props) {
                 className="mc-input"
                 value={form.city}
                 onChange={(e) => set("city", e.target.value)}
+                onBlur={() => checks.touch("city")}
               />
+              {checks.error("city") && (
+                <span className="mc-field-error" role="alert">
+                  {checks.error("city")}
+                </span>
+              )}
             </div>
             <div>
               <label className="mc-label" htmlFor="org-state">
@@ -213,7 +317,13 @@ export function EditOrganizationModal({ open, onClose }: Props) {
                 className="mc-input"
                 value={form.state}
                 onChange={(e) => set("state", e.target.value)}
+                onBlur={() => checks.touch("state")}
               />
+              {checks.error("state") && (
+                <span className="mc-field-error" role="alert">
+                  {checks.error("state")}
+                </span>
+              )}
             </div>
             <div>
               <label className="mc-label" htmlFor="org-postal">
@@ -224,7 +334,13 @@ export function EditOrganizationModal({ open, onClose }: Props) {
                 className="mc-input"
                 value={form.postal_code}
                 onChange={(e) => set("postal_code", e.target.value)}
+                onBlur={() => checks.touch("postal")}
               />
+              {checks.error("postal") && (
+                <span className="mc-field-error" role="alert">
+                  {checks.error("postal")}
+                </span>
+              )}
             </div>
             <div>
               <label className="mc-label" htmlFor="org-country">
@@ -235,7 +351,13 @@ export function EditOrganizationModal({ open, onClose }: Props) {
                 className="mc-input"
                 value={form.country}
                 onChange={(e) => set("country", e.target.value)}
+                onBlur={() => checks.touch("country")}
               />
+              {checks.error("country") && (
+                <span className="mc-field-error" role="alert">
+                  {checks.error("country")}
+                </span>
+              )}
               <span className="mc-hint">
                 Changing the country changes which population the risk model
                 treats this hospital as.
@@ -305,7 +427,12 @@ export function EditOrganizationModal({ open, onClose }: Props) {
             gap: 12,
           }}
         >
-          {updateOrg.isError && (
+          {formError && (
+            <p className="mc-alert mc-alert-error" role="alert">
+              {formError}
+            </p>
+          )}
+          {!formError && updateOrg.isError && (
             <p className="mc-alert mc-alert-error">
               {updateOrg.error instanceof Error
                 ? updateOrg.error.message

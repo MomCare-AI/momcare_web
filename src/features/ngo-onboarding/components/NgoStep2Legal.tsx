@@ -18,6 +18,9 @@ export default function NgoStep2Legal({ defaultValues, onSubmit }: Props) {
     formState: { errors },
   } = useForm<LegalData>({
     resolver: zodResolver(legalSchema),
+    // Flag a mistake as soon as the user leaves the field, then keep
+    // re-checking as they correct it.
+    mode: "onTouched",
     defaultValues: { expiryDate: "", ntn: "", ...defaultValues },
   });
 

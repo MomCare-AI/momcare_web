@@ -1,6 +1,7 @@
 "use client";
 
 import { useForm } from "react-hook-form";
+import { filtered, keepName, keepPhone } from "@/shared/lib/validation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { step1Schema, type Step1Data } from "./hwSchemas";
 
@@ -16,6 +17,9 @@ export default function HwStep1Personal({ defaultValues, onSubmit }: Props) {
     formState: { errors },
   } = useForm<Step1Data>({
     resolver: zodResolver(step1Schema),
+    // Flag a mistake as soon as the user leaves the field, then keep
+    // re-checking as they correct it.
+    mode: "onTouched",
     defaultValues,
   });
 
@@ -37,7 +41,7 @@ export default function HwStep1Personal({ defaultValues, onSubmit }: Props) {
               First name <span className="hw-req">*</span>
             </label>
             <input
-              {...register("firstName")}
+              {...filtered(register("firstName"), keepName)}
               type="text"
               autoComplete="given-name"
               placeholder="John"
@@ -52,7 +56,7 @@ export default function HwStep1Personal({ defaultValues, onSubmit }: Props) {
               Last name <span className="hw-req">*</span>
             </label>
             <input
-              {...register("lastName")}
+              {...filtered(register("lastName"), keepName)}
               type="text"
               autoComplete="family-name"
               placeholder="Smith"
@@ -127,7 +131,7 @@ export default function HwStep1Personal({ defaultValues, onSubmit }: Props) {
           <div className="hw-field">
             <label className="hw-label">Phone number</label>
             <input
-              {...register("phoneNumber")}
+              {...filtered(register("phoneNumber"), keepPhone)}
               type="tel"
               placeholder="+1 555 000 0000"
               className="hw-input"

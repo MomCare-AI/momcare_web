@@ -1,5 +1,22 @@
 "use client";
 
+import {
+  checkAddressLine,
+  checkCnic,
+  checkDateOfBirth,
+  checkEmail,
+  checkPersonName,
+  checkPhone,
+  checkPlace,
+  checkPostalCode,
+  checkWholeNumber,
+  keepCnic,
+  keepName,
+  keepPhone,
+  keepPlace,
+  keepText,
+  type Rule,
+} from "@/shared/lib/validation";
 import { cloneElement, isValidElement, useId, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -80,16 +97,6 @@ type FormState = {
   country: string;
 };
 
-/** The backend requires all six when a patient is first enrolled. */
-const ADDRESS_FIELDS = [
-  "address_line1",
-  "address_line2",
-  "city",
-  "state",
-  "postal_code",
-  "country",
-] as const satisfies readonly (keyof FormState)[];
-
 type PregnancyState = {
   lmp: string;
   edd: string;
@@ -98,6 +105,99 @@ type PregnancyState = {
   para: string;
   notes: string;
 };
+
+/** What may be typed into each field. Anything else is dropped as it is typed
+ *  or pasted, so a digit can never end up in a name. */
+const FILTERS: Partial<Record<keyof FormState, (v: string) => string>> = {
+  first_name: keepName,
+  last_name: keepName,
+  emergency_contact_name: keepName,
+  emergency_contact_relation: keepName,
+  phone: keepPhone,
+  emergency_contact_phone: keepPhone,
+  cnic: keepCnic,
+  city: keepPlace,
+  state: keepPlace,
+  country: keepPlace,
+  address_line1: (v) => keepText(v, 200),
+  address_line2: (v) => keepText(v, 200),
+  postal_code: (v) => v.replace(/[^A-Za-z0-9 -]/g, "").slice(0, 10),
+  emergency_contact_email: (v) => v.replace(/\s/g, "").slice(0, 254),
+};
+
+type FieldErrors = Partial<
+  Record<keyof FormState | "gravida" | "para" | "lmp", string>
+>;
+
+/** The first problem with each field, using the shared rules. */
+function validateForm(
+  form: FormState,
+  pregnancy: PregnancyState,
+  recordPregnancy: boolean
+): FieldErrors {
+  const errors: FieldErrors = {};
+  const add = (field: keyof FieldErrors, rule: Rule) => {
+    if (rule) errors[field] = rule;
+  };
+  add("first_name", checkPersonName(form.first_name, "First name"));
+  add(
+    "last_name",
+    checkPersonName(form.last_name, "Last name", { required: false })
+  );
+  add("date_of_birth", checkDateOfBirth(form.date_of_birth));
+  add("phone", checkPhone(form.phone));
+  add("cnic", checkCnic(form.cnic));
+  add(
+    "emergency_contact_name",
+    checkPersonName(form.emergency_contact_name, "Emergency contact name", {
+      required: false,
+    })
+  );
+  add(
+    "emergency_contact_phone",
+    checkPhone(form.emergency_contact_phone, "Emergency contact phone")
+  );
+  add(
+    "emergency_contact_relation",
+    checkPersonName(form.emergency_contact_relation, "Relationship", {
+      required: false,
+    })
+  );
+  add(
+    "emergency_contact_email",
+    checkEmail(form.emergency_contact_email, "Email", { required: false })
+  );
+  add("address_line1", checkAddressLine(form.address_line1, "Address line 1"));
+  add("address_line2", checkAddressLine(form.address_line2, "Address line 2"));
+  add("city", checkPlace(form.city, "City"));
+  add("state", checkPlace(form.state, "State / province"));
+  add("postal_code", checkPostalCode(form.postal_code));
+  add("country", checkPlace(form.country, "Country"));
+
+  if (recordPregnancy) {
+    add("gravida", checkWholeNumber(pregnancy.gravida, "Gravida", 1, 20));
+    add("para", checkWholeNumber(pregnancy.para, "Para", 0, 20));
+    if (
+      !errors.gravida &&
+      !errors.para &&
+      pregnancy.gravida &&
+      pregnancy.para &&
+      Number(pregnancy.para) > Number(pregnancy.gravida)
+    ) {
+      errors.para = "Para cannot be higher than gravida.";
+    }
+    if (pregnancy.lmp) {
+      const days = (Date.now() - new Date(pregnancy.lmp).getTime()) / 86400000;
+      if (Number.isNaN(days)) errors.lmp = "Enter a valid date.";
+      else if (days < 0)
+        errors.lmp = "The last period cannot be in the future.";
+      else if (days > 310) {
+        errors.lmp = "That is over 44 weeks ago. Check the date.";
+      }
+    }
+  }
+  return errors;
+}
 
 const STEPS = [
   { label: "Identity & Contact", sub: "Who is the patient", Icon: User },
@@ -195,24 +295,33 @@ export default function EnrolPatientPage() {
   );
   const derivedAge = derivedEdd ? gestationalAge(derivedEdd) : null;
 
-  const set = (field: keyof FormState, value: string) =>
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+
+  // Check one field as soon as the user leaves it, so a mistake is flagged
+  // right there instead of at the end of the form.
+  const blurField = (field: keyof FieldErrors) => {
+    const message = validateForm(form, pregnancy, recordPregnancy)[field];
+    setFieldErrors((e) => ({ ...e, [field]: message }));
+  };
+
+  const set = (field: keyof FormState, raw: string) => {
+    const value = FILTERS[field]?.(raw) ?? raw;
     setForm((f) => ({ ...f, [field]: value }));
+    setFieldErrors((e) => (e[field] ? { ...e, [field]: undefined } : e));
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    if (!form.first_name.trim()) {
-      setError("First name is required.");
-      setStep(0);
-      return;
-    }
-
-    if (ADDRESS_FIELDS.some((f) => !form[f].trim())) {
-      setError(
-        "Fill in every address field — the record needs her full address."
+    const problems = validateForm(form, pregnancy, recordPregnancy);
+    if (Object.values(problems).some(Boolean)) {
+      setFieldErrors(problems);
+      setError("Please correct the highlighted fields.");
+      const onFirstStep = Object.keys(problems).some(
+        (k) => k !== "gravida" && k !== "para" && k !== "lmp"
       );
-      setStep(0);
+      setStep(onFirstStep ? 0 : 1);
       return;
     }
 
@@ -355,21 +464,34 @@ export default function EnrolPatientPage() {
                 </div>
                 <div className="mc-card-body">
                   <div className="mc-formgrid">
-                    <Field label="First name" required>
+                    <Field
+                      label="First name"
+                      required
+                      error={fieldErrors.first_name}
+                      onBlur={() => blurField("first_name")}
+                    >
                       <input
                         className="mc-input"
                         value={form.first_name}
                         onChange={(e) => set("first_name", e.target.value)}
                       />
                     </Field>
-                    <Field label="Last name">
+                    <Field
+                      label="Last name"
+                      error={fieldErrors.last_name}
+                      onBlur={() => blurField("last_name")}
+                    >
                       <input
                         className="mc-input"
                         value={form.last_name}
                         onChange={(e) => set("last_name", e.target.value)}
                       />
                     </Field>
-                    <Field label="Date of birth">
+                    <Field
+                      label="Date of birth"
+                      error={fieldErrors.date_of_birth}
+                      onBlur={() => blurField("date_of_birth")}
+                    >
                       <input
                         className="mc-input"
                         type="date"
@@ -391,7 +513,12 @@ export default function EnrolPatientPage() {
                         ))}
                       </select>
                     </Field>
-                    <Field label="Phone" hint="Used to find her record later">
+                    <Field
+                      label="Phone"
+                      hint="Used to find her record later"
+                      error={fieldErrors.phone}
+                      onBlur={() => blurField("phone")}
+                    >
                       <input
                         className="mc-input"
                         value={form.phone}
@@ -399,7 +526,12 @@ export default function EnrolPatientPage() {
                         placeholder="03001234567"
                       />
                     </Field>
-                    <Field label="CNIC" hint="If she has one">
+                    <Field
+                      label="CNIC"
+                      hint="If she has one"
+                      error={fieldErrors.cnic}
+                      onBlur={() => blurField("cnic")}
+                    >
                       <input
                         className="mc-input"
                         value={form.cnic}
@@ -424,7 +556,11 @@ export default function EnrolPatientPage() {
                   </div>
 
                   <div className="mc-formgrid" style={{ marginBottom: 0 }}>
-                    <Field label="Emergency contact">
+                    <Field
+                      label="Emergency contact"
+                      error={fieldErrors.emergency_contact_name}
+                      onBlur={() => blurField("emergency_contact_name")}
+                    >
                       <input
                         className="mc-input"
                         value={form.emergency_contact_name}
@@ -434,7 +570,11 @@ export default function EnrolPatientPage() {
                         placeholder="Name"
                       />
                     </Field>
-                    <Field label="Their phone">
+                    <Field
+                      label="Their phone"
+                      error={fieldErrors.emergency_contact_phone}
+                      onBlur={() => blurField("emergency_contact_phone")}
+                    >
                       <input
                         className="mc-input"
                         value={form.emergency_contact_phone}
@@ -443,7 +583,11 @@ export default function EnrolPatientPage() {
                         }
                       />
                     </Field>
-                    <Field label="Relationship">
+                    <Field
+                      label="Relationship"
+                      error={fieldErrors.emergency_contact_relation}
+                      onBlur={() => blurField("emergency_contact_relation")}
+                    >
                       <input
                         className="mc-input"
                         value={form.emergency_contact_relation}
@@ -453,7 +597,12 @@ export default function EnrolPatientPage() {
                         placeholder="Husband, mother, sister…"
                       />
                     </Field>
-                    <Field label="Their email" hint="Optional">
+                    <Field
+                      label="Their email"
+                      hint="Optional"
+                      error={fieldErrors.emergency_contact_email}
+                      onBlur={() => blurField("emergency_contact_email")}
+                    >
                       <input
                         className="mc-input"
                         type="email"
@@ -472,7 +621,12 @@ export default function EnrolPatientPage() {
                     Address
                   </div>
                   <div className="mc-formgrid" style={{ marginBottom: 0 }}>
-                    <Field label="Address line 1" required>
+                    <Field
+                      label="Address line 1"
+                      required
+                      error={fieldErrors.address_line1}
+                      onBlur={() => blurField("address_line1")}
+                    >
                       <input
                         className="mc-input"
                         value={form.address_line1}
@@ -480,7 +634,12 @@ export default function EnrolPatientPage() {
                         placeholder="House 12, Street 4"
                       />
                     </Field>
-                    <Field label="Address line 2" required>
+                    <Field
+                      label="Address line 2"
+                      required
+                      error={fieldErrors.address_line2}
+                      onBlur={() => blurField("address_line2")}
+                    >
                       <input
                         className="mc-input"
                         value={form.address_line2}
@@ -488,28 +647,48 @@ export default function EnrolPatientPage() {
                         placeholder="Area, e.g. F-7"
                       />
                     </Field>
-                    <Field label="City" required>
+                    <Field
+                      label="City"
+                      required
+                      error={fieldErrors.city}
+                      onBlur={() => blurField("city")}
+                    >
                       <input
                         className="mc-input"
                         value={form.city}
                         onChange={(e) => set("city", e.target.value)}
                       />
                     </Field>
-                    <Field label="State / province" required>
+                    <Field
+                      label="State / province"
+                      required
+                      error={fieldErrors.state}
+                      onBlur={() => blurField("state")}
+                    >
                       <input
                         className="mc-input"
                         value={form.state}
                         onChange={(e) => set("state", e.target.value)}
                       />
                     </Field>
-                    <Field label="Postal code" required>
+                    <Field
+                      label="Postal code"
+                      required
+                      error={fieldErrors.postal_code}
+                      onBlur={() => blurField("postal_code")}
+                    >
                       <input
                         className="mc-input"
                         value={form.postal_code}
                         onChange={(e) => set("postal_code", e.target.value)}
                       />
                     </Field>
-                    <Field label="Country" required>
+                    <Field
+                      label="Country"
+                      required
+                      error={fieldErrors.country}
+                      onBlur={() => blurField("country")}
+                    >
                       <input
                         className="mc-input"
                         value={form.country}
@@ -602,16 +781,20 @@ export default function EnrolPatientPage() {
                         <Field
                           label="Gravida"
                           hint="Pregnancies including this one"
+                          error={fieldErrors.gravida}
+                          onBlur={() => blurField("gravida")}
                         >
                           <input
                             className="mc-input"
-                            type="number"
-                            min={0}
+                            inputMode="numeric"
+                            maxLength={2}
                             value={pregnancy.gravida}
                             onChange={(e) =>
                               setPregnancy((p) => ({
                                 ...p,
-                                gravida: e.target.value,
+                                gravida: e.target.value
+                                  .replace(/\D/g, "")
+                                  .slice(0, 2),
                               }))
                             }
                           />
@@ -619,16 +802,20 @@ export default function EnrolPatientPage() {
                         <Field
                           label="Para"
                           hint="Births reaching viable gestation"
+                          error={fieldErrors.para}
+                          onBlur={() => blurField("para")}
                         >
                           <input
                             className="mc-input"
-                            type="number"
-                            min={0}
+                            inputMode="numeric"
+                            maxLength={2}
                             value={pregnancy.para}
                             onChange={(e) =>
                               setPregnancy((p) => ({
                                 ...p,
-                                para: e.target.value,
+                                para: e.target.value
+                                  .replace(/\D/g, "")
+                                  .slice(0, 2),
                               }))
                             }
                           />
@@ -919,11 +1106,17 @@ function Field({
   label,
   hint,
   required,
+  error,
+  onBlur,
   children,
 }: {
   label: string;
   hint?: string;
   required?: boolean;
+  /** The message for this field, shown under it in red. */
+  error?: string;
+  /** Runs when focus leaves the field. */
+  onBlur?: () => void;
   children: React.ReactNode;
 }) {
   // Tie the label to its control so a screen reader announces it and a click
@@ -936,22 +1129,31 @@ function Field({
     : null;
   const id = control?.props.id ?? generated;
   const hintId = hint ? `${id}-hint` : undefined;
+  const errorId = error ? `${id}-error` : undefined;
 
   return (
-    <div>
+    <div onBlur={onBlur}>
       <label className="mc-label" htmlFor={id}>
         {label} {required && <span className="mc-req">*</span>}
       </label>
       {control
         ? cloneElement(control, {
             id,
-            "aria-describedby": control.props["aria-describedby"] ?? hintId,
-          })
+            "aria-describedby":
+              errorId ?? control.props["aria-describedby"] ?? hintId,
+            ...(error ? { "aria-invalid": true } : {}),
+          } as Record<string, unknown>)
         : children}
-      {hint && (
-        <span className="mc-hint" id={hintId}>
-          {hint}
+      {error ? (
+        <span className="mc-field-error" id={errorId} role="alert">
+          {error}
         </span>
+      ) : (
+        hint && (
+          <span className="mc-hint" id={hintId}>
+            {hint}
+          </span>
+        )
       )}
     </div>
   );

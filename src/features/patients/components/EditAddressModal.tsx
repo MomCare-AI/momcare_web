@@ -1,6 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import {
+  checkAddressLine,
+  checkPlace,
+  checkPostalCode,
+  keepPlace,
+  keepText,
+  useFieldChecks,
+} from "@/shared/lib/validation";
 import { AlertCircle, MapPin } from "lucide-react";
 
 import { Modal } from "@/shared/ui/Modal";
@@ -57,6 +65,15 @@ function formFrom(patient: Partial<Pick<PatientDetail, AddressKey>>) {
  * backend requires every one when a patient is enrolled, so a half-edited
  * address would leave the record worse than before.
  */
+/** What may be typed into each address field. */
+function filterAddress(key: string, v: string): string {
+  if (key === "city" || key === "state" || key === "country")
+    return keepPlace(v);
+  if (key === "postal_code")
+    return v.replace(/[^A-Za-z0-9 -]/g, "").slice(0, 10);
+  return keepText(v, 200);
+}
+
 export function EditAddressModal({
   open,
   onClose,
@@ -80,14 +97,24 @@ export function EditAddressModal({
     }
   }
 
+  const checks = useFieldChecks(() => ({
+    address_line1: checkAddressLine(form.address_line1, "Address line 1"),
+    address_line2: checkAddressLine(form.address_line2, "Address line 2"),
+    city: checkPlace(form.city, "City"),
+    state: checkPlace(form.state, "State / province"),
+    postal_code: checkPostalCode(form.postal_code),
+    country: checkPlace(form.country, "Country"),
+  }));
+
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     const cleaned = Object.fromEntries(
       ADDRESS_KEYS.map((k) => [k, form[k].trim()])
     ) as AddressForm;
-    if (ADDRESS_KEYS.some((k) => !cleaned[k])) {
-      setError("Fill in every address field.");
+    const problem = checks.validateAll();
+    if (problem) {
+      setError(problem);
       return;
     }
     try {
@@ -121,9 +148,18 @@ export function EditAddressModal({
                 value={form[f.key]}
                 placeholder={f.placeholder}
                 onChange={(e) =>
-                  setForm((prev) => ({ ...prev, [f.key]: e.target.value }))
+                  setForm((prev) => ({
+                    ...prev,
+                    [f.key]: filterAddress(f.key, e.target.value),
+                  }))
                 }
+                onBlur={() => checks.touch(f.key)}
               />
+              {checks.error(f.key) && (
+                <span className="mc-field-error" role="alert">
+                  {checks.error(f.key)}
+                </span>
+              )}
             </div>
           ))}
         </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { checkRegistrationNumber } from "@/shared/lib/validation";
 import Link from "next/link";
 import { motion } from "motion/react";
 import { Plus, Radio, Watch } from "lucide-react";
@@ -183,6 +184,7 @@ function DeviceRow({ device, index }: { device: Device; index: number }) {
 
 function RegisterForm({ onDone }: { onDone: () => void }) {
   const register = useRegisterDevice();
+  const [serialProblem, setSerialProblem] = useState<string | null>(null);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -191,7 +193,9 @@ function RegisterForm({ onDone }: { onDone: () => void }) {
     // ever pasted from a scanner that fires no keystroke events.
     const form = new FormData(e.currentTarget);
     const serial = String(form.get("serial") ?? "").trim();
-    if (!serial) return;
+    const problem = checkRegistrationNumber(serial, "Serial number");
+    setSerialProblem(problem);
+    if (problem) return;
     const acquisition = String(form.get("acquisition") ?? "");
     register.mutate(
       { serialNumber: serial, acquisition },
@@ -210,10 +214,18 @@ function RegisterForm({ onDone }: { onDone: () => void }) {
             id="serial"
             name="serial"
             className="mc-input"
+            maxLength={40}
+            aria-invalid={serialProblem ? true : undefined}
+            onChange={() => setSerialProblem(null)}
             placeholder="e.g. MC-2026-0413"
             autoFocus
             required
           />
+          {serialProblem && (
+            <span className="mc-field-error" role="alert">
+              {serialProblem}
+            </span>
+          )}
         </div>
         <div>
           <label className="mc-label" htmlFor="acquisition">

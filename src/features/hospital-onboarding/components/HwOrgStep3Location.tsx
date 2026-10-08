@@ -1,6 +1,7 @@
 "use client";
 
 import { useForm } from "react-hook-form";
+import { filtered, keepPlace } from "@/shared/lib/validation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { orgStep3Schema, type OrgStep3Data } from "./hwSchemas";
 import { isSupported, regionLabelFor } from "../regions";
@@ -148,6 +149,9 @@ export default function HwOrgStep3Location({
     formState: { errors },
   } = useForm<OrgStep3Data>({
     resolver: zodResolver(orgStep3Schema),
+    // Flag a mistake as soon as the user leaves the field, then keep
+    // re-checking as they correct it.
+    mode: "onTouched",
     defaultValues,
   });
 
@@ -204,7 +208,7 @@ export default function HwOrgStep3Location({
               City <span className="hw-req">*</span>
             </label>
             <input
-              {...register("city")}
+              {...filtered(register("city"), keepPlace)}
               type="text"
               placeholder="e.g. London"
               className={`hw-input${errors.city ? " hw-input-err" : ""}`}
@@ -221,7 +225,7 @@ export default function HwOrgStep3Location({
               State / Province <span className="hw-req">*</span>
             </label>
             <input
-              {...register("stateProvince")}
+              {...filtered(register("stateProvince"), keepPlace)}
               type="text"
               placeholder="e.g. England"
               className={`hw-input${errors.stateProvince ? " hw-input-err" : ""}`}
@@ -252,7 +256,7 @@ export default function HwOrgStep3Location({
               Country <span className="hw-req">*</span>
             </label>
             <select
-              {...register("country")}
+              {...filtered(register("country"), keepPlace)}
               defaultValue=""
               className={`hw-input hw-select${errors.country ? " hw-input-err" : ""}`}
             >

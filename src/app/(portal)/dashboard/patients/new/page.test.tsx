@@ -204,8 +204,58 @@ describe("EnrolPatientPage", () => {
     clickContinue();
     fireEvent.click(screen.getByRole("button", { name: /Enrol patient/ }));
 
-    await screen.findByText(/Fill in every address field/);
+    await screen.findByText(/City is required/);
     expect(mutateAsync).not.toHaveBeenCalled();
+  });
+
+  it("does not let digits into a name, and refuses a name that is only digits", async () => {
+    const { mutateAsync } = setup();
+    render(<EnrolPatientPage />);
+
+    fillRequired();
+    fireEvent.change(fieldInput(/^First name/), { target: { value: "123" } });
+    // Digits never reach the field in the first place.
+    expect((fieldInput(/^First name/) as HTMLInputElement).value).toBe("");
+
+    clickContinue();
+    fireEvent.click(screen.getByLabelText("Record a pregnancy now")); // off
+    clickContinue();
+    fireEvent.click(screen.getByRole("button", { name: /Enrol patient/ }));
+
+    await screen.findByText(/First name is required/);
+    expect(mutateAsync).not.toHaveBeenCalled();
+  });
+
+  it("strips letters from phone numbers and digits from names as they are typed", () => {
+    setup();
+    render(<EnrolPatientPage />);
+
+    fireEvent.change(fieldInput(/^First name/), {
+      target: { value: "Ay3sha#" },
+    });
+    expect((fieldInput(/^First name/) as HTMLInputElement).value).toBe("Aysha");
+
+    fireEvent.change(fieldInput(/^Phone/), { target: { value: "03a00-12b" } });
+    expect((fieldInput(/^Phone/) as HTMLInputElement).value).toBe("0300-12");
+  });
+
+  it("flags a mistake as soon as the user leaves the field", async () => {
+    setup();
+    render(<EnrolPatientPage />);
+
+    // Looked up once: an error message that starts with "Phone" would
+    // otherwise match the label query too.
+    const phone = fieldInput(/^Phone/);
+    const first = fieldInput(/^First name/);
+
+    fireEvent.change(phone, { target: { value: "123" } });
+    expect(screen.queryByText(/7 to 15 digits/)).toBeNull();
+    fireEvent.blur(phone);
+    expect(await screen.findByText(/7 to 15 digits/)).toBeTruthy();
+
+    // A required field left empty
+    fireEvent.blur(first);
+    expect(await screen.findByText(/First name is required/)).toBeTruthy();
   });
 
   it("refuses to submit without a dating source when recording a pregnancy", async () => {
