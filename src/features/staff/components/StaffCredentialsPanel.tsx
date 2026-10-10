@@ -1,6 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import {
+  checkLabel,
+  checkRegistrationNumber,
+  checkText,
+  firstProblem,
+  keepText,
+} from "@/shared/lib/validation";
 import Image from "next/image";
 import { GraduationCap } from "lucide-react";
 
@@ -49,8 +56,37 @@ export function StaffCredentialsPanel({
     setEditing(true);
   }
 
+  const [problem, setProblem] = useState<string | null>(null);
+
   function submit(e: React.FormEvent) {
     e.preventDefault();
+    const today = new Date().toISOString().slice(0, 10);
+    const found = firstProblem(
+      checkText(qualifications, "Qualifications", { max: 200 }),
+      specialty ? checkLabel(specialty, "Specialty", { max: 100 }) : null,
+      registrationNumber
+        ? checkRegistrationNumber(registrationNumber, "Registration number")
+        : null,
+      registrationAuthority
+        ? checkLabel(registrationAuthority, "Registration authority", {
+            max: 100,
+          })
+        : null,
+      practicingSince && practicingSince > today
+        ? "Practising since cannot be in the future."
+        : null,
+      practicingSince && practicingSince < "1950-01-01"
+        ? "Practising since is not a believable date."
+        : null,
+      photoFile && !/^image\/(jpeg|png|webp)$/.test(photoFile.type)
+        ? "The photo must be a JPG, PNG or WebP image."
+        : null,
+      photoFile && photoFile.size > 5 * 1024 * 1024
+        ? "The photo must be 5 MB or smaller."
+        : null
+    );
+    setProblem(found);
+    if (found) return;
     updateProfile.mutate(
       {
         staffId: member.id,
@@ -85,7 +121,7 @@ export function StaffCredentialsPanel({
               id={`qual-${member.id}`}
               className="mc-input"
               value={qualifications}
-              onChange={(e) => setQualifications(e.target.value)}
+              onChange={(e) => setQualifications(keepText(e.target.value, 200))}
               placeholder="e.g. MBBS, FCPS (Gynae & Obs)"
             />
           </div>
@@ -97,7 +133,7 @@ export function StaffCredentialsPanel({
               id={`spec-${member.id}`}
               className="mc-input"
               value={specialty}
-              onChange={(e) => setSpecialty(e.target.value)}
+              onChange={(e) => setSpecialty(keepText(e.target.value, 100))}
               placeholder="e.g. Obstetrics & Gynaecology"
             />
           </div>
@@ -109,7 +145,9 @@ export function StaffCredentialsPanel({
               id={`regno-${member.id}`}
               className="mc-input"
               value={registrationNumber}
-              onChange={(e) => setRegistrationNumber(e.target.value)}
+              onChange={(e) =>
+                setRegistrationNumber(keepText(e.target.value, 40))
+              }
               placeholder="e.g. PMDC-12345"
             />
           </div>
@@ -121,7 +159,9 @@ export function StaffCredentialsPanel({
               id={`regauth-${member.id}`}
               className="mc-input"
               value={registrationAuthority}
-              onChange={(e) => setRegistrationAuthority(e.target.value)}
+              onChange={(e) =>
+                setRegistrationAuthority(keepText(e.target.value, 100))
+              }
               placeholder="e.g. PMDC, Pakistan Nursing Council"
             />
           </div>
@@ -151,7 +191,17 @@ export function StaffCredentialsPanel({
           </div>
         </div>
 
-        {updateProfile.isError && (
+        {problem && (
+          <p
+            className="mc-alert mc-alert-error"
+            role="alert"
+            style={{ marginTop: 10 }}
+          >
+            {problem}
+          </p>
+        )}
+
+        {!problem && updateProfile.isError && (
           <p className="mc-alert mc-alert-error" style={{ marginTop: 10 }}>
             {updateProfile.error instanceof Error
               ? updateProfile.error.message

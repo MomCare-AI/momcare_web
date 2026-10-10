@@ -71,8 +71,10 @@ describe("HospitalWizard shell", () => {
     fireEvent.click(screen.getByRole("button", { name: /back/i }));
 
     await waitFor(() => expect(screen.getByText("Step 1 of 4")).toBeTruthy());
-    expect(
-      (screen.getByPlaceholderText("John") as HTMLInputElement).value
-    ).toBe("Sara");
+    // The step content fades in after the counter changes, so wait for it.
+    const first = (await screen.findByPlaceholderText(
+      "John"
+    )) as HTMLInputElement;
+    expect(first.value).toBe("Sara");
   });
 });

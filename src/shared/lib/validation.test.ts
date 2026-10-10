@@ -6,6 +6,7 @@ import {
   checkDateOfBirth,
   checkEmail,
   checkOrgName,
+  checkPassword,
   checkPersonName,
   checkPhone,
   checkPlace,
@@ -138,5 +139,15 @@ describe("numbers and dates", () => {
     expect(checkDateOfBirth("2999-01-01")).toMatch(/future/);
     expect(checkDateOfBirth("1996-03-14")).toBeNull();
     expect(checkDateOfBirth("1800-01-01")).toMatch(/120/);
+  });
+});
+
+describe("passwords", () => {
+  it("needs 8 characters, an uppercase letter and a number", () => {
+    expect(checkPassword("")).toMatch(/required/);
+    expect(checkPassword("Ab1")).toMatch(/8 characters/);
+    expect(checkPassword("password1")).toMatch(/uppercase/);
+    expect(checkPassword("Passwordx")).toMatch(/number/);
+    expect(checkPassword("Password1")).toBeNull();
   });
 });

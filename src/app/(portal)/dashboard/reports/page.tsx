@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Activity,
   AlertTriangle,
@@ -99,7 +100,15 @@ function formatMinutes(minutes: number | null): string {
 export default function ReportsPage() {
   usePageTitle("Executive Dashboard");
   const { isHospitalAdmin } = usePortal();
+  const router = useRouter();
   const [tab, setTab] = useState<Tab>("clinical");
+
+  // This page is for hospital admins only; anyone else who reaches it by
+  // typing the address is sent back to the dashboard.
+  useEffect(() => {
+    if (!isHospitalAdmin) router.replace("/dashboard");
+  }, [isHospitalAdmin, router]);
+  if (!isHospitalAdmin) return null;
 
   return (
     <>
@@ -330,57 +339,6 @@ function ClinicalOverviewTab() {
           <section className="mc-kpis">
             <div
               className="mc-kpi"
-              style={{ background: TINT_AMBER, borderLeftColor: "transparent" }}
-            >
-              <div className="mc-kpi-top">
-                <span className="mc-kpi-label">Total readings</span>
-                <span className="mc-kpi-icon mc-kpi-icon-neutral">
-                  <Activity size={17} strokeWidth={1.9} aria-hidden />
-                </span>
-              </div>
-              <span
-                className="mc-kpi-value"
-                title="Not yet available — no hospital-wide reading-count endpoint exists yet (readings are only listed per pregnancy)"
-              >
-                —
-              </span>
-            </div>
-            <div
-              className="mc-kpi"
-              style={{ background: TINT_BLUE, borderLeftColor: "transparent" }}
-            >
-              <div className="mc-kpi-top">
-                <span className="mc-kpi-label">RPM compliance</span>
-                <span className="mc-kpi-icon mc-kpi-icon-neutral">
-                  <CheckCircle2 size={17} strokeWidth={1.9} aria-hidden />
-                </span>
-              </div>
-              <span
-                className="mc-kpi-value"
-                title="MomCare runs one programme — there is no RPM/CCM split on the backend to compute this from"
-              >
-                —
-              </span>
-            </div>
-            <div
-              className="mc-kpi"
-              style={{ background: TINT_GREEN, borderLeftColor: "transparent" }}
-            >
-              <div className="mc-kpi-top">
-                <span className="mc-kpi-label">CCM compliance</span>
-                <span className="mc-kpi-icon mc-kpi-icon-neutral">
-                  <CheckCircle2 size={17} strokeWidth={1.9} aria-hidden />
-                </span>
-              </div>
-              <span
-                className="mc-kpi-value"
-                title="MomCare runs one programme — there is no RPM/CCM split on the backend to compute this from"
-              >
-                —
-              </span>
-            </div>
-            <div
-              className="mc-kpi"
               style={{ background: TINT_BLUE, borderLeftColor: "transparent" }}
             >
               <div className="mc-kpi-top">
@@ -394,25 +352,6 @@ function ClinicalOverviewTab() {
           </section>
 
           <div className="mc-grid-even">
-            <Card>
-              <CardHeader>
-                <div className="mc-card-title">Monthly compliance</div>
-                <div className="mc-card-sub">
-                  No MomCare equivalent — RPM/CCM programme compliance
-                  isn&apos;t tracked here
-                </div>
-              </CardHeader>
-              <CardBody>
-                <EmptyState
-                  icon={
-                    <CheckCircle2 size={20} strokeWidth={1.9} aria-hidden />
-                  }
-                  title="Not applicable"
-                  text="MomCare runs a single programme with no billing-compliance concept to chart month by month."
-                />
-              </CardBody>
-            </Card>
-
             <Card>
               <CardHeader>
                 <div className="mc-card-title">Device distribution</div>

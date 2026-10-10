@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 
 import { API_BASE } from "@/core/api/apiBase";
+import { checkPassword } from "@/shared/lib/validation";
 import { AuthSplitLayout } from "../../../../_components/AuthSplitLayout";
 import styles from "../../../../login/login.module.css";
 
@@ -84,8 +85,9 @@ export function ResetPasswordPageClient({
     const password = String(form.get("password") ?? "");
     const confirm = String(form.get("confirm") ?? "");
 
-    if (!password) {
-      setError("Choose a new password.");
+    const weak = checkPassword(password, "Password");
+    if (weak) {
+      setError(weak);
       return;
     }
     if (password !== confirm) {

@@ -5,6 +5,7 @@ import { GraduationCap, KeyRound, ShieldCheck } from "lucide-react";
 
 import { authFetch, clearAccessToken } from "@/core/api/authFetch";
 import { clearQueryCache } from "@/core/query/queryClient";
+import { checkPassword } from "@/shared/lib/validation";
 import { usePortal } from "../portal";
 import { useStaffList } from "@/features/staff/hooks/useStaff";
 import { StaffCredentialsPanel } from "@/features/staff/components/StaffCredentialsPanel";
@@ -64,8 +65,13 @@ export default function SettingsPage() {
     const next = String(form.get("new_password") ?? "");
     const confirm = String(form.get("confirm_password") ?? "");
 
-    if (!current || !next) {
-      setError("Fill in your current and new password.");
+    if (!current) {
+      setError("Enter your current password.");
+      return;
+    }
+    const weak = checkPassword(next, "New password");
+    if (weak) {
+      setError(weak);
       return;
     }
     if (next !== confirm) {

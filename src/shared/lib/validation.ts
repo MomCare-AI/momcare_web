@@ -281,6 +281,16 @@ export function checkDateOfBirth(
   return null;
 }
 
+/** The portal's password rule: 8+ characters, an uppercase letter and a number. */
+export function checkPassword(value: string, label = "Password"): Rule {
+  if (!value) return `${label} is required.`;
+  if (value.length < 8) return `${label} must be at least 8 characters.`;
+  if (value.length > 128) return `${label} is too long.`;
+  if (!/[A-Z]/.test(value)) return `${label} needs an uppercase letter.`;
+  if (!/[0-9]/.test(value)) return `${label} needs a number.`;
+  return null;
+}
+
 /** The first problem among several rule results, or `null`. */
 export const firstProblem = (...rules: Rule[]): Rule =>
   rules.find((r) => r !== null) ?? null;

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Check, Pencil, StickyNote, Trash2, X } from "lucide-react";
 
 import { Card, CardBody, CardHeader } from "@/shared/ui/Card";
+import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { InitialsAvatar } from "@/shared/ui/InitialsAvatar";
 import { formatDateTime } from "@/shared/lib/formatDateTime";
 import type { TextEntry } from "../types";
@@ -54,6 +55,7 @@ export function CarePlanEntries({
   const [draft, setDraft] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState("");
+  const [removingId, setRemovingId] = useState<string | null>(null);
 
   const mayWrite = canWrite && editable;
 
@@ -207,7 +209,7 @@ export function CarePlanEntries({
                           aria-label="Remove"
                           title="Remove"
                           disabled={busy}
-                          onClick={() => onRemove(entry.id)}
+                          onClick={() => setRemovingId(entry.id)}
                         >
                           <Trash2 size={12} strokeWidth={2} aria-hidden />
                         </button>
@@ -284,6 +286,18 @@ export function CarePlanEntries({
           </p>
         )}
       </CardBody>
+      <ConfirmDialog
+        open={removingId !== null}
+        title="Remove this entry?"
+        message="It will be taken off this care plan."
+        confirmLabel="Remove"
+        busy={busy}
+        onClose={() => setRemovingId(null)}
+        onConfirm={() => {
+          if (removingId) onRemove(removingId);
+          setRemovingId(null);
+        }}
+      />
     </Card>
   );
 }

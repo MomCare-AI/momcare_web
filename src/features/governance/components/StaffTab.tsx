@@ -590,10 +590,7 @@ function StaffRow({
             <span className="mc-badge mc-badge-stable">Active</span>
           )}
         </td>
-        <td
-          className="mc-dtable-sub"
-          title="Not yet available — Staff.max_patients exists on the backend model but isn't exposed via the API yet"
-        >
+        <td className="mc-dtable-sub" title="Not tracked yet">
           —
         </td>
         <td>

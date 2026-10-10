@@ -107,24 +107,7 @@ export default function HwOrgStep2Contact({
               className={`hw-input hw-input-icon-pad${errors.contactPhone ? " hw-input-err" : ""}`}
             />
           </div>
-          <div className="hw-info-badge">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <circle
-                cx="7"
-                cy="7"
-                r="6"
-                stroke="currentColor"
-                strokeWidth="1.2"
-              />
-              <path
-                d="M7 6.5V10M7 4.5v.5"
-                stroke="currentColor"
-                strokeWidth="1.4"
-                strokeLinecap="round"
-              />
-            </svg>
-            Verified by OTP before submission is accepted.
-          </div>
+
           {errors.contactPhone && (
             <span className="hw-err-msg">{errors.contactPhone.message}</span>
           )}

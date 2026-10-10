@@ -183,8 +183,8 @@ describe("reset password", () => {
     await renderReset();
 
     const password = await screen.findByLabelText(/new password/i);
-    type(password, "password");
-    type(screen.getByLabelText(/confirm password/i), "password");
+    type(password, "Password1");
+    type(screen.getByLabelText(/confirm password/i), "Password1");
     fireEvent.click(screen.getByRole("button", { name: /set password/i }));
 
     expect(await screen.findByText(/too common/i)).toBeTruthy();
@@ -215,8 +215,8 @@ describe("reset password", () => {
     await renderReset();
 
     const password = await screen.findByLabelText(/new password/i);
-    type(password, "zaka.satti@momcare");
-    type(screen.getByLabelText(/confirm password/i), "zaka.satti@momcare");
+    type(password, "Zaka.satti1");
+    type(screen.getByLabelText(/confirm password/i), "Zaka.satti1");
     fireEvent.click(screen.getByRole("button", { name: /set password/i }));
 
     expect(await screen.findByText(/too similar to your email/i)).toBeTruthy();

@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { usePortal } from "../portal";
 import { GovernanceStatsHeader } from "@/features/governance/components/GovernanceStatsHeader";
@@ -37,6 +37,11 @@ const VALID_TABS: Tab[] = [
 export default function GovernancePage() {
   usePageTitle("System Governance");
   const { org, isHospitalAdmin } = usePortal();
+  const router = useRouter();
+  // Hospital admins only; anyone else who types the address is sent back.
+  useEffect(() => {
+    if (!isHospitalAdmin) router.replace("/dashboard");
+  }, [isHospitalAdmin, router]);
   const searchParams = useSearchParams();
   // A citation link (AI Summary's staff mentions) arrives as ?tab=staff&
   // staff=<id> — read once on first render, not kept in sync afterwards,

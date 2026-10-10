@@ -80,8 +80,7 @@ export default function HwStep1Personal({ defaultValues, onSubmit }: Props) {
             className={`hw-input${errors.email ? " hw-input-err" : ""}`}
           />
           <span className="hw-hint">
-            Login identifier — unique, case-insensitive. Verification link sent
-            here.
+            You will sign in with this email. We send a verification link to it.
           </span>
           {errors.email && (
             <span className="hw-err-msg">{errors.email.message}</span>
@@ -118,7 +117,7 @@ export default function HwStep1Personal({ defaultValues, onSubmit }: Props) {
               placeholder="Repeat password"
               className={`hw-input${errors.confirmPassword ? " hw-input-err" : ""}`}
             />
-            <span className="hw-hint">Frontend-only match check.</span>
+            <span className="hw-hint">Type the same password again.</span>
             {errors.confirmPassword && (
               <span className="hw-err-msg">
                 {errors.confirmPassword.message}
@@ -137,7 +136,7 @@ export default function HwStep1Personal({ defaultValues, onSubmit }: Props) {
               className="hw-input"
             />
             <span className="hw-hint">
-              Unique if provided. Used for OTP later if added.
+              Optional. Digits only, with a leading + for a country code.
             </span>
           </div>
           <div className="hw-field">

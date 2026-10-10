@@ -184,10 +184,7 @@ export function PatientLookupTab() {
                       </span>
                     )}
                   </td>
-                  <td
-                    className="mc-dtable-sub"
-                    title="Not yet available — the patient list endpoint doesn't return a location on this row yet"
-                  >
+                  <td className="mc-dtable-sub" title="Not shown yet">
                     —
                   </td>
                   <td

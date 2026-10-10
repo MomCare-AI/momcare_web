@@ -10,6 +10,7 @@ import {
 } from "@/features/monitoring/hooks/useMonitoring";
 import { ACQUISITION_OPTIONS } from "@/features/monitoring/types";
 import { Card, CardBody, CardHeader } from "@/shared/ui/Card";
+import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { Pair } from "@/shared/ui/Pair";
 
@@ -29,6 +30,7 @@ export function PatientDevicesPanel({ pregnancyId, canWrite }: Props) {
   const devicesQuery = useDevices();
   const assign = useAssignDevice(pregnancyId);
   const unassign = useUnassignDevice(pregnancyId);
+  const [confirmUnassign, setConfirmUnassign] = useState(false);
   const [deviceId, setDeviceId] = useState("");
   const [acquisition, setAcquisition] = useState("");
 
@@ -116,10 +118,23 @@ export function PatientDevicesPanel({ pregnancyId, canWrite }: Props) {
                 type="button"
                 className="mc-btn-ghost mc-btn-sm"
                 disabled={unassign.isPending}
-                onClick={() => unassign.mutate()}
+                onClick={() => setConfirmUnassign(true)}
               >
                 {unassign.isPending ? "Returning…" : "Unassign device"}
               </button>
+              <ConfirmDialog
+                open={confirmUnassign}
+                title="Unassign this device?"
+                message="The device goes back to the hospital's stock and stops sending readings to this patient."
+                confirmLabel="Unassign"
+                busy={unassign.isPending}
+                onClose={() => setConfirmUnassign(false)}
+                onConfirm={() => {
+                  unassign.mutate(undefined, {
+                    onSettled: () => setConfirmUnassign(false),
+                  });
+                }}
+              />
             </>
           )}
         </CardBody>
