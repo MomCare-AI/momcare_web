@@ -207,7 +207,8 @@ export function VitalsChart({
     );
 
     return {
-      domain: [Math.floor(floor) - 5, Math.ceil(ceiling) + 8] as [
+      // No vital can be below zero, so the axis never goes negative.
+      domain: [Math.max(0, Math.floor(floor) - 5), Math.ceil(ceiling) + 8] as [
         number,
         number,
       ],
