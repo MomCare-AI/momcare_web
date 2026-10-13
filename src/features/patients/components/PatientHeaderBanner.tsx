@@ -236,7 +236,7 @@ export function PatientHeaderBanner({
                     fontSize: 12,
                   }}
                 >
-                  {[age, patient.gender].filter(Boolean).join(" · ") && (
+                  {age && (
                     <span
                       style={{
                         display: "inline-flex",
@@ -245,12 +245,16 @@ export function PatientHeaderBanner({
                       }}
                     >
                       <User size={11} strokeWidth={2} aria-hidden />
-                      {[age, patient.gender].filter(Boolean).join(" · ")}
+                      {age}
                     </span>
                   )}
-                  {[patient.mrn, patient.cnic].filter(Boolean).join(" · ") && (
+                  {[patient.mrn, patient.national_id]
+                    .filter(Boolean)
+                    .join(" · ") && (
                     <span>
-                      {[patient.mrn, patient.cnic].filter(Boolean).join(" · ")}
+                      {[patient.mrn, patient.national_id]
+                        .filter(Boolean)
+                        .join(" · ")}
                     </span>
                   )}
                   {patient.location_name && (

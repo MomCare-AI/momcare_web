@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { motion } from "motion/react";
 import { AlertCircle, ClipboardCheck, UserRoundPlus } from "lucide-react";
 
 import {
-  useApproveJoinRequest,
   useJoinRequests,
   useRejectJoinRequest,
 } from "@/features/join-requests/hooks/useJoinRequests";
@@ -13,7 +13,6 @@ import type {
   JoinRequest,
   JoinRequestStatus,
 } from "@/features/join-requests/types";
-import { RISK_FACTORS } from "@/features/patients/types";
 import { formatDate } from "@/shared/lib/formatDateTime";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { Pair } from "@/shared/ui/Pair";
@@ -28,10 +27,10 @@ const FILTERS: { value: JoinRequestStatus | "all"; label: string }[] = [
 
 /**
  * A woman self-registers in the mobile app with no hospital yet, and asks
- * one to take her on. Approving needs nothing from the hospital — no
- * location, no care team, no MRN, all deliberately excluded from what she
- * can report (core/patients/api/serializers.py::PatientDraftSerializer) —
- * so this is a pure accept/reject decision, not a mini-enrollment form.
+ * one to take her on. Her profile arrives frozen with the request. Staff
+ * "review and enrol": the enrolment form opens pre-filled from it, they add
+ * the clinical fields, and saving that form is the approval. Rejecting is
+ * the only decision made on this list.
  */
 export function JoinRequestsPanel() {
   const [filter, setFilter] = useState<JoinRequestStatus | "all">("pending");
@@ -108,25 +107,25 @@ function JoinRequestRow({
 }) {
   const [expanded, setExpanded] = useState(false);
   const [note, setNote] = useState("");
-  const [pendingAction, setPendingAction] = useState<
-    "approve" | "reject" | null
-  >(null);
-  const approve = useApproveJoinRequest();
+  const [rejecting, setRejecting] = useState(false);
   const reject = useRejectJoinRequest();
 
-  const draft = request.draft;
-  const presentFactors = RISK_FACTORS.filter(
-    ({ field }) => draft[field] && draft[field] !== "unknown"
-  );
+  const profile = request.profile;
+  const address = [
+    profile.address_line1,
+    profile.address_line2,
+    profile.city,
+    profile.state,
+    profile.postal_code,
+    profile.country,
+  ]
+    .filter(Boolean)
+    .join(", ");
 
-  const busy = approve.isPending || reject.isPending;
-  const error = approve.error ?? reject.error;
-
-  const confirm = (decision: "approve" | "reject") => {
-    const mutate = decision === "approve" ? approve.mutate : reject.mutate;
-    mutate(
+  const confirmReject = () => {
+    reject.mutate(
       { requestId: request.id, note: note.trim() || undefined },
-      { onSuccess: () => setPendingAction(null) }
+      { onSuccess: () => setRejecting(false) }
     );
   };
 
@@ -150,11 +149,12 @@ function JoinRequestRow({
       >
         <div>
           <div className="mc-row-title">
-            {draft.first_name} {draft.last_name}
+            {profile.first_name} {profile.last_name}
           </div>
           <div className="mc-row-meta">
             {request.applicant_name || request.applicant_email}
             {request.applicant_email && ` · ${request.applicant_email}`}
+            {request.location_name && ` · asked for ${request.location_name}`}
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -180,62 +180,22 @@ function JoinRequestRow({
           <div className="mc-pairs">
             <Pair
               label="Date of birth"
-              value={formatDate(draft.date_of_birth)}
+              value={formatDate(profile.date_of_birth)}
             />
-            <Pair label="Phone" value={draft.phone} />
-            <Pair label="CNIC" value={draft.cnic} />
-            <Pair label="Blood group" value={draft.blood_group} />
+            <Pair label="Phone" value={profile.phone} />
+            <Pair label="National ID" value={profile.national_id} />
+            <Pair label="Blood group" value={profile.blood_group} />
+            <Pair label="Address" value={address} />
             <Pair
               label="Emergency contact"
               value={[
-                draft.emergency_contact_name,
-                draft.emergency_contact_phone,
+                profile.emergency_contact_name,
+                profile.emergency_contact_phone,
               ]
                 .filter(Boolean)
                 .join(" · ")}
             />
-            <Pair
-              label="Pregnancy dating"
-              value={
-                draft.lmp || draft.edd
-                  ? [
-                      draft.lmp && `LMP ${formatDate(draft.lmp)}`,
-                      draft.edd && `EDD ${formatDate(draft.edd)}`,
-                    ]
-                      .filter(Boolean)
-                      .join(" · ")
-                  : "Not reported"
-              }
-            />
-            <Pair
-              label="Gravida / Para"
-              value={
-                draft.gravida != null || draft.para != null
-                  ? `G${draft.gravida ?? "?"} P${draft.para ?? "?"}`
-                  : ""
-              }
-            />
           </div>
-
-          {presentFactors.length > 0 && (
-            <div style={{ marginTop: 14 }}>
-              <div className="mc-pair-label" style={{ marginBottom: 6 }}>
-                Reported risk factors
-              </div>
-              <div className="mc-risklist">
-                {presentFactors.map(({ field, label }) => (
-                  <div key={field} className="mc-riskrow">
-                    <span className="mc-riskrow-label">{label}</span>
-                    <span
-                      className={`mc-badge mc-badge-${draft[field] === "yes" ? "high" : "stable"}`}
-                    >
-                      {draft[field] === "yes" ? "Yes" : "No"}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
           {request.status !== "pending" && request.decision_note && (
             <p className="mc-hint" style={{ marginTop: 14 }}>
@@ -245,7 +205,7 @@ function JoinRequestRow({
 
           {request.status === "pending" && (
             <div style={{ marginTop: 16 }}>
-              {pendingAction ? (
+              {rejecting ? (
                 <div onClick={(e) => e.stopPropagation()}>
                   <label className="mc-label" htmlFor={`note-${request.id}`}>
                     Note (optional)
@@ -253,22 +213,19 @@ function JoinRequestRow({
                   <input
                     id={`note-${request.id}`}
                     className="mc-input"
+                    maxLength={500}
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
-                    placeholder={
-                      pendingAction === "approve"
-                        ? "Optional"
-                        : "Why is this being rejected?"
-                    }
+                    placeholder="Why is this being rejected?"
                   />
 
-                  {error && (
+                  {reject.error && (
                     <p
                       className="mc-alert mc-alert-error"
                       style={{ marginTop: 10 }}
                     >
-                      {error instanceof Error
-                        ? error.message
+                      {reject.error instanceof Error
+                        ? reject.error.message
                         : "Something went wrong."}
                     </p>
                   )}
@@ -277,27 +234,19 @@ function JoinRequestRow({
                     <button
                       type="button"
                       className="mc-btn-ghost mc-btn-sm"
-                      onClick={() => setPendingAction(null)}
-                      disabled={busy}
+                      onClick={() => setRejecting(false)}
+                      disabled={reject.isPending}
                     >
                       Cancel
                     </button>
                     <button
                       type="button"
                       className="mc-btn mc-btn-sm"
-                      style={
-                        pendingAction === "reject"
-                          ? { background: "var(--c-high)" }
-                          : undefined
-                      }
-                      disabled={busy}
-                      onClick={() => confirm(pendingAction)}
+                      style={{ background: "var(--c-high)" }}
+                      disabled={reject.isPending}
+                      onClick={confirmReject}
                     >
-                      {busy
-                        ? "Saving…"
-                        : pendingAction === "approve"
-                          ? "Confirm approve"
-                          : "Confirm reject"}
+                      {reject.isPending ? "Saving…" : "Confirm reject"}
                     </button>
                   </div>
                 </div>
@@ -311,22 +260,18 @@ function JoinRequestRow({
                     className="mc-btn-ghost mc-btn-sm mc-btn-danger"
                     onClick={() => {
                       setNote("");
-                      setPendingAction("reject");
+                      setRejecting(true);
                     }}
                   >
                     Reject
                   </button>
-                  <button
-                    type="button"
+                  <Link
+                    href={`/dashboard/patients/new?request=${request.id}`}
                     className="mc-btn mc-btn-sm"
-                    onClick={() => {
-                      setNote("");
-                      setPendingAction("approve");
-                    }}
                   >
                     <ClipboardCheck size={13} strokeWidth={2.2} aria-hidden />
-                    Approve
-                  </button>
+                    Review and enrol
+                  </Link>
                 </div>
               )}
             </div>

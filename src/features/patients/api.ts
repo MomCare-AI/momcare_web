@@ -19,13 +19,14 @@ import type {
 } from "./types";
 
 export interface EnrolmentInput {
+  /** The join request this save approves, when the woman asked to join. */
+  join_request?: string;
   mrn?: string | null;
   first_name: string;
   last_name?: string;
   date_of_birth?: string | null;
-  gender?: string;
   phone?: string;
-  cnic?: string;
+  national_id?: string;
   blood_group?: string;
   emergency_contact_name?: string;
   emergency_contact_phone?: string;

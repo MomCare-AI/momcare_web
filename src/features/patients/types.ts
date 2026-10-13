@@ -89,7 +89,7 @@ export interface PatientListItem {
   mrn: string | null;
   full_name: string;
   phone: string;
-  cnic: string;
+  national_id: string;
   date_of_birth: string | null;
   pregnancy_id: string | null;
   gestational_age_display: string | null;
@@ -150,9 +150,8 @@ export interface PatientDetail {
   last_name: string;
   full_name: string;
   date_of_birth: string | null;
-  gender: string;
   phone: string;
-  cnic: string;
+  national_id: string;
   blood_group: string;
   emergency_contact_name: string;
   emergency_contact_phone: string;

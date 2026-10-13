@@ -50,6 +50,10 @@ export const keepPhone = (v: string) => v.replace(PHONE_CHARS, "").slice(0, 20);
 /** CNIC: digits and dashes. */
 export const keepCnic = (v: string) => v.replace(CNIC_CHARS, "").slice(0, 15);
 
+/** National ID: letters, digits and dashes. */
+export const keepNationalId = (v: string) =>
+  v.replace(/[^A-Za-z0-9-]/g, "").slice(0, 20);
+
 /** Whole numbers only. */
 export const keepDigits = (v: string, max = 10) =>
   v.replace(DIGITS, "").slice(0, max);
@@ -133,6 +137,20 @@ export function checkEmail(
   if (v.length > 254) return `${label} is too long.`;
   if (!/^[^\s@]+@[^\s@.]+(\.[^\s@.]+)+$/.test(v)) {
     return `Enter a valid ${label.toLowerCase()}, like name@hospital.com.`;
+  }
+  return null;
+}
+
+/** Whatever identity number the country uses (optional): 5 to 20 letters,
+ *  digits or dashes. Not every country has one, so it is never required. */
+export function checkNationalId(
+  value: string,
+  { required = false } = {}
+): Rule {
+  const v = value.trim();
+  if (!v) return required ? "National ID is required." : null;
+  if (!/^[A-Za-z0-9][A-Za-z0-9-]{3,18}[A-Za-z0-9]$/.test(v)) {
+    return "National ID must be 5 to 20 letters, digits or dashes.";
   }
   return null;
 }

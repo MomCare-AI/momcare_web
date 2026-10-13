@@ -23,9 +23,8 @@ const patient = {
   full_name: "TestWizard Debug",
   date_of_birth: null,
   phone: "",
-  gender: "",
   mrn: null,
-  cnic: "",
+  national_id: "",
   location_name: "Main Branch",
   created_at: "2026-10-01T00:00:00Z",
 } as unknown as PatientDetail;

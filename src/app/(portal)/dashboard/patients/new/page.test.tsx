@@ -27,8 +27,14 @@ import type { OrgSummary } from "@/features/portal/hooks/usePortalData";
 
 const push = vi.fn();
 const replace = vi.fn();
+let searchParams = new URLSearchParams();
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push, replace }),
+  useSearchParams: () => searchParams,
+}));
+const joinRequestData = vi.fn();
+vi.mock("@/features/join-requests/hooks/useJoinRequests", () => ({
+  useJoinRequest: () => ({ data: joinRequestData() }),
 }));
 vi.mock("../../portal", () => ({ usePortal: vi.fn() }));
 vi.mock("@/features/patients/hooks/usePatients", () => ({
@@ -41,6 +47,8 @@ const mockedUseClinicians = vi.mocked(useClinicians);
 const mockedUseEnrolPatient = vi.mocked(useEnrolPatient);
 
 afterEach(() => {
+  searchParams = new URLSearchParams();
+  joinRequestData.mockReset();
   cleanup();
   vi.clearAllMocks();
 });
@@ -256,6 +264,46 @@ describe("EnrolPatientPage", () => {
     // A required field left empty
     fireEvent.blur(first);
     expect(await screen.findByText(/First name is required/)).toBeTruthy();
+  });
+
+  it("opens pre-filled from a join request and sends it so saving approves it", async () => {
+    searchParams = new URLSearchParams("request=req-1");
+    joinRequestData.mockReturnValue({
+      id: "req-1",
+      profile: {
+        first_name: "Mariam",
+        last_name: "Bibi",
+        phone: "03001234567",
+        national_id: "61101-1234567-8",
+        address_line1: "House 12, Street 4",
+        address_line2: "F-7",
+        city: "Islamabad",
+        state: "ICT",
+        postal_code: "44000",
+        country: "Pakistan",
+      },
+    });
+    const { mutateAsync } = setup();
+    render(<EnrolPatientPage />);
+
+    expect((fieldInput(/^First name/) as HTMLInputElement).value).toBe(
+      "Mariam"
+    );
+    expect((fieldInput(/^City/) as HTMLInputElement).value).toBe("Islamabad");
+
+    clickContinue();
+    fireEvent.click(screen.getByLabelText("Record a pregnancy now")); // off
+    clickContinue();
+    fireEvent.click(screen.getByRole("button", { name: /Enrol patient/ }));
+
+    await vi.waitFor(() => expect(mutateAsync).toHaveBeenCalled());
+    expect(mutateAsync.mock.calls[0][0]).toMatchObject({
+      join_request: "req-1",
+      first_name: "Mariam",
+      national_id: "61101-1234567-8",
+    });
+    expect(mutateAsync.mock.calls[0][0]).not.toHaveProperty("gender");
+    expect(mutateAsync.mock.calls[0][0]).not.toHaveProperty("cnic");
   });
 
   it("refuses to submit without a dating source when recording a pregnancy", async () => {

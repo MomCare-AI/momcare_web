@@ -170,7 +170,7 @@ export function PatientsTable({
     return patients.filter((p) => {
       const matchesSearch =
         !q ||
-        [p.full_name, p.mrn, p.phone, p.cnic]
+        [p.full_name, p.mrn, p.phone, p.national_id]
           .filter(Boolean)
           .join(" ")
           .toLowerCase()

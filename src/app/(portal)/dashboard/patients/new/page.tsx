@@ -1,8 +1,9 @@
 "use client";
 
+import { useJoinRequest } from "@/features/join-requests/hooks/useJoinRequests";
 import {
   checkAddressLine,
-  checkCnic,
+  checkNationalId,
   checkDateOfBirth,
   checkEmail,
   checkPersonName,
@@ -10,7 +11,7 @@ import {
   checkPlace,
   checkPostalCode,
   checkWholeNumber,
-  keepCnic,
+  keepNationalId,
   keepName,
   keepPhone,
   keepPlace,
@@ -19,7 +20,7 @@ import {
 } from "@/shared/lib/validation";
 import { cloneElement, isValidElement, useId, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   AlertCircle,
   AlertTriangle,
@@ -45,13 +46,6 @@ import {
 } from "@/features/patients/types";
 import { usePortal } from "../../portal";
 import { usePageTitle } from "@/hooks/usePageTitle";
-
-const GENDER_OPTIONS = [
-  { value: "female", label: "Female" },
-  { value: "male", label: "Male" },
-  { value: "other", label: "Other" },
-  { value: "unknown", label: "Unknown" },
-];
 
 /** LMP + 280 days — mirrors the backend so the nurse sees the due date as she
  *  types, rather than after saving. The server remains authoritative. */
@@ -81,9 +75,8 @@ type FormState = {
   first_name: string;
   last_name: string;
   date_of_birth: string;
-  gender: string;
   phone: string;
-  cnic: string;
+  national_id: string;
   blood_group: string;
   emergency_contact_name: string;
   emergency_contact_phone: string;
@@ -115,7 +108,7 @@ const FILTERS: Partial<Record<keyof FormState, (v: string) => string>> = {
   emergency_contact_relation: keepName,
   phone: keepPhone,
   emergency_contact_phone: keepPhone,
-  cnic: keepCnic,
+  national_id: keepNationalId,
   city: keepPlace,
   state: keepPlace,
   country: keepPlace,
@@ -146,7 +139,7 @@ function validateForm(
   );
   add("date_of_birth", checkDateOfBirth(form.date_of_birth));
   add("phone", checkPhone(form.phone));
-  add("cnic", checkCnic(form.cnic));
+  add("national_id", checkNationalId(form.national_id));
   add(
     "emergency_contact_name",
     checkPersonName(form.emergency_contact_name, "Emergency contact name", {
@@ -225,14 +218,19 @@ export default function EnrolPatientPage() {
   const router = useRouter();
   const { org } = usePortal();
 
+  // Opened from the join requests list: the form starts as her profile, and
+  // saving it is the approval of her request.
+  const requestId = useSearchParams().get("request");
+  const joinRequest = useJoinRequest(requestId);
+  const [prefilledFrom, setPrefilledFrom] = useState<string | null>(null);
+
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<FormState>({
     first_name: "",
     last_name: "",
     date_of_birth: "",
-    gender: "",
     phone: "",
-    cnic: "",
+    national_id: "",
     blood_group: "",
     emergency_contact_name: "",
     emergency_contact_phone: "",
@@ -245,6 +243,31 @@ export default function EnrolPatientPage() {
     postal_code: "",
     country: "",
   });
+
+  const requestProfile = joinRequest.data?.profile;
+  if (requestProfile && prefilledFrom !== joinRequest.data?.id) {
+    setPrefilledFrom(joinRequest.data?.id ?? null);
+    setForm((f) => ({
+      ...f,
+      first_name: requestProfile.first_name ?? "",
+      last_name: requestProfile.last_name ?? "",
+      date_of_birth: requestProfile.date_of_birth ?? "",
+      phone: requestProfile.phone ?? "",
+      national_id: requestProfile.national_id ?? "",
+      blood_group: requestProfile.blood_group ?? "",
+      emergency_contact_name: requestProfile.emergency_contact_name ?? "",
+      emergency_contact_phone: requestProfile.emergency_contact_phone ?? "",
+      emergency_contact_relation:
+        requestProfile.emergency_contact_relation ?? "",
+      emergency_contact_email: requestProfile.emergency_contact_email ?? "",
+      address_line1: requestProfile.address_line1 ?? "",
+      address_line2: requestProfile.address_line2 ?? "",
+      city: requestProfile.city ?? "",
+      state: requestProfile.state ?? "",
+      postal_code: requestProfile.postal_code ?? "",
+      country: requestProfile.country ?? "",
+    }));
+  }
   const [recordPregnancy, setRecordPregnancy] = useState(true);
   const [pregnancy, setPregnancy] = useState<PregnancyState>({
     lmp: "",
@@ -336,6 +359,7 @@ export default function EnrolPatientPage() {
 
     const payload: EnrolmentInput = {
       ...form,
+      ...(requestId ? { join_request: requestId } : {}),
       date_of_birth: form.date_of_birth || null,
       consent_date: consentGiven ? todayIso() : null,
     };
@@ -403,6 +427,13 @@ export default function EnrolPatientPage() {
           Enrol a patient
         </h1>
       </div>
+      {requestId && (
+        <p className="mc-alert mc-alert-notice" style={{ marginBottom: 14 }}>
+          This is a woman who asked to join your hospital. Her details are
+          filled in from her profile. Check them, add the clinical details, and
+          saving this form accepts her request.
+        </p>
+      )}
 
       <div
         className="mc-wizard-steps"
@@ -499,20 +530,6 @@ export default function EnrolPatientPage() {
                         onChange={(e) => set("date_of_birth", e.target.value)}
                       />
                     </Field>
-                    <Field label="Gender">
-                      <select
-                        className="mc-input"
-                        value={form.gender}
-                        onChange={(e) => set("gender", e.target.value)}
-                      >
-                        <option value="">Not recorded</option>
-                        {GENDER_OPTIONS.map((g) => (
-                          <option key={g.value} value={g.value}>
-                            {g.label}
-                          </option>
-                        ))}
-                      </select>
-                    </Field>
                     <Field
                       label="Phone"
                       hint="Used to find her record later"
@@ -527,16 +544,16 @@ export default function EnrolPatientPage() {
                       />
                     </Field>
                     <Field
-                      label="CNIC"
+                      label="National ID"
                       hint="If she has one"
-                      error={fieldErrors.cnic}
-                      onBlur={() => blurField("cnic")}
+                      error={fieldErrors.national_id}
+                      onBlur={() => blurField("national_id")}
                     >
                       <input
                         className="mc-input"
-                        value={form.cnic}
-                        onChange={(e) => set("cnic", e.target.value)}
-                        placeholder="61101-1234567-8"
+                        value={form.national_id}
+                        onChange={(e) => set("national_id", e.target.value)}
+                        placeholder="e.g. 61101-1234567-8"
                       />
                     </Field>
                     <Field label="Blood group">
@@ -1235,7 +1252,6 @@ function LivePreview({
           </span>
           <span>
             <div className="mc-preview-name">{fullName || "New Patient"}</div>
-            {form.gender && <div className="mc-preview-sub">{form.gender}</div>}
           </span>
         </div>
 
@@ -1246,7 +1262,7 @@ function LivePreview({
             <PreviewField label="Last name" value={form.last_name} />
             <PreviewField label="Date of birth" value={form.date_of_birth} />
             <PreviewField label="Phone" value={form.phone} />
-            <PreviewField label="CNIC" value={form.cnic} />
+            <PreviewField label="National ID" value={form.national_id} />
             <PreviewField label="Blood group" value={form.blood_group} />
           </div>
 

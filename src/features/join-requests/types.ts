@@ -1,33 +1,31 @@
-import type { RiskFactors } from "@/features/patients/types";
-
-/** Mirrors `core/patients/api/serializers.py::PatientDraftSerializer` — what
- *  she reported before any hospital had her. Deliberately excludes location,
- *  care team and MRN: those are the hospital's decision, made only if and
- *  when it approves. */
-export interface JoinRequestDraft extends Partial<RiskFactors> {
+/** The profile she sent, frozen when she sent the request. Its keys are
+ *  exactly the fields of the enrolment form, so the form can be pre-filled
+ *  with it as it is. Identity only: no medical history or pregnancy dating,
+ *  those are the clinician's to enter at the visit. */
+export interface JoinRequestProfile {
   first_name: string;
   last_name?: string;
   date_of_birth?: string | null;
   phone?: string;
-  cnic?: string;
+  national_id?: string;
   blood_group?: string;
   emergency_contact_name?: string;
   emergency_contact_phone?: string;
   emergency_contact_relation?: string;
   emergency_contact_email?: string;
-  consent_date?: string | null;
-  lmp?: string | null;
-  edd?: string | null;
-  gravida?: number | null;
-  para?: number | null;
+  address_line1?: string;
+  address_line2?: string;
+  city?: string;
+  state?: string;
+  postal_code?: string;
+  country?: string;
 }
 
 export type JoinRequestStatus =
   "pending" | "approved" | "rejected" | "withdrawn";
 
 /** Mirrors `PatientJoinRequestSerializer` plus the two fields
- *  `JoinRequestReviewView` adds from her account identity — which may not
- *  match what she typed as first_name/last_name in the draft itself. */
+ *  `JoinRequestReviewView` adds from her account identity. */
 export interface JoinRequest {
   id: string;
   organization: string;
@@ -35,7 +33,10 @@ export interface JoinRequest {
   organization_city: string;
   status: JoinRequestStatus;
   status_display: string;
-  draft: JoinRequestDraft;
+  profile: JoinRequestProfile;
+  /** The branch she asked for, or null. */
+  location: string | null;
+  location_name: string | null;
   decision_note: string;
   decided_at: string | null;
   patient_id: string | null;

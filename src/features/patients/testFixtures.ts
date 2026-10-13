@@ -9,7 +9,7 @@ export function makePatient(
     mrn: null,
     full_name: "Test Patient",
     phone: "",
-    cnic: "",
+    national_id: "",
     date_of_birth: null,
     pregnancy_id: null,
     gestational_age_display: null,
