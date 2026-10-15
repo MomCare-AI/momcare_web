@@ -23,7 +23,18 @@ const json = (body: unknown, status = 200) =>
   });
 
 describe("token storage", () => {
-  beforeEach(() => localStorage.clear());
+  beforeEach(() => {
+    localStorage.clear();
+    clearAccessToken();
+  });
+
+  it("never writes the access token to localStorage, and removes an old one", () => {
+    localStorage.setItem("access_token", "left-by-an-older-version");
+    setAccessToken("abc123");
+    expect(localStorage.getItem("access_token")).toBeNull();
+    expect(JSON.stringify({ ...localStorage })).not.toContain("abc123");
+    clearAccessToken();
+  });
 
   it("round-trips the access token", () => {
     setAccessToken("abc123");
@@ -36,6 +47,8 @@ describe("token storage", () => {
 describe("authFetch", () => {
   beforeEach(() => {
     localStorage.clear();
+    // The token lives in module memory, which tests share, so start clean.
+    clearAccessToken();
     vi.restoreAllMocks();
   });
 
@@ -52,14 +65,28 @@ describe("authFetch", () => {
     expect(init.headers.Authorization).toBe("Bearer token-1");
   });
 
-  it("refuses to call the API when there is no token at all", async () => {
-    const fetchMock = vi.fn();
+  it("asks the server for a token when there is none in memory (a reload or a new tab)", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(json({ access: "restored" }))
+      .mockResolvedValueOnce(json({ ok: true }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await authFetch("/api/patients/");
+
+    expect(fetchMock.mock.calls[0][0]).toContain("/api/auth/refresh/");
+    expect(fetchMock.mock.calls[1][1].headers.Authorization).toBe(
+      "Bearer restored"
+    );
+  });
+
+  it("ends the session when there is no token and the cookie is no longer good", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(json({ detail: "no" }, 401));
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(authFetch("/api/patients/")).rejects.toBeInstanceOf(
       SessionExpiredError
     );
-    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("refreshes once on a 401 and retries the original request", async () => {
@@ -216,5 +243,17 @@ describe("authJson", () => {
     );
 
     await expect(authJson("/api/patients/")).rejects.toThrow(/503/);
+  });
+
+  it("turns a request that never left the browser into a readable message", async () => {
+    setAccessToken("token-1");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockRejectedValue(new TypeError("Failed to fetch"))
+    );
+
+    await expect(authFetch("/api/patients/")).rejects.toThrow(
+      "Could not reach the server"
+    );
   });
 });

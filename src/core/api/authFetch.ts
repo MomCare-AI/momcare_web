@@ -7,23 +7,77 @@
  *
  * The refresh token is HttpOnly and scoped to /api/auth, so it never passes
  * through JavaScript; only the refresh call needs `credentials: "include"`.
+ *
+ * The access token itself lives only in memory. It is never written to
+ * localStorage, so a script injected into the page cannot read it back later.
+ * A page load or a new tab starts without one and asks the server for a fresh
+ * token with the HttpOnly cookie, so the person stays signed in. Tabs take
+ * turns refreshing (the refresh token rotates, so two refreshes at once would
+ * revoke each other) and tell each other when one of them signs out.
  */
 
 import { API_BASE } from "./apiBase";
 
-const TOKEN_KEY = "access_token";
+// An older version kept the token here. It is deleted on sight so a token left
+// behind by that version cannot be read by anything.
+const LEGACY_TOKEN_KEY = "access_token";
+// `next dev` runs on localhost against the live API, where the refresh cookie
+// is not sent back, so development keeps the token for the length of the tab.
+const DEV_TOKEN_KEY = "mc_dev_access_token";
+const KEEP_FOR_TAB = process.env.NODE_ENV === "development";
+
+let memoryToken: string | null = null;
+
+const channel =
+  typeof BroadcastChannel !== "undefined"
+    ? new BroadcastChannel("momcare-auth")
+    : null;
+channel?.addEventListener("message", (event) => {
+  // Another tab signed out: this one must not keep acting as that person.
+  if (event.data === "signed-out") memoryToken = null;
+});
+
+function dropLegacyToken() {
+  try {
+    localStorage.removeItem(LEGACY_TOKEN_KEY);
+  } catch {
+    // Storage can be blocked; there is then nothing to remove.
+  }
+}
 
 export function getAccessToken(): string | null {
   if (typeof window === "undefined") return null;
-  return localStorage.getItem(TOKEN_KEY);
+  if (!memoryToken && KEEP_FOR_TAB) {
+    try {
+      memoryToken = sessionStorage.getItem(DEV_TOKEN_KEY);
+    } catch {
+      // ignore
+    }
+  }
+  return memoryToken;
 }
 
 export function setAccessToken(token: string): void {
-  localStorage.setItem(TOKEN_KEY, token);
+  memoryToken = token;
+  dropLegacyToken();
+  if (KEEP_FOR_TAB) {
+    try {
+      sessionStorage.setItem(DEV_TOKEN_KEY, token);
+    } catch {
+      // ignore
+    }
+  }
 }
 
 export function clearAccessToken(): void {
-  localStorage.removeItem(TOKEN_KEY);
+  memoryToken = null;
+  dropLegacyToken();
+  try {
+    sessionStorage.removeItem(DEV_TOKEN_KEY);
+  } catch {
+    // ignore
+  }
+  channel?.postMessage("signed-out");
 }
 
 /** Distinguishes "the server couldn't be reached" from "the refresh token
@@ -47,7 +101,7 @@ let refreshInFlight: Promise<RefreshOutcome> | null = null;
 async function refreshAccessToken(): Promise<RefreshOutcome> {
   if (refreshInFlight) return refreshInFlight;
 
-  refreshInFlight = (async () => {
+  const refresh = async (): Promise<RefreshOutcome> => {
     try {
       const res = await fetch(`${API_BASE}/api/auth/refresh/`, {
         method: "POST",
@@ -61,10 +115,19 @@ async function refreshAccessToken(): Promise<RefreshOutcome> {
       return access as string;
     } catch {
       return REFRESH_UNAVAILABLE;
-    } finally {
-      refreshInFlight = null;
     }
-  })();
+  };
+
+  // Tabs take turns: the refresh token rotates, so two tabs refreshing at the
+  // same moment would revoke each other and sign the person out.
+  const locks = typeof navigator !== "undefined" ? navigator.locks : undefined;
+  const run = async (): Promise<RefreshOutcome> =>
+    locks
+      ? ((await locks.request("momcare-refresh", refresh)) as RefreshOutcome)
+      : refresh();
+  refreshInFlight = run().finally(() => {
+    refreshInFlight = null;
+  });
 
   return refreshInFlight;
 }
@@ -86,17 +149,39 @@ export async function authFetch(
   path: string,
   init: RequestInit = {}
 ): Promise<Response> {
-  const call = (token: string | null) =>
-    fetch(`${API_BASE}${path}`, {
-      ...init,
-      headers: {
-        ...(init.headers ?? {}),
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-    });
+  const call = async (token: string | null) => {
+    try {
+      return await fetch(`${API_BASE}${path}`, {
+        ...init,
+        headers: {
+          ...(init.headers ?? {}),
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+    } catch (error) {
+      // A request that never reached the server (offline, a dropped
+      // connection) says "Failed to fetch" in the browser, which means nothing
+      // to the person looking at the screen.
+      if (error instanceof DOMException && error.name === "AbortError") {
+        throw error;
+      }
+      throw new Error(
+        "Could not reach the server. Check your connection and try again."
+      );
+    }
+  };
 
-  const token = getAccessToken();
-  if (!token) throw new SessionExpiredError();
+  let token = getAccessToken();
+  if (!token) {
+    // A new tab or a reloaded page: no token in memory yet, but the secure
+    // cookie may still be good.
+    const restored = await refreshAccessToken();
+    if (restored === REFRESH_UNAVAILABLE) {
+      throw new Error("Could not reach the server. Please try again.");
+    }
+    if (!restored) throw new SessionExpiredError();
+    token = restored;
+  }
 
   let response = await call(token);
   if (response.status !== 401) return response;
