@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { checkLabel } from "@/shared/lib/validation";
+import { checkLabel, useFieldChecks } from "@/shared/lib/validation";
 import { AlertCircle, Check, Tag as TagIcon } from "lucide-react";
 
 import { usePortal } from "@/app/(portal)/dashboard/portal";
@@ -59,11 +59,15 @@ export function CreateTagModal({
     }
   }
 
+  const checks = useFieldChecks(() => ({
+    name: checkLabel(name, "Tag name", { max: 30 }),
+  }));
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     const trimmed = name.trim();
-    const problem = checkLabel(trimmed, "Tag name", { max: 30 });
+    const problem = checks.validateAll();
     if (problem) {
       setError(problem);
       return;
@@ -114,7 +118,13 @@ export function CreateTagModal({
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="e.g. Follow-up, Motion"
+            onBlur={() => checks.touch("name")}
           />
+          {checks.error("name") && (
+            <span className="mc-field-error" role="alert">
+              {checks.error("name")}
+            </span>
+          )}
         </div>
 
         <div>

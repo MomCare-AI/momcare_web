@@ -549,7 +549,15 @@ function StaffRow({
         id={`staff-row-${m.id}`}
         className="mc-dtable-row"
         aria-expanded={expanded}
+        tabIndex={0}
         onClick={onToggleExpand}
+        onKeyDown={(e) => {
+          if (e.target !== e.currentTarget) return;
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onToggleExpand();
+          }
+        }}
       >
         <td>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>

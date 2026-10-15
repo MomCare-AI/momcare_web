@@ -16,7 +16,12 @@ import {
   type NumericVital,
   type VitalMetric,
 } from "../types";
-import { VITAL_LIMITS, checkVitalValues } from "../vitalLimits";
+import { useFieldChecks } from "@/shared/lib/validation";
+import {
+  VITAL_LIMITS,
+  checkVitalValues,
+  vitalFieldProblem,
+} from "../vitalLimits";
 import { VitalsChart } from "./VitalsChart";
 import { EmptyState } from "@/shared/ui/EmptyState";
 
@@ -211,6 +216,12 @@ export function ManualReadingForm({
   );
   const record = useRecordReading(pregnancyId);
 
+  const checks = useFieldChecks(() =>
+    Object.fromEntries(
+      VITAL_FIELDS.map(({ field }) => [field, vitalFieldProblem(values, field)])
+    )
+  );
+
   const set = (field: NumericVital, value: string) =>
     setValues((prev) => ({ ...prev, [field]: value }));
 
@@ -220,6 +231,7 @@ export function ManualReadingForm({
     e.preventDefault();
     setFormError(null);
 
+    checks.validateAll();
     const problem = checkVitalValues(values);
     if (problem) {
       setFormError(problem);
@@ -274,7 +286,13 @@ export function ManualReadingForm({
               // while focused — blurring on wheel makes scrolling just
               // scroll, never silently edit a vital.
               onWheel={(e) => e.currentTarget.blur()}
+              onBlur={() => checks.touch(field)}
             />
+            {checks.error(field) && (
+              <span className="mc-field-error" role="alert">
+                {checks.error(field)}
+              </span>
+            )}
           </div>
         ))}
       </div>

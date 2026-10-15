@@ -5,8 +5,8 @@ import {
   checkLabel,
   checkRegistrationNumber,
   checkText,
-  firstProblem,
   keepText,
+  useFieldChecks,
 } from "@/shared/lib/validation";
 import Image from "next/image";
 import { GraduationCap } from "lucide-react";
@@ -56,36 +56,40 @@ export function StaffCredentialsPanel({
     setEditing(true);
   }
 
-  const [problem, setProblem] = useState<string | null>(null);
+  const checks = useFieldChecks(() => ({
+    qual: checkText(qualifications, "Qualifications", { max: 200 }),
+    spec: specialty ? checkLabel(specialty, "Specialty", { max: 100 }) : null,
+    regno: registrationNumber
+      ? checkRegistrationNumber(registrationNumber, "Registration number")
+      : null,
+    regauth: registrationAuthority
+      ? checkLabel(registrationAuthority, "Registration authority", {
+          max: 100,
+        })
+      : null,
+    since:
+      practicingSince && practicingSince > new Date().toISOString().slice(0, 10)
+        ? "Practising since cannot be in the future."
+        : practicingSince && practicingSince < "1950-01-01"
+          ? "Practising since is not a believable date."
+          : null,
+  }));
+  const [photoProblem, setPhotoProblem] = useState<string | null>(null);
+
+  function checkPhoto(file: File | null): string | null {
+    if (!file) return null;
+    if (!/^image\/(jpeg|png|webp)$/.test(file.type)) {
+      return "The photo must be a JPG, PNG or WebP image.";
+    }
+    if (file.size > 5 * 1024 * 1024)
+      return "The photo must be 5 MB or smaller.";
+    return null;
+  }
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
-    const today = new Date().toISOString().slice(0, 10);
-    const found = firstProblem(
-      checkText(qualifications, "Qualifications", { max: 200 }),
-      specialty ? checkLabel(specialty, "Specialty", { max: 100 }) : null,
-      registrationNumber
-        ? checkRegistrationNumber(registrationNumber, "Registration number")
-        : null,
-      registrationAuthority
-        ? checkLabel(registrationAuthority, "Registration authority", {
-            max: 100,
-          })
-        : null,
-      practicingSince && practicingSince > today
-        ? "Practising since cannot be in the future."
-        : null,
-      practicingSince && practicingSince < "1950-01-01"
-        ? "Practising since is not a believable date."
-        : null,
-      photoFile && !/^image\/(jpeg|png|webp)$/.test(photoFile.type)
-        ? "The photo must be a JPG, PNG or WebP image."
-        : null,
-      photoFile && photoFile.size > 5 * 1024 * 1024
-        ? "The photo must be 5 MB or smaller."
-        : null
-    );
-    setProblem(found);
+    const found = checks.validateAll() ?? checkPhoto(photoFile);
+    setPhotoProblem(checkPhoto(photoFile));
     if (found) return;
     updateProfile.mutate(
       {
@@ -123,7 +127,13 @@ export function StaffCredentialsPanel({
               value={qualifications}
               onChange={(e) => setQualifications(keepText(e.target.value, 200))}
               placeholder="e.g. MBBS, FCPS (Gynae & Obs)"
+              onBlur={() => checks.touch("qual")}
             />
+            {checks.error("qual") && (
+              <span className="mc-field-error" role="alert">
+                {checks.error("qual")}
+              </span>
+            )}
           </div>
           <div>
             <label className="mc-label" htmlFor={`spec-${member.id}`}>
@@ -135,7 +145,13 @@ export function StaffCredentialsPanel({
               value={specialty}
               onChange={(e) => setSpecialty(keepText(e.target.value, 100))}
               placeholder="e.g. Obstetrics & Gynaecology"
+              onBlur={() => checks.touch("spec")}
             />
+            {checks.error("spec") && (
+              <span className="mc-field-error" role="alert">
+                {checks.error("spec")}
+              </span>
+            )}
           </div>
           <div>
             <label className="mc-label" htmlFor={`regno-${member.id}`}>
@@ -149,7 +165,13 @@ export function StaffCredentialsPanel({
                 setRegistrationNumber(keepText(e.target.value, 40))
               }
               placeholder="e.g. PMDC-12345"
+              onBlur={() => checks.touch("regno")}
             />
+            {checks.error("regno") && (
+              <span className="mc-field-error" role="alert">
+                {checks.error("regno")}
+              </span>
+            )}
           </div>
           <div>
             <label className="mc-label" htmlFor={`regauth-${member.id}`}>
@@ -163,7 +185,13 @@ export function StaffCredentialsPanel({
                 setRegistrationAuthority(keepText(e.target.value, 100))
               }
               placeholder="e.g. PMDC, Pakistan Nursing Council"
+              onBlur={() => checks.touch("regauth")}
             />
+            {checks.error("regauth") && (
+              <span className="mc-field-error" role="alert">
+                {checks.error("regauth")}
+              </span>
+            )}
           </div>
           <div>
             <label className="mc-label" htmlFor={`since-${member.id}`}>
@@ -175,7 +203,13 @@ export function StaffCredentialsPanel({
               type="date"
               value={practicingSince}
               onChange={(e) => setPracticingSince(e.target.value)}
+              onBlur={() => checks.touch("since")}
             />
+            {checks.error("since") && (
+              <span className="mc-field-error" role="alert">
+                {checks.error("since")}
+              </span>
+            )}
           </div>
           <div>
             <label className="mc-label" htmlFor={`photo-${member.id}`}>
@@ -186,22 +220,26 @@ export function StaffCredentialsPanel({
               className="mc-input"
               type="file"
               accept="image/*"
-              onChange={(e) => setPhotoFile(e.target.files?.[0] ?? null)}
+              onChange={(e) => {
+                const file = e.target.files?.[0] ?? null;
+                setPhotoFile(file);
+                setPhotoProblem(checkPhoto(file));
+              }}
             />
           </div>
         </div>
 
-        {problem && (
+        {photoProblem && (
           <p
             className="mc-alert mc-alert-error"
             role="alert"
             style={{ marginTop: 10 }}
           >
-            {problem}
+            {photoProblem}
           </p>
         )}
 
-        {!problem && updateProfile.isError && (
+        {!photoProblem && updateProfile.isError && (
           <p className="mc-alert mc-alert-error" style={{ marginTop: 10 }}>
             {updateProfile.error instanceof Error
               ? updateProfile.error.message

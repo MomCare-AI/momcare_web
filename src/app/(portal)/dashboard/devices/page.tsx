@@ -217,6 +217,14 @@ function RegisterForm({ onDone }: { onDone: () => void }) {
             maxLength={40}
             aria-invalid={serialProblem ? true : undefined}
             onChange={() => setSerialProblem(null)}
+            onBlur={(e) =>
+              setSerialProblem(
+                checkRegistrationNumber(
+                  e.currentTarget.value.trim(),
+                  "Serial number"
+                )
+              )
+            }
             placeholder="e.g. MC-2026-0413"
             autoFocus
             required

@@ -41,7 +41,7 @@ export default function HwOrgStep2Contact({
 
       <form id="hw-step-form" onSubmit={handleSubmit(onSubmit)} noValidate>
         <div className="hw-field">
-          <label className="hw-label">
+          <label className="hw-label" htmlFor="hw-contactEmail">
             Official contact email <span className="hw-req">*</span>
           </label>
           <div className="hw-input-wrap">
@@ -65,6 +65,7 @@ export default function HwOrgStep2Contact({
               />
             </svg>
             <input
+              id="hw-contactEmail"
               {...register("contactEmail")}
               type="email"
               placeholder="contact@yourhospital.com"
@@ -81,7 +82,7 @@ export default function HwOrgStep2Contact({
         </div>
 
         <div className="hw-field hw-mt">
-          <label className="hw-label">
+          <label className="hw-label" htmlFor="hw-contactPhone">
             Official contact phone <span className="hw-req">*</span>
           </label>
           <div className="hw-input-wrap">
@@ -101,6 +102,7 @@ export default function HwOrgStep2Contact({
               />
             </svg>
             <input
+              id="hw-contactPhone"
               {...filtered(register("contactPhone"), keepPhone)}
               type="tel"
               placeholder="+1 555 000 0000"

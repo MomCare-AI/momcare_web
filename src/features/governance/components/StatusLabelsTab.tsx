@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { checkLabel, checkText, firstProblem } from "@/shared/lib/validation";
+import { checkLabel, checkText, useFieldChecks } from "@/shared/lib/validation";
 import {
   AlertCircle,
   Check,
@@ -243,13 +243,15 @@ function StatusFormModal({
 
   const pending = createLabel.isPending || updateLabel.isPending;
 
+  const checks = useFieldChecks(() => ({
+    name: checkLabel(form.name, "Status name", { max: 30 }),
+    description: checkText(form.description ?? "", "Description", { max: 200 }),
+  }));
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    const problem = firstProblem(
-      checkLabel(form.name, "Status name", { max: 30 }),
-      checkText(form.description ?? "", "Description", { max: 200 })
-    );
+    const problem = checks.validateAll();
     if (problem) {
       setError(problem);
       return;
@@ -306,7 +308,13 @@ function StatusFormModal({
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
             placeholder="e.g. Critical, Telehealth Connected"
+            onBlur={() => checks.touch("name")}
           />
+          {checks.error("name") && (
+            <span className="mc-field-error" role="alert">
+              {checks.error("name")}
+            </span>
+          )}
           <div className="mc-hint" style={{ textAlign: "right", marginTop: 4 }}>
             {form.name.length}/30
           </div>
@@ -325,7 +333,13 @@ function StatusFormModal({
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
             placeholder="Describe when this status applies…"
+            onBlur={() => checks.touch("description")}
           />
+          {checks.error("description") && (
+            <span className="mc-field-error" role="alert">
+              {checks.error("description")}
+            </span>
+          )}
           <div className="mc-hint" style={{ textAlign: "right", marginTop: 4 }}>
             {form.description.length}/200
           </div>

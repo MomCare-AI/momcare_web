@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { checkLabel, checkText, firstProblem } from "@/shared/lib/validation";
+import { checkLabel, checkText, useFieldChecks } from "@/shared/lib/validation";
 import {
   AlertCircle,
   FileText,
@@ -174,7 +174,17 @@ function TemplateRow({
     <div
       className="mc-row"
       style={{ cursor: "pointer", flexWrap: "wrap" }}
+      role="button"
+      tabIndex={0}
+      aria-expanded={expanded}
       onClick={onToggleExpand}
+      onKeyDown={(e) => {
+        if (e.target !== e.currentTarget) return;
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onToggleExpand();
+        }
+      }}
     >
       <div className="mc-row-main">
         <div className="mc-row-title">{template.title}</div>
@@ -268,16 +278,18 @@ function TemplateFormModal({
 
   const pending = createTemplate.isPending || updateTemplate.isPending;
 
+  const checks = useFieldChecks(() => ({
+    title: checkLabel(form.title, "Template title", { max: 100 }),
+    content: checkText(form.content ?? "", "Template text", {
+      required: true,
+      max: 5000,
+    }),
+  }));
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    const problem = firstProblem(
-      checkLabel(form.title, "Template title", { max: 100 }),
-      checkText(form.content ?? "", "Template text", {
-        required: true,
-        max: 5000,
-      })
-    );
+    const problem = checks.validateAll();
     if (problem) {
       setError(problem);
       return;
@@ -324,7 +336,13 @@ function TemplateFormModal({
             value={form.title}
             onChange={(e) => setForm({ ...form, title: e.target.value })}
             placeholder="e.g. Missed Appointment Follow-up"
+            onBlur={() => checks.touch("title")}
           />
+          {checks.error("title") && (
+            <span className="mc-field-error" role="alert">
+              {checks.error("title")}
+            </span>
+          )}
         </div>
         <div>
           <label className="mc-label" htmlFor="template-content">
@@ -339,7 +357,13 @@ function TemplateFormModal({
             value={form.content}
             onChange={(e) => setForm({ ...form, content: e.target.value })}
             placeholder="The reusable text itself"
+            onBlur={() => checks.touch("content")}
           />
+          {checks.error("content") && (
+            <span className="mc-field-error" role="alert">
+              {checks.error("content")}
+            </span>
+          )}
         </div>
 
         {error && (

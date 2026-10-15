@@ -16,7 +16,12 @@ import {
 import { RiskBadge } from "./RiskBadge";
 import { Pair } from "@/shared/ui/Pair";
 import { MODEL_AGE_RANGE, ageFromDob } from "@/shared/lib/age";
-import { VITAL_LIMITS, checkVitalValues } from "../vitalLimits";
+import { useFieldChecks } from "@/shared/lib/validation";
+import {
+  VITAL_LIMITS,
+  checkVitalValues,
+  vitalFieldProblem,
+} from "../vitalLimits";
 
 interface Props {
   pregnancyId: string;
@@ -57,6 +62,12 @@ export function ScoreVitalsForm({
 
   const record = useRecordReading(pregnancyId);
 
+  const checks = useFieldChecks(() =>
+    Object.fromEntries(
+      VITAL_FIELDS.map(({ field }) => [field, vitalFieldProblem(values, field)])
+    )
+  );
+
   const set = (field: NumericVital, value: string) =>
     setValues((prev) => ({ ...prev, [field]: value }));
 
@@ -65,6 +76,7 @@ export function ScoreVitalsForm({
     setError(null);
     setResult(null);
 
+    checks.validateAll();
     const problem = checkVitalValues(
       useRegisteredAge ? { ...values, age: undefined } : values
     );
@@ -139,7 +151,13 @@ export function ScoreVitalsForm({
                 // accident while scrolling the page past it. Blurring on
                 // wheel makes scrolling just scroll, never edit.
                 onWheel={(e) => e.currentTarget.blur()}
+                onBlur={() => checks.touch(field)}
               />
+              {checks.error(field) && (
+                <span className="mc-field-error" role="alert">
+                  {checks.error(field)}
+                </span>
+              )}
             </div>
           ))}
         </div>

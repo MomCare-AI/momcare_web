@@ -145,7 +145,16 @@ function JoinRequestRow({
           gap: 12,
           cursor: "pointer",
         }}
+        role="button"
+        tabIndex={0}
+        aria-expanded={expanded}
         onClick={() => setExpanded((v) => !v)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setExpanded((v) => !v);
+          }
+        }}
       >
         <div>
           <div className="mc-row-title">

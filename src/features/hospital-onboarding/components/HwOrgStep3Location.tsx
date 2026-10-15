@@ -176,10 +176,11 @@ export default function HwOrgStep3Location({
 
       <form id="hw-step-form" onSubmit={handleSubmit(onSubmit)} noValidate>
         <div className="hw-field">
-          <label className="hw-label">
+          <label className="hw-label" htmlFor="hw-addressLine1">
             Address line 1 <span className="hw-req">*</span>
           </label>
           <input
+            id="hw-addressLine1"
             {...register("addressLine1")}
             type="text"
             placeholder="Street address, P.O. box, company name"
@@ -191,10 +192,11 @@ export default function HwOrgStep3Location({
         </div>
 
         <div className="hw-field hw-mt">
-          <label className="hw-label">
+          <label className="hw-label" htmlFor="hw-addressLine2">
             Address line 2 <span className="hw-opt-tag">optional</span>
           </label>
           <input
+            id="hw-addressLine2"
             {...register("addressLine2")}
             type="text"
             placeholder="Apartment, suite, unit, building, floor"
@@ -204,10 +206,11 @@ export default function HwOrgStep3Location({
 
         <div className="hw-grid-2 hw-mt">
           <div className="hw-field">
-            <label className="hw-label">
+            <label className="hw-label" htmlFor="hw-city">
               City <span className="hw-req">*</span>
             </label>
             <input
+              id="hw-city"
               {...filtered(register("city"), keepPlace)}
               type="text"
               placeholder="e.g. London"
@@ -221,10 +224,11 @@ export default function HwOrgStep3Location({
             )}
           </div>
           <div className="hw-field">
-            <label className="hw-label">
+            <label className="hw-label" htmlFor="hw-stateProvince">
               State / Province <span className="hw-req">*</span>
             </label>
             <input
+              id="hw-stateProvince"
               {...filtered(register("stateProvince"), keepPlace)}
               type="text"
               placeholder="e.g. England"
@@ -238,10 +242,11 @@ export default function HwOrgStep3Location({
 
         <div className="hw-grid-2 hw-mt">
           <div className="hw-field">
-            <label className="hw-label">
+            <label className="hw-label" htmlFor="hw-postalCode">
               Postal code <span className="hw-req">*</span>
             </label>
             <input
+              id="hw-postalCode"
               {...register("postalCode")}
               type="text"
               placeholder="e.g. SW1A 1AA"
@@ -252,10 +257,11 @@ export default function HwOrgStep3Location({
             )}
           </div>
           <div className="hw-field">
-            <label className="hw-label">
+            <label className="hw-label" htmlFor="hw-country">
               Country <span className="hw-req">*</span>
             </label>
             <select
+              id="hw-country"
               {...filtered(register("country"), keepPlace)}
               defaultValue=""
               className={`hw-input hw-select${errors.country ? " hw-input-err" : ""}`}
@@ -298,11 +304,12 @@ export default function HwOrgStep3Location({
         </div>
 
         <div className="hw-field hw-mt-lg">
-          <label className="hw-label">
+          <label className="hw-label" htmlFor="hw-licenseNo">
             Self-declared license / registration no.{" "}
             <span className="hw-req">*</span>
           </label>
           <input
+            id="hw-licenseNo"
             {...register("licenseNo")}
             type="text"
             placeholder="e.g. PHC-2026-LHR-441"

@@ -37,10 +37,11 @@ export default function HwStep1Personal({ defaultValues, onSubmit }: Props) {
       <form id="hw-step-form" onSubmit={handleSubmit(onSubmit)} noValidate>
         <div className="hw-grid-2">
           <div className="hw-field">
-            <label className="hw-label">
+            <label className="hw-label" htmlFor="hw-firstName">
               First name <span className="hw-req">*</span>
             </label>
             <input
+              id="hw-firstName"
               {...filtered(register("firstName"), keepName)}
               type="text"
               autoComplete="given-name"
@@ -52,10 +53,11 @@ export default function HwStep1Personal({ defaultValues, onSubmit }: Props) {
             )}
           </div>
           <div className="hw-field">
-            <label className="hw-label">
+            <label className="hw-label" htmlFor="hw-lastName">
               Last name <span className="hw-req">*</span>
             </label>
             <input
+              id="hw-lastName"
               {...filtered(register("lastName"), keepName)}
               type="text"
               autoComplete="family-name"
@@ -69,10 +71,11 @@ export default function HwStep1Personal({ defaultValues, onSubmit }: Props) {
         </div>
 
         <div className="hw-field hw-mt">
-          <label className="hw-label">
+          <label className="hw-label" htmlFor="hw-email">
             Email address <span className="hw-req">*</span>
           </label>
           <input
+            id="hw-email"
             {...register("email")}
             type="email"
             autoComplete="username"
@@ -89,10 +92,11 @@ export default function HwStep1Personal({ defaultValues, onSubmit }: Props) {
 
         <div className="hw-grid-2 hw-mt-lg">
           <div className="hw-field">
-            <label className="hw-label">
+            <label className="hw-label" htmlFor="hw-password">
               Password <span className="hw-req">*</span>
             </label>
             <input
+              id="hw-password"
               {...register("password")}
               type="password"
               autoComplete="new-password"
@@ -107,10 +111,11 @@ export default function HwStep1Personal({ defaultValues, onSubmit }: Props) {
             )}
           </div>
           <div className="hw-field">
-            <label className="hw-label">
+            <label className="hw-label" htmlFor="hw-confirmPassword">
               Confirm password <span className="hw-req">*</span>
             </label>
             <input
+              id="hw-confirmPassword"
               {...register("confirmPassword")}
               type="password"
               autoComplete="new-password"
@@ -128,8 +133,11 @@ export default function HwStep1Personal({ defaultValues, onSubmit }: Props) {
 
         <div className="hw-grid-2 hw-mt-lg">
           <div className="hw-field">
-            <label className="hw-label">Phone number</label>
+            <label className="hw-label" htmlFor="hw-phoneNumber">
+              Phone number
+            </label>
             <input
+              id="hw-phoneNumber"
               {...filtered(register("phoneNumber"), keepPhone)}
               type="tel"
               placeholder="+1 555 000 0000"
@@ -140,8 +148,11 @@ export default function HwStep1Personal({ defaultValues, onSubmit }: Props) {
             </span>
           </div>
           <div className="hw-field">
-            <label className="hw-label">Gender</label>
+            <label className="hw-label" htmlFor="hw-gender">
+              Gender
+            </label>
             <select
+              id="hw-gender"
               {...register("gender")}
               className="hw-input hw-select"
               defaultValue=""

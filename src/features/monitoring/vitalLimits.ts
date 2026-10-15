@@ -63,3 +63,37 @@ export function checkVitalValues(
 
   return null;
 }
+
+/**
+ * The problem with one vital, for flagging it as soon as the user leaves the
+ * field. Blood pressure's two halves are checked against each other on the
+ * diastolic box.
+ */
+export function vitalFieldProblem(
+  values: Partial<Record<NumericVital, string>>,
+  field: NumericVital
+): string | null {
+  const raw = values[field]?.trim() ?? "";
+
+  if (raw) {
+    if (!/^\d+(\.\d+)?$/.test(raw)) return `${label(field)} must be a number.`;
+    const n = Number(raw);
+    const { min, max } = VITAL_LIMITS[field];
+    if (n < min || n > max) {
+      return `${label(field)} must be between ${min} and ${max}.`;
+    }
+  }
+
+  if (field === "diastolic_bp") {
+    const sys = values.systolic_bp?.trim();
+    if (sys && !raw) return "Blood pressure needs the diastolic value too.";
+    if (sys && raw && Number(raw) >= Number(sys)) {
+      return "The diastolic pressure must be lower than the systolic.";
+    }
+  }
+  if (field === "systolic_bp") {
+    const dia = values.diastolic_bp?.trim();
+    if (dia && !raw) return "Blood pressure needs the systolic value too.";
+  }
+  return null;
+}

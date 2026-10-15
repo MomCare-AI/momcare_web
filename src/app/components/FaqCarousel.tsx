@@ -100,6 +100,7 @@ export function FaqCarousel() {
             <div style={{ display: "flex", gap: "12px" }}>
               <button
                 onClick={handlePrev}
+                aria-label="Previous question"
                 disabled={activeIndex === 0}
                 style={{
                   width: "48px",
@@ -119,6 +120,7 @@ export function FaqCarousel() {
               </button>
               <button
                 onClick={handleNext}
+                aria-label="Next question"
                 disabled={activeIndex === faqs.length - 1}
                 style={{
                   width: "48px",
