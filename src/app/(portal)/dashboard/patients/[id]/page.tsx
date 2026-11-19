@@ -32,6 +32,7 @@ import { PatientHeaderBanner } from "@/features/patients/components/PatientHeade
 import { PatientStickyHeader } from "@/features/patients/components/PatientStickyHeader";
 import { PatientOverviewSnapshot } from "@/features/patients/components/PatientOverviewSnapshot";
 import { RecentActivityCards } from "@/features/patients/components/RecentActivityCards";
+import { RiskHistoryEditor } from "@/features/patients/components/RiskHistoryEditor";
 import { PatientQueueNav } from "@/features/patients/components/PatientQueueNav";
 import {
   parseQueue,
@@ -90,6 +91,7 @@ type Tab =
   | "overview"
   | "readings"
   | "risk"
+  | "pregnancy"
   | "careplan"
   | "notes"
   | "devices"
@@ -100,6 +102,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "overview", label: "Overview" },
   { id: "readings", label: "Readings" },
   { id: "risk", label: "Risk" },
+  { id: "pregnancy", label: "Pregnancy" },
   { id: "careplan", label: "Care Plan" },
   { id: "notes", label: "Clinical Notes" },
   { id: "devices", label: "Devices" },
@@ -332,6 +335,31 @@ function PatientProfile({ id }: { id: string }) {
             <EmptyState
               title="No active pregnancy"
               text="Risk is assessed from readings on an active pregnancy."
+            />
+          </div>
+        ))}
+
+      {tab === "pregnancy" &&
+        (current ? (
+          <>
+            <CareTeamEditor
+              key={`team-${current.updated_at}`}
+              patientId={patient.id}
+              pregnancy={current}
+              canWrite={canManageCareTeam}
+            />
+            <RiskHistoryEditor
+              key={`risk-${current.updated_at}`}
+              patientId={patient.id}
+              pregnancy={current}
+              canWrite={canManageCareTeam}
+            />
+          </>
+        ) : (
+          <div className="mc-card">
+            <EmptyState
+              title="No active pregnancy"
+              text="The care team and obstetric history belong to an active pregnancy."
             />
           </div>
         ))}
